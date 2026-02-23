@@ -2,67 +2,125 @@ import React, { useRef } from "react";
 import Navbar from "./Navbar";
 import { useGSAP } from "@gsap/react";
 
-import { introImages } from "../data";
+import { introHeroTxt, introImages } from "../data";
 import gsap from "gsap";
 import { CustomEase, SplitText } from "gsap/all";
+import useStore from "../store";
 
 const Home: React.FC = () => {
   const homeRef = useRef<HTMLDivElement>(null);
 
+  const { introAnimDone, setIntroAnimDone } = useStore();
+
+  const introSlides = introImages.slice(0, -1);
+  const fixedBgImage = introImages[introImages.length - 1]?.img;
+
   useGSAP(() => {
-    if (!homeRef.current || !homeRef.current?.querySelectorAll(".introImgs"))
+    if (!homeRef.current) {
       return;
+    }
+
+    const slides = homeRef.current.querySelectorAll(".introImg");
+    const heroContent = homeRef.current.querySelector(".hero-content");
+
+    if (!heroContent) {
+      return;
+    }
+
+    const rollSplits: SplitText[] = [];
+
+    // Prepare for text character-roll animation.
+    Array.from(slides).forEach((slide) => {
+      const revealText = slide.querySelector(".reveal-text");
+
+      if (!revealText) {
+        return;
+      }
+
+      const rollSplit = SplitText.create(revealText, {
+        type: "chars",
+        charsClass: "reveal-text-split",
+      });
+      rollSplits.push(rollSplit);
+
+      const topHalf: Element[] = [];
+      const bottomHalf: Element[] = [];
+
+      rollSplit.chars.forEach((ch, i) => {
+        if (i % 2 === 0) {
+          topHalf.push(ch);
+        } else {
+          bottomHalf.push(ch);
+        }
+      });
+
+      gsap.set(topHalf, { yPercent: -120 });
+      gsap.set(bottomHalf, { yPercent: 100 });
+    });
+
+    // Setting up timeline.
     const tl = gsap.timeline();
 
-    tl.set(homeRef.current.querySelector(".hero-content"), { opacity: 0 });
-    tl.to(homeRef.current.querySelector(".introImgs:first-child"), {
+    tl.set(heroContent, { opacity: 0 });
+
+    if (!slides.length) {
+      tl.to(heroContent, {
+        opacity: 1,
+        duration: 0.8,
+        onComplete: () => setIntroAnimDone(true),
+      });
+      return;
+    }
+
+    // First scale down the first.
+    tl.to(slides[0], {
       scale: 1,
       duration: 1,
       ease: "power4.inOut",
     });
 
-    homeRef.current
-      .querySelectorAll(".introImgs:not(.introImgs:last-child)")
-      .forEach((img) => {
-        tl.to(
-          img,
-          { opacity: 1, scale: 1, duration: 1.25, ease: "power3.out" },
-          ">-0.5",
-        );
-      });
+    // For all others scale down and fade in.
+    const rollSettleGap = 0.3;
+    slides.forEach((introImg, index) => {
+      tl.to(
+        introImg,
+        { opacity: 1, duration: 1.75, ease: "power3.out" },
+        index === 0 ? ">-0.5" : `>+${rollSettleGap}`,
+      );
+      tl.to(introImg.querySelector("img"), { scale: 1, duration: 1.75 }, "<");
+      tl.to(
+        introImg.querySelectorAll(".reveal-text-split"),
+        { yPercent: 0, duration: 0.75 },
+        ">-0.1",
+      );
+    });
 
     CustomEase.create(
       "hop",
       "M0,0 C0.355,0.022 0.448,0.079 0.5,0.5 0.542,0.846 0.615,1 1,1",
     );
-    CustomEase.create(
-      "hop2",
-      "M0,0 C0.078,0.617 0.114,0.716 0.255,0.828 0.373,0.922 0.561,1 1,1",
-    );
+    tl.to(heroContent, { opacity: 1, duration: 1 }, ">+0.1");
 
-    const arr = Array.from(
-      homeRef.current.querySelectorAll(".introImgs:not(.introImgs:last-child)"),
-    );
-
-    homeRef.current
-      .querySelectorAll(".introImgs:not(.introImgs:last-child)")
-      .forEach((_, i) => {
-        tl.to(
-          arr[arr.length - i],
-          {
-            xPercent: `${i % 2 === 0 ? "-" : ""}100%`,
-            duration: 1.25,
-            ease: "power3.out",
-          },
-          ">-0.5",
-        );
-      });
-
-    const splits = Array.from(
-      homeRef.current.querySelectorAll(".text-split"),
+    // Setting up for the final text join.
+    const headingSplits = Array.from(
+      homeRef.current.querySelectorAll(".text-split-heading"),
     ).map((node) => SplitText.create(node, { type: "chars" }));
+    const secondarySplits = Array.from(
+      homeRef.current.querySelectorAll(".text-split-secondary"),
+    ).map((node) => SplitText.create(node, { type: "chars" }));
+    const allTextSplits = [...headingSplits, ...secondarySplits];
+    let headingSplitsReverted = false;
 
-    splits.forEach((split) => {
+    const revertHeadingSplits = () => {
+      if (headingSplitsReverted) {
+        return;
+      }
+
+      headingSplits.forEach((split) => split.revert());
+      headingSplitsReverted = true;
+    };
+
+    allTextSplits.forEach((split) => {
       const chars = split.chars as HTMLElement[];
 
       const midpoint = Math.ceil(chars.length / 2);
@@ -73,51 +131,133 @@ const Home: React.FC = () => {
       gsap.set(rightHalf, { x: 120, opacity: 0 });
     });
 
-    tl.to(
-      homeRef.current.querySelector(".hero-content"),
-      { opacity: 1, duration: 1 },
-      ">-5.5",
+    // Effecting.
+    const headingChars = headingSplits.flatMap(
+      (split) => split.chars as HTMLElement[],
     );
+    const secondaryChars = secondarySplits.flatMap(
+      (split) => split.chars as HTMLElement[],
+    );
+    let introImagesFaded = false;
 
-    const allChars = splits.flatMap((split) => split.chars as HTMLElement[]);
-    tl.to(
-      allChars,
-      {
-        x: 0,
-        opacity: 1,
-        duration: 0.9,
-        ease: "hop",
-        stagger: 0.02,
-      },
-      ">-0.1",
-    );
+    const fadeOutIntroImages = () => {
+      if (introImagesFaded) {
+        return;
+      }
+
+      introImagesFaded = true;
+      gsap.to(homeRef.current?.querySelectorAll(".introImg"), {
+        opacity: 0,
+        pointerEvents: "none",
+        duration: 1.25,
+      });
+    };
+
+    tl.add("hero-text-join", ">-0.1");
+
+    if (headingChars.length) {
+      tl.to(
+        headingChars,
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.9,
+          ease: "hop",
+          stagger: 0.02,
+          onStart: fadeOutIntroImages,
+          onComplete: () => {
+            revertHeadingSplits();
+            setIntroAnimDone(true);
+          },
+        },
+        "hero-text-join",
+      );
+    }
+
+    if (secondaryChars.length) {
+      tl.to(
+        secondaryChars,
+        {
+          x: 0,
+          opacity: 1,
+          duration: 0.9,
+          ease: "hop",
+          stagger: 0.02,
+          onStart: fadeOutIntroImages,
+          onComplete: () => {
+            if (!headingChars.length) {
+              setIntroAnimDone(true);
+            }
+          },
+        },
+        "hero-text-join",
+      );
+    }
+
+    if (!headingChars.length && !secondaryChars.length) {
+      tl.call(() => setIntroAnimDone(true), [], "hero-text-join");
+    }
 
     return () => {
-      splits.forEach((split) => split.revert());
+      rollSplits.forEach((split) => split.revert());
+      revertHeadingSplits();
+      secondarySplits.forEach((split) => split.revert());
     };
   }, []);
+
   return (
-    <div
-      className="h-screen w-full relative flex justify-center items-center overflow-hidden"
+    <section
+      id="home-section"
+      className="h-screen w-full relative flex justify-center items-center overflow-hidden bg-cover bg-center bg-fixed"
+      style={
+        fixedBgImage
+          ? {
+              backgroundImage: `url(${fixedBgImage})`,
+            }
+          : undefined
+      }
       ref={homeRef}
     >
       <Navbar />
 
-      {introImages.map((img, i) => (
-        <img
+      {introSlides.map((img, i) => (
+        <div
           key={i}
-          src={img}
-          className={`introImgs h-full absolute left-0 top-0 w-full object-cover scale-150 ${i === 0 ? "opacity-100" : "opacity-0"}`}
-          alt=""
-        />
-      ))}
-      <div className="hero-content flex flex-col gap-2 absolute inset-0 items-center justify-center h-full w-full bg-[rgba(0,0,0,.5)]">
-        <div className="text-split text-white text-5xl">Heading Text</div>
-        <div className="text-split text-white text-lg">
-          Supporting text and Supporting text
+          className={`introImg absolute inset-0 z-0 flex items-center justify-center ${i === 0 ? "opacity-100" : "opacity-0"}`}
+        >
+          <img
+            src={img.img}
+            className="absolute inset-0 h-full w-full object-cover z-0 scale-150"
+            alt="reveal-image"
+          />
+          <div className="h-full w-full flex items-center justify-center relative z-0 bg-[rgba(0,0,0,.3)]">
+            <h1 className="reveal-text relative z-0 p-2 text-5xl sm:text-7xl text-white overflow-hidden">
+              {img.label}
+            </h1>
+          </div>
         </div>
+      ))}
+
+      <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
+        {introHeroTxt[1].header.map((h, i) => (
+          <div
+            key={i}
+            className={`text-split text-split-heading text-5xl font-bold ${
+              introAnimDone
+                ? "text-transparent bg-clip-text bg-linear-to-r from-blue-700 to-white"
+                : "text-white"
+            }`}
+          >
+            {h}
+          </div>
+        ))}
+        {introHeroTxt[1].secondary.map((s, i) => (
+          <div key={i} className="text-split text-split-secondary text-white text-lg">
+            {s}
+          </div>
+        ))}
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -1,12 +1,21 @@
-import introImg from './assets/images/50044.jpg'
-import introImg2 from './assets/images/hand-writing.jpg'
-import introImg3 from './assets/images/pexels-ivan-stecko-305645871-13438939.jpg'
+import introImg from "./assets/images/50044.jpg";
+import introImg3 from "./assets/images/pexels-ivan-stecko-305645871-13438939.jpg";
 
-export const introImages = [
-  introImg,
-  introImg2,
-  introImg3,
-  introImg,
-  introImg2,
-  introImg3,
+export const introImages: { img: string; label: string }[] = [
+  {img: introImg, label: 'Praise & Worship'},
+  {img: introImg3, label: 'Bible Study'},
+  { img: introImg, label: "Healing" },
+  { img: introImg3, label: "Preaching" },
 ];
+
+export const introHeroTxt: { header: string[]; secondary: string[] }[] = [
+  {
+    header: ["Remember Also Your Creator", "In The Days Of Your Youth"],
+    secondary: ["Lorem Ipsum Dolor Sit Amet"],
+  },
+  {
+    header: ['"Do Not Hold Them,', 'Let The Children Come To Me"'],
+    secondary: ["Lorem Ipsum Dolor Sit Amet"],
+  },
+];
+
