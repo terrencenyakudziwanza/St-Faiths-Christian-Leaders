@@ -23,9 +23,15 @@ Create a `.env` file in the repo root:
 ```env
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+VITE_MEDIA_MODE=online
 ```
 
 If either value is missing, the app fails fast with a clear Supabase env error.
+
+`VITE_MEDIA_MODE` options:
+- `online`: always use Supabase bucket URLs.
+- `offline`: always use local fallback files from `public/offline-media`.
+- `auto`: in development, uses fallback when browser is offline.
 
 ## 3. Supabase setup (dashboard flow)
 
@@ -47,6 +53,13 @@ Upload files to `media` bucket with these path patterns:
 - `presenters/<file>`
 
 Seed SQL already references paths using this structure.
+
+## 4.1 Offline media fallback
+
+Local fallback assets now live in:
+- `public/offline-media`
+
+This folder mirrors storage paths exactly (`events/...`, `shorts/...`, `presenters/...`) so the same `storage_path` values work in both online and offline mode.
 
 ## 5. Database objects created
 

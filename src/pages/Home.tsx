@@ -228,6 +228,7 @@ const Home: React.FC = () => {
   return (
     <section
       id="home-section"
+      data-nav-theme="dark"
       className="h-screen w-full relative flex justify-center items-center overflow-hidden bg-cover bg-center bg-fixed"
       style={
         fixedBgImage

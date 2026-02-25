@@ -1,4 +1,5 @@
-import { MEDIA_BUCKET, supabase } from "../lib/supabase";
+import { resolveMediaUrl } from "../lib/media";
+import { supabase } from "../lib/supabase";
 import type { ShortItem } from "../types/domain";
 
 type ShortRow = {
@@ -10,17 +11,8 @@ type ShortRow = {
   published_at: string;
 };
 
-function publicUrlFor(storagePath: string | null): string | null {
-  if (!storagePath) {
-    return null;
-  }
-
-  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
 function mapShort(row: ShortRow): ShortItem {
-  const publicUrl = publicUrlFor(row.storage_path);
+  const publicUrl = resolveMediaUrl(row.storage_path);
 
   if (!publicUrl) {
     throw new Error(`Could not resolve short URL for path "${row.storage_path}"`);
@@ -32,7 +24,7 @@ function mapShort(row: ShortRow): ShortItem {
     storagePath: row.storage_path,
     publicUrl,
     thumbnailPath: row.thumbnail_path,
-    thumbnailUrl: publicUrlFor(row.thumbnail_path),
+    thumbnailUrl: resolveMediaUrl(row.thumbnail_path),
     likeCount: row.like_count ?? 0,
     publishedAt: row.published_at,
   };

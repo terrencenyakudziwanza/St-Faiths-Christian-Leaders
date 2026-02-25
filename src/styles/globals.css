@@ -164,11 +164,11 @@ html::-webkit-scrollbar-thumb {
 }
 
 
-.event-img-container img:nth-child(2){
+.event-img-container img:nth-child(2):not(:last-child){
   transform: translateY(-5px) scaleX(0.9);
   border-radius: 30px;
 }
-.event-img-container img:first-child{
+.event-img-container img:first-child:not(:only-child){
   transform: translateY(-10px) scaleX(0.8);
   border-radius: 30px;
 }

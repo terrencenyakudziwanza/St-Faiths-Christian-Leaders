@@ -6,6 +6,7 @@ const About: React.FC = () => {
   return (
     <section
       id="about-section"
+      data-nav-theme="light"
       className="h-screen w-full grid grid-cols-[2fr_3fr]"
     >
       <div className="flex flex-col py-[calc(10%+42px)] px-4">

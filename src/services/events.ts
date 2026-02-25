@@ -1,4 +1,5 @@
-import { MEDIA_BUCKET, supabase } from "../lib/supabase";
+import { resolveMediaUrl } from "../lib/media";
+import { supabase } from "../lib/supabase";
 import type { EventItem, EventMedia, FeedType, MediaType } from "../types/domain";
 
 type EventMediaRow = {
@@ -24,17 +25,8 @@ type EventRow = {
   event_media: EventMediaRow[] | null;
 };
 
-function publicUrlFor(storagePath: string | null): string | null {
-  if (!storagePath) {
-    return null;
-  }
-
-  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(storagePath);
-  return data.publicUrl;
-}
-
 function mapMedia(row: EventMediaRow): EventMedia {
-  const publicUrl = publicUrlFor(row.storage_path);
+  const publicUrl = resolveMediaUrl(row.storage_path);
 
   if (!publicUrl) {
     throw new Error(`Could not resolve media URL for path "${row.storage_path}"`);
@@ -73,7 +65,7 @@ function mapEvent(row: EventRow): EventItem {
     presenterName: row.presenter_name,
     presenterRole: row.presenter_role,
     presenterAvatarPath: row.presenter_avatar_path,
-    presenterAvatarUrl: publicUrlFor(row.presenter_avatar_path),
+    presenterAvatarUrl: resolveMediaUrl(row.presenter_avatar_path),
     media,
   };
 }
