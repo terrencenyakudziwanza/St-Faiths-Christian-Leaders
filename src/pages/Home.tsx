@@ -1,14 +1,16 @@
 import React, { useRef } from "react";
-import Navbar from "./Navbar";
+import Navbar from "../components/Navbar";
 import { useGSAP } from "@gsap/react";
 
 import { introHeroTxt, introImages } from "../data";
 import gsap from "gsap";
 import { CustomEase, SplitText } from "gsap/all";
 import useStore from "../store";
+import arrowDown from "../assets/icons/arrow-down.svg";
 
 const Home: React.FC = () => {
   const homeRef = useRef<HTMLDivElement>(null);
+  const introTlRef = useRef<gsap.core.Timeline | null>(null);
 
   const { introAnimDone, setIntroAnimDone } = useStore();
 
@@ -60,6 +62,7 @@ const Home: React.FC = () => {
 
     // Setting up timeline.
     const tl = gsap.timeline();
+    introTlRef.current = tl;
 
     tl.set(heroContent, { opacity: 0 });
 
@@ -69,7 +72,10 @@ const Home: React.FC = () => {
         duration: 0.8,
         onComplete: () => setIntroAnimDone(true),
       });
-      return;
+      return () => {
+        rollSplits.forEach((split) => split.revert());
+        introTlRef.current = null;
+      };
     }
 
     // First scale down the first.
@@ -145,8 +151,14 @@ const Home: React.FC = () => {
         return;
       }
 
+      const introImageElements = homeRef.current?.querySelectorAll(".introImg");
+
+      if (!introImageElements?.length) {
+        return;
+      }
+
       introImagesFaded = true;
-      gsap.to(homeRef.current?.querySelectorAll(".introImg"), {
+      gsap.to(introImageElements, {
         opacity: 0,
         pointerEvents: "none",
         duration: 1.25,
@@ -202,8 +214,16 @@ const Home: React.FC = () => {
       rollSplits.forEach((split) => split.revert());
       revertHeadingSplits();
       secondarySplits.forEach((split) => split.revert());
+      introTlRef.current = null;
     };
   }, []);
+
+  const handleSkipIntro = () => {
+    if (!introAnimDone) {
+      introTlRef.current?.progress(1);
+      setIntroAnimDone(true);
+    }
+  };
 
   return (
     <section
@@ -219,6 +239,18 @@ const Home: React.FC = () => {
       ref={homeRef}
     >
       <Navbar />
+      <button
+        type="button"
+        onClick={handleSkipIntro}
+        className={`absolute left-6 top-6 z-30 flex items-center gap-2 rounded-full  border-white border-[1.5px] p-2 text-sm text-white transition-all ease-out duration-300 outline-0 cursor-pointer ${
+          introAnimDone
+            ? "-translate-x-[180%] opacity-0 pointer-events-none duration-1000"
+            : "translate-x-0 opacity-100 duration-300"
+        }`}
+      >
+        <img src={arrowDown} alt="" className="h-2 w-2 -rotate-90 icon" />
+        <span>Skip</span>
+      </button>
 
       {introSlides.map((img, i) => (
         <div
@@ -252,7 +284,10 @@ const Home: React.FC = () => {
           </div>
         ))}
         {introHeroTxt[1].secondary.map((s, i) => (
-          <div key={i} className="text-split text-split-secondary text-white text-lg">
+          <div
+            key={i}
+            className="text-split text-split-secondary text-white text-lg"
+          >
             {s}
           </div>
         ))}

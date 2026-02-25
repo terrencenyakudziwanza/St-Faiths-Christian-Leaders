@@ -2,29 +2,40 @@ import "./styles/globals.css";
 import "./styles/animations.css";
 import "./styles/tailwind.css";
 import { useEffect } from "react";
-import Home from "./components/Home";
 import gsap from "gsap";
 import { CustomEase, Flip, SplitText } from "gsap/all";
-import About from "./components/About";
 import useStore, { type SectionName } from "./store";
+import { Route, Routes, useLocation } from "react-router-dom";
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Events from "./pages/Events";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
 
-const sectionIds: Record<SectionName, string> = {
+type HomeSectionName = Exclude<SectionName, "Events">;
+
+const sectionIds: Record<HomeSectionName, string> = {
   Home: "home-section",
   About: "about-section",
 };
 
 type SectionEntry = {
-  name: SectionName;
+  name: HomeSectionName;
   element: HTMLElement;
 };
 
 function App() {
   const setCurrSection = useStore((state) => state.setCurrSection);
+  const location = useLocation();
 
   useEffect(() => {
-    const sections = (Object.entries(sectionIds) as Array<[SectionName, string]>)
+    if (location.pathname !== "/") {
+      return;
+    }
+
+    const sections = (Object.entries(sectionIds) as Array<
+      [HomeSectionName, string]
+    >)
       .map(([name, id]) => {
         const element = document.getElementById(id);
         return element ? { name, element } : null;
@@ -60,13 +71,21 @@ function App() {
       window.removeEventListener("scroll", updateCurrSection);
       window.removeEventListener("resize", updateCurrSection);
     };
-  }, [setCurrSection]);
+  }, [location.pathname, setCurrSection]);
 
   return (
-    <>
-      <Home />
-      <About />
-    </>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <>
+            <Home />
+            <About />
+          </>
+        }
+      />
+      <Route path="/events" element={<Events />} />
+    </Routes>
   );
 }
 

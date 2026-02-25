@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import login from "../assets/icons/log-in.svg";
 import useStore, { type SectionName } from "../store";
 
-const sectionIds: Record<SectionName, string> = {
+const sectionIds = {
   Home: "home-section",
   About: "about-section",
 };
@@ -11,7 +12,10 @@ const sectionIds: Record<SectionName, string> = {
 const Navbar: React.FC = () => {
   const [isScrolling, setIsScrolling] = useState(false);
   const [menuClicked, setMenuClicked] = useState(false);
-  const menuItms: SectionName[] = ["Home", "About"];
+  const [showAuthNotice, setShowAuthNotice] = useState(false);
+  const menuItms: SectionName[] = ["Home", "About", "Events"];
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const { introAnimDone, currSection, setCurrSection } = useStore();
 
@@ -22,11 +26,41 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!showAuthNotice) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowAuthNotice(false);
+    }, 2400);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [showAuthNotice]);
+
   const jumpToSection = (section: SectionName) => {
     setCurrSection(section);
-    document
-      .getElementById(sectionIds[section])
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (section === "Events") {
+      navigate("/events");
+      setMenuClicked(false);
+      return;
+    }
+
+    const sectionId = sectionIds[section];
+
+    if (location.pathname !== "/") {
+      navigate(`/#${sectionId}`);
+      setMenuClicked(false);
+      return;
+    }
+
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
     setMenuClicked(false);
   };
 
@@ -43,15 +77,20 @@ const Navbar: React.FC = () => {
               className="menu-itm relative flex flex-col items-center p-2"
             >
               <span
-                className={`${currSection === m ? "bg-yellow-700 text-white active" : "bg-transparent text-yellow-700 hover:bg-[rgba(255,255,255,.3)]"} rounded-[15px] cursor-pointer p-1.5 duration-500`}
+                className={`${currSection === m ? "bg-blue-700 text-white active" : "bg-transparent text-white hover:bg-[rgba(255,255,255,.3)]"} rounded-[15px] cursor-pointer p-1.5 duration-500`}
                 onClick={() => jumpToSection(m)}
               >
                 {m}
+                
               </span>
             </div>
           ))}
         </div>
-        <button className="login-btn outline-none h-full p-2.5 px-4 bg-transparent text-white rounded-[15px] flex items-center gap-2 border-[1.5px] border-white cursor-pointer">
+        <button
+          className="login-btn outline-none h-full p-2.5 px-4 bg-transparent text-white rounded-[15px] flex items-center gap-2 border-[1.5px] border-white cursor-pointer"
+          onClick={() => setShowAuthNotice(true)}
+          type="button"
+        >
           <img src={login} className="icon" alt="" />
           <p>Login</p>
         </button>
@@ -84,6 +123,15 @@ const Navbar: React.FC = () => {
             {itm}
           </div>
         ))}
+      </div>
+      <div
+        className={`absolute right-8 top-[calc(100%+8px)] rounded-xl border border-white/40 bg-black/70 px-3 py-2 text-xs text-white transition-all duration-300 ${
+          showAuthNotice
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-2 opacity-0 pointer-events-none"
+        }`}
+      >
+        Auth is coming in a later phase.
       </div>
     </div>
   );

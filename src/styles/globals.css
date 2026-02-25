@@ -7,14 +7,17 @@
   font-family: SpaceGrotesk;
 }
 html,
-body,
-#root {
+body {
   margin: 0;
   padding: 0;
   width: 100%;
   max-width: 100%;
-  min-height: 100vh;
   overflow-x: hidden;
+}
+
+body,
+#root {
+  min-height: 100vh;
 }
 
 html::-webkit-scrollbar-track {
@@ -31,6 +34,57 @@ html::-webkit-scrollbar-thumb {
   width: 30px;
   filter: invert(100%);
 }
+.icon-dk{
+  height: 20px;
+  width: 20px;
+}
+.icon-wrapper{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 500ms ease-in-out;
+}
+.icon-wrapper:hover{
+  background-color: rgb(230,230,230);
+}
+
+.clips {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.clips::-webkit-scrollbar {
+  display: none;
+}
+
+.clip-pause-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(1.18);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+
+.clip-pause-indicator.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.clip-pause-indicator__wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  width: 64px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.28);
+}
 
 .menu-itm span.active::after {
   width: 40%;
@@ -45,7 +99,7 @@ html::-webkit-scrollbar-thumb {
   width: 0%;
   border-radius: 10px;
   height: 2.5px;
-  background-color: yellow;
+  background-color: blue;
   transition: width 0.5s ease;
 }
 
@@ -80,4 +134,41 @@ html::-webkit-scrollbar-thumb {
   .drop-menu.clicked:first-child{
     rotate: 45deg;
   }
+}
+
+.image-stack {
+  display: flex;
+  align-items: center;
+}
+
+.image-stack img {
+  position: relative;
+  margin-left: -14px;
+  border: 2px solid rgb(240, 240, 240);
+}
+
+.image-stack img:first-child {
+  margin-left: 0;
+}
+
+.image-stack img:nth-child(2) {
+  transform: translateX(0px);
+}
+
+.image-stack img:nth-child(3) {
+  transform: translateX(2px);
+}
+
+.image-stack img:nth-child(4) {
+  transform: translateX(4px);
+}
+
+
+.event-img-container img:nth-child(2){
+  transform: translateY(-5px) scaleX(0.9);
+  border-radius: 30px;
+}
+.event-img-container img:first-child{
+  transform: translateY(-10px) scaleX(0.8);
+  border-radius: 30px;
 }

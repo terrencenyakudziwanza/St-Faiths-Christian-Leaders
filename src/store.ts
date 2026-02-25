@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type SectionName = "Home" | "About";
+type SectionName = "Home" | "About" | "Events";
 
 interface StoreState {
   introAnimDone: boolean;
