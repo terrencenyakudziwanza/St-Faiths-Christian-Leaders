@@ -4,19 +4,21 @@ import "./styles/tailwind.css";
 import { useEffect } from "react";
 import gsap from "gsap";
 import { CustomEase, Flip, SplitText } from "gsap/all";
-import useStore, { type SectionName } from "./store";
+import useStore from "./store";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
-import About from "./pages/About";
 import Events from "./pages/Events";
+import Testimonials from "./components/Testimonials";
+import Footer from "./components/Footer";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
 
-type HomeSectionName = Exclude<SectionName, "Events">;
+type HomeSectionName = "Home" | "About" | "Testimonials";
 
 const sectionIds: Record<HomeSectionName, string> = {
   Home: "home-section",
   About: "about-section",
+  Testimonials: "testimonials-section",
 };
 
 type SectionEntry = {
@@ -33,9 +35,9 @@ function App() {
       return;
     }
 
-    const sections = (Object.entries(sectionIds) as Array<
-      [HomeSectionName, string]
-    >)
+    const sections = (
+      Object.entries(sectionIds) as Array<[HomeSectionName, string]>
+    )
       .map(([name, id]) => {
         const element = document.getElementById(id);
         return element ? { name, element } : null;
@@ -80,11 +82,20 @@ function App() {
         element={
           <>
             <Home />
-            <About />
+            <Testimonials />
+            <Footer />
           </>
         }
       />
-      <Route path="/events" element={<Events />} />
+      <Route
+        path="/events"
+        element={
+          <>
+            <Events />
+            <Footer />
+          </>
+        }
+      />
     </Routes>
   );
 }

@@ -7,6 +7,25 @@ import gsap from "gsap";
 import { CustomEase, SplitText } from "gsap/all";
 import useStore from "../store";
 import arrowDown from "../assets/icons/arrow-down.svg";
+import type { NavPage } from "../types/nav";
+
+const homeNavPages: NavPage[] = [
+  {
+    id: "home-page",
+    label: "Home",
+    path: "/",
+    sections: [
+      { id: "Home", label: "Home", sectionId: "home-section" },
+      { id: "About", label: "About", sectionId: "about-section" },
+      {
+        id: "Testimonials",
+        label: "Testimonials",
+        sectionId: "testimonials-section",
+      },
+    ],
+  },
+  { id: "events-page", label: "Events", path: "/events" },
+];
 
 const Home: React.FC = () => {
   const homeRef = useRef<HTMLDivElement>(null);
@@ -239,7 +258,7 @@ const Home: React.FC = () => {
       }
       ref={homeRef}
     >
-      <Navbar />
+      <Navbar navPages={homeNavPages} />
       <button
         type="button"
         onClick={handleSkipIntro}
@@ -277,7 +296,7 @@ const Home: React.FC = () => {
             key={i}
             className={`text-split text-split-heading text-5xl font-bold ${
               introAnimDone
-                ? "text-transparent bg-clip-text bg-linear-to-r from-blue-700 to-white"
+                ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
                 : "text-white"
             }`}
           >

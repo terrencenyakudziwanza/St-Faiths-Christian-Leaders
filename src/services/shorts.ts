@@ -1,4 +1,5 @@
-import { resolveMediaUrl } from "../lib/media";
+import { offlineShortRows, type OfflineShortRow } from "../data/offlineContent";
+import { isOffline, resolveMediaUrl } from "../lib/media";
 import { supabase } from "../lib/supabase";
 import type { ShortItem } from "../types/domain";
 
@@ -31,6 +32,17 @@ function mapShort(row: ShortRow): ShortItem {
 }
 
 export async function fetchShorts(limit = 8): Promise<ShortItem[]> {
+  if (isOffline) {
+    return offlineShortRows
+      .filter((row) => row.is_published)
+      .sort(
+        (a, b) =>
+          new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
+      )
+      .slice(0, limit)
+      .map((row) => mapShort(row as OfflineShortRow as ShortRow));
+  }
+
   const { data, error } = await supabase
     .from("shorts")
     .select("id, title, storage_path, thumbnail_path, like_count, published_at")

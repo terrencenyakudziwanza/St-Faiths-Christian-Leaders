@@ -13,8 +13,22 @@ import type {
   ShortItem,
 } from "../types/domain";
 import Navbar from "../components/Navbar";
+import type { NavPage } from "../types/nav";
+import useStore from "../store";
 
 const feedTypes: FeedType[] = ["Services", "Revivals", "Specials"];
+const eventPageNavPages: NavPage[] = [
+  { id: "home-page", label: "Home", path: "/" },
+  {
+    id: "events-page",
+    label: "Events",
+    path: "/events",
+    sections: [
+      { id: "Events", label: "Events", sectionId: "events-section" },
+      { id: "Shorts", label: "Shorts", sectionId: "shorts-section" },
+    ],
+  },
+];
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -41,6 +55,7 @@ const Events: React.FC = () => {
   const [shorts, setShorts] = React.useState<ShortItem[]>([]);
   const [shortsLoading, setShortsLoading] = React.useState(true);
   const [shortsError, setShortsError] = React.useState<string | null>(null);
+  const setCurrSection = useStore((state) => state.setCurrSection);
 
   const activeFeedType = feedTypes[feedTypeIndex];
 
@@ -78,6 +93,55 @@ const Events: React.FC = () => {
     void loadShorts();
   }, [loadShorts]);
 
+  React.useEffect(() => {
+    const currentPageSections =
+      eventPageNavPages.find((page) => page.path === "/events")?.sections ?? [];
+
+    const sections = currentPageSections
+      .map((item) => {
+        const element = document.getElementById(item.sectionId);
+        return element ? { id: item.id, element } : null;
+      })
+      .filter(
+        (
+          entry,
+        ): entry is {
+          id: string;
+          element: HTMLElement;
+        } => entry !== null,
+      );
+
+    if (!sections.length) {
+      return;
+    }
+
+    const activationRatio = 0.16;
+
+    const updateCurrSection = () => {
+      const activationLine = window.innerHeight * activationRatio;
+      let activeSection = sections[0].id;
+
+      sections.forEach(({ id, element }) => {
+        const rect = element.getBoundingClientRect();
+
+        if (rect.top <= activationLine) {
+          activeSection = id;
+        }
+      });
+
+      setCurrSection(activeSection);
+    };
+
+    updateCurrSection();
+    window.addEventListener("scroll", updateCurrSection, { passive: true });
+    window.addEventListener("resize", updateCurrSection);
+
+    return () => {
+      window.removeEventListener("scroll", updateCurrSection);
+      window.removeEventListener("resize", updateCurrSection);
+    };
+  }, [setCurrSection, events.length, shorts.length]);
+
   const openEventModal = React.useCallback(async (event: EventItem) => {
     setSelectedEvent(event);
     setSelectedMedia(event.media);
@@ -97,9 +161,9 @@ const Events: React.FC = () => {
 
   return (
     <div className="w-full overflow-x-hidden">
-      <Navbar />
+      <Navbar navPages={eventPageNavPages} />
       <div className="w-full flex flex-col items-center pt-[10%]">
-        <div className="flex p-1 my-4 gap-4 rounded-[30px] flex-wrap justify-center">
+        <div className="flex p-1 my-4 mb-12 gap-4 rounded-[30px] flex-wrap justify-center">
           {feedTypes.map((btn, i) => (
             <button
               key={btn}
@@ -155,9 +219,9 @@ const Events: React.FC = () => {
           />
         </section>
 
-        <section id="shorts-section" className="p-4 w-full max-w-[1300px]">
+        <section id="shorts-section" className="p-4 pt-8 w-full max-w-325">
           <div className="w-full h-px bg-[#DDD]"></div>
-          <div className="flex items-center gap-4 py-8">
+          <div className="flex justify-center items-center gap-4 py-8">
             <img src={fire} alt="" className="icon-dk scale-150" />
             <h2 className="text-4xl font-bold">Latest Shorts From Media</h2>
           </div>
@@ -177,7 +241,7 @@ const Events: React.FC = () => {
           )}
 
           {!shortsLoading && !shortsError && (
-            <div className="flex flex-wrap gap-8 py-8 pb-12">
+            <div className="flex justify-center flex-wrap sm:gap-10 gap-16 py-8 pb-12">
               {shorts.map((short) => (
                 <ShortCard key={short.id} short={short} />
               ))}

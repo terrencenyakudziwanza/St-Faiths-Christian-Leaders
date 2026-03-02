@@ -2,10 +2,21 @@ export type FeedType = "Services" | "Revivals" | "Specials";
 
 export type MediaType = "picture" | "video";
 
+export type ServiceComponent = "Preaching" | "Intercession" | "Praise and Worship";
+
+export interface ServiceLeader {
+  component: ServiceComponent;
+  name: string;
+  roleLabel: string;
+  avatarPath: string | null;
+  avatarUrl: string | null;
+}
+
 export interface EventMedia {
   id: string;
   eventId: string;
   mediaType: MediaType;
+  component: ServiceComponent;
   storagePath: string;
   publicUrl: string;
   caption: string;
@@ -17,6 +28,7 @@ export interface EventItem {
   id: string;
   slug: string;
   title: string;
+  themeTopic: string;
   feedType: FeedType;
   summary: string;
   eventDate: string;
@@ -24,6 +36,11 @@ export interface EventItem {
   presenterRole: string;
   presenterAvatarPath: string | null;
   presenterAvatarUrl: string | null;
+  serviceLeaders: ServiceLeader[];
+  themeScriptureReference: string;
+  themeScriptureText: string;
+  intercessionPrayerPoints: string[];
+  praiseHighlights: string[];
   media: EventMedia[];
 }
 

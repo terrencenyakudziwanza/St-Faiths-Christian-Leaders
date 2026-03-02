@@ -164,11 +164,104 @@ html::-webkit-scrollbar-thumb {
 }
 
 
-.event-img-container img:nth-child(2):not(:last-child){
+.stacked-imgs img:nth-child(2):not(:last-child){
   transform: translateY(-5px) scaleX(0.9);
   border-radius: 30px;
 }
-.event-img-container img:first-child:not(:only-child){
+.stacked-imgs img:first-child:not(:only-child){
   transform: translateY(-10px) scaleX(0.8);
   border-radius: 30px;
+}
+
+@keyframes testimonial-marquee-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes testimonial-marquee-down {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.testimonial-marquee {
+  position: relative;
+  overflow: hidden;
+  height: clamp(420px, 72vh, 760px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 10%,
+    #000 90%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 10%,
+    #000 90%,
+    transparent 100%
+  );
+}
+
+.testimonial-marquee__track {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  will-change: transform;
+}
+
+.testimonial-marquee__track--up {
+  animation: testimonial-marquee-up 40s linear infinite;
+  animation-play-state: running;
+}
+
+.testimonial-marquee__track--down {
+  animation: testimonial-marquee-down 40s linear infinite;
+  animation-play-state: running;
+}
+
+.testimonial-marquee:hover .testimonial-marquee__track--up,
+.testimonial-marquee:hover .testimonial-marquee__track--down {
+  animation-play-state: paused;
+}
+
+@media (max-width: 1024px) {
+  .testimonial-marquee {
+    height: clamp(380px, 68vh, 640px);
+  }
+}
+
+@media (max-width: 768px) {
+  .testimonial-marquee {
+    height: clamp(320px, 62vh, 560px);
+  }
+}
+
+.video-progress-only::-webkit-media-controls-play-button,
+.video-progress-only::-webkit-media-controls-mute-button,
+.video-progress-only::-webkit-media-controls-volume-slider,
+.video-progress-only::-webkit-media-controls-current-time-display,
+.video-progress-only::-webkit-media-controls-time-remaining-display,
+.video-progress-only::-webkit-media-controls-fullscreen-button,
+.video-progress-only::-webkit-media-controls-overflow-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+
+.video-progress-only::-webkit-media-controls-panel {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.25) 45%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }

@@ -11,12 +11,6 @@ interface EventsCardProps {
   onOpen: (event: EventItem) => void;
 }
 
-const leaderCountByFeed = {
-  Services: 6,
-  Revivals: 5,
-  Specials: 4,
-} as const;
-
 const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
   const orderedMedia = [...event.media].sort((a, b) => a.sortOrder - b.sortOrder);
   const imageUrls = orderedMedia
@@ -25,50 +19,60 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
     .map((item) => item.publicUrl);
 
   const stackImages = imageUrls.length ? imageUrls : [fallbackImg];
-  const baseAvatar = event.presenterAvatarUrl ?? fallbackProfile;
+  const leaders = event.serviceLeaders.length
+    ? event.serviceLeaders
+    : [
+        {
+          component: "Preaching" as const,
+          name: event.presenterName,
+          roleLabel: event.presenterRole,
+          avatarPath: event.presenterAvatarPath,
+          avatarUrl: event.presenterAvatarUrl,
+        },
+      ];
 
-  const totalLeaders = leaderCountByFeed[event.feedType];
-  const visibleAvatarCount = Math.min(3, totalLeaders);
-  const visibleAvatars = Array.from({ length: visibleAvatarCount }, () => baseAvatar);
-  const remainingLeaderCount = Math.max(totalLeaders - visibleAvatarCount, 0);
+  const preacher = leaders.find((leader) => leader.component === "Preaching") ?? leaders[0];
+  const totalLeaders = leaders.length;
+  const visibleLeaders = leaders.slice(0, 2);
+  const remainingLeaderCount = Math.max(totalLeaders - visibleLeaders.length, 0);
   const othersLedCount = Math.max(totalLeaders - 1, 0);
   const subtitle =
     othersLedCount > 0
-      ? `${event.presenterName} +${othersLedCount} others led`
-      : `${event.presenterName} led`;
+      ? `${preacher.name} +${othersLedCount} others led`
+      : `${preacher.name} led`;
 
   return (
-    <div className="flex w-full gap-8 flex-col lg:flex-row">
+    <div className="flex items-center w-full gap-8 flex-col lg:flex-row">
       <button
         type="button"
-        className="relative h-[50vh] w-full lg:w-100 shrink-0 text-left"
+        className="relative h-[50vh] w-[60%] lg:w-100 shrink-0 text-left"
         onClick={() => onOpen(event)}
       >
-        <div className="event-img-container flex flex-col h-[50vh] w-full lg:w-100">
+        <div className="stacked-imgs flex items-center flex-col h-[50vh] lg:w-100">
           {stackImages.map((img, i) => (
             <img
               key={`${event.id}-cover-${i}`}
               src={img}
               alt={event.title}
-              className="rounded-[50px] h-full w-full left-0 top-0 object-cover absolute"
+              className="rounded-[40px] h-full w-full max-w-[60vw] left-0 top-0 object-cover absolute"
             />
           ))}
         </div>
 
-        <div className="absolute left-0 top-0 w-full h-full bg-[rgba(0,0,0,.3)] duration-500 rounded-[50px] flex justify-center items-center opacity-0 hover:opacity-100">
+        <div className="absolute left-0 top-0 w-full h-full bg-[rgba(0,0,0,.3)] duration-500 rounded-[40px] flex justify-center items-center opacity-0 hover:opacity-100">
           <img src={play} alt="" className="icon scale-200" />
         </div>
       </button>
 
-      <div className="rounded-[50px] bg-[rgb(240,240,240)] flex-1 min-w-0 p-6 flex flex-col gap-4">
+      <div className="rounded-[40px] w-[60vw] h-[50vh]  bg-[rgb(240,240,240)] flex-1 min-w-0 p-6 flex flex-col gap-4">
         <div className="flex gap-4 items-center">
           <div className="flex items-center shrink-0">
-            {visibleAvatars.map((avatarUrl, index) => (
+            {visibleLeaders.map((leader, index) => (
               <img
-                key={`${event.id}-leader-${index}`}
-                src={avatarUrl}
+                key={`${event.id}-${leader.component}`}
+                src={leader.avatarUrl ?? fallbackProfile}
                 className={`${index === 0 ? "" : "-ml-3"} rounded-full h-12 w-12 object-cover border-2 border-[rgb(240,240,240)]`}
-                alt={`${event.presenterName} team member ${index + 1}`}
+                alt={`${leader.name} (${leader.roleLabel})`}
               />
             ))}
             {remainingLeaderCount > 0 && (
@@ -83,7 +87,9 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
             )}
           </div>
           <div className="flex flex-col">
-            <h2 className="text-xl text-black font-semibold">{event.title}</h2>
+            <h2 className="text-xl text-black font-semibold">
+              {event.themeTopic}
+            </h2>
             <p className="text-[#555]">{subtitle}</p>
           </div>
         </div>

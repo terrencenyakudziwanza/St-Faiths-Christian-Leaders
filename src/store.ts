@@ -1,12 +1,10 @@
 import { create } from "zustand";
 
-type SectionName = "Home" | "About" | "Events";
-
 interface StoreState {
   introAnimDone: boolean;
-  currSection: SectionName;
+  currSection: string;
   setIntroAnimDone: (bool: boolean) => void;
-  setCurrSection: (section: SectionName) => void;
+  setCurrSection: (section: string) => void;
 }
 
 const useStore = create<StoreState>((set) => ({
@@ -16,5 +14,4 @@ const useStore = create<StoreState>((set) => ({
   setCurrSection: (section) => set({ currSection: section }),
 }));
 
-export type { SectionName };
 export default useStore;
