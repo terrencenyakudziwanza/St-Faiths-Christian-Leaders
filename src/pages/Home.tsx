@@ -25,6 +25,7 @@ const homeNavPages: NavPage[] = [
     ],
   },
   { id: "events-page", label: "Events", path: "/events" },
+  { id: "family-page", label: "Family", path: "/family" },
 ];
 
 const Home: React.FC = () => {
@@ -35,6 +36,7 @@ const Home: React.FC = () => {
 
   const introSlides = introImages.slice(0, -1);
   const fixedBgImage = introImages[introImages.length - 1]?.img;
+
 
   useGSAP(() => {
     if (!homeRef.current) {
@@ -291,6 +293,12 @@ const Home: React.FC = () => {
       ))}
 
       <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
+        {/* <div className="flex justify-around absolute left-0 w-full">
+          <div className="bg-[#0000ff89] rounded-full h-70 w-100  "></div>
+          <div className="bg-[#0000ff89] rounded-full h-70 w-100 absolute top-full "></div>
+          <div className="bg-[#0000ff89] rounded-full h-70 w-100 absolute top-full "></div>
+        </div> */}
+
         {introHeroTxt[1].header.map((h, i) => (
           <div
             key={i}

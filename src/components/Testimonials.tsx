@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import ProfileCard from "./ProfileCard";
 
 interface TestimonialsState {
   avatar: { img: string; name: string; personalDetails: string };
@@ -141,23 +142,14 @@ const Testimonials: React.FC = () => {
                   <p className="text-[14px] text-[#444]">
                     {testimonial.testimonial}
                   </p>
-                  <span className="flex gap-2 pt-1 items-center">
-                    <img
-                      src={testimonial.avatar.img}
-                      className="rounded-[50%] h-14 w-14 object-cover"
-                      alt=""
-                    />
-                    <div className="flex flex-col">
-                      <h2 className="text-xl text-black font-medium">
-                        {testimonial.avatar.name}
-                      </h2>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-[#555]">
-                          {testimonial.avatar.personalDetails}
-                        </p>
-                      </div>
-                    </div>
-                  </span>
+                  <ProfileCard
+                    imageSrc={testimonial.avatar.img}
+                    imageAlt={testimonial.avatar.name}
+                    name={testimonial.avatar.name}
+                    details={testimonial.avatar.personalDetails}
+                    className="pt-1"
+                    nameClassName="text-xl"
+                  />
                 </div>
               ))}
             </div>

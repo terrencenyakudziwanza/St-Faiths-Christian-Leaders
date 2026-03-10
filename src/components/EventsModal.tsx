@@ -9,7 +9,10 @@ import arrowDown from "../assets/icons/arrow-down.svg";
 import bookOpen from "../assets/icons/book-open.svg";
 import muteIcon from "../assets/icons/mute.svg";
 import volumeIcon from "../assets/icons/volume.svg";
+import pauseIcon from "../assets/icons/pause.svg";
+import playIcon from "../assets/icons/play-fill.svg";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
+import ProfileCard from "./ProfileCard";
 
 import type {
   EventItem,
@@ -30,6 +33,13 @@ interface EventsModalProps {
 }
 
 type MobilePane = "clips" | "details";
+type ClipIndicatorAction = "play" | "pause";
+
+type LikeBurst = {
+  id: number;
+  clipId: string;
+  offsetX: number;
+};
 
 function getComponentChip(component: ServiceComponent): string {
   if (component === "Preaching") {
@@ -68,10 +78,24 @@ const EventsModal: React.FC<EventsModalProps> = ({
 }) => {
   const desktopClipsRef = React.useRef<HTMLDivElement | null>(null);
   const mobileClipsRef = React.useRef<HTMLDivElement | null>(null);
+  const videoRefs = React.useRef(new Map<string, HTMLVideoElement>());
+  const clipIndicatorTimeoutRef = React.useRef<number | null>(null);
+  const likeBurstIdRef = React.useRef(0);
+  const likeBurstTimeoutsRef = React.useRef<number[]>([]);
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("clips");
   const [activeMedia, setActiveMedia] = React.useState<MediaType>("picture");
   const [isMuted, setIsMuted] = React.useState(true);
   const [activeClipId, setActiveClipId] = React.useState<string | null>(null);
+  const [clipIndicator, setClipIndicator] = React.useState<{
+    clipId: string;
+    action: ClipIndicatorAction;
+  } | null>(null);
+  const [likeBursts, setLikeBursts] = React.useState<LikeBurst[]>([]);
+  const [likePulseVersions, setLikePulseVersions] = React.useState<
+    Record<string, number>
+  >({});
+  const [likeCounts, setLikeCounts] = React.useState<Record<string, number>>({});
+  const [shareCounts, setShareCounts] = React.useState<Record<string, number>>({});
 
   const pictureClips = React.useMemo(
     () => media.filter((item) => item.mediaType === "picture"),
@@ -163,6 +187,115 @@ const EventsModal: React.FC<EventsModalProps> = ({
       ? (event?.intercessionPrayerPoints ?? [])
       : (event?.praiseHighlights ?? []);
 
+  const registerVideoRef = React.useCallback(
+    (clipId: string, element: HTMLVideoElement | null) => {
+      if (element) {
+        videoRefs.current.set(clipId, element);
+        return;
+      }
+
+      videoRefs.current.delete(clipId);
+    },
+    [],
+  );
+
+  const clearLikeBurstTimeouts = React.useCallback(() => {
+    likeBurstTimeoutsRef.current.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId);
+    });
+    likeBurstTimeoutsRef.current = [];
+  }, []);
+
+  const pauseAllVideos = React.useCallback((exceptClipId?: string) => {
+    videoRefs.current.forEach((video, clipId) => {
+      if (clipId === exceptClipId) {
+        return;
+      }
+
+      if (!video.paused) {
+        video.pause();
+      }
+    });
+  }, []);
+
+  const showClipIndicator = React.useCallback(
+    (clipId: string, action: ClipIndicatorAction) => {
+      if (clipIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(clipIndicatorTimeoutRef.current);
+      }
+
+      setClipIndicator({ clipId, action });
+      clipIndicatorTimeoutRef.current = window.setTimeout(() => {
+        setClipIndicator((current) =>
+          current?.clipId === clipId && current.action === action ? null : current,
+        );
+        clipIndicatorTimeoutRef.current = null;
+      }, 560);
+    },
+    [],
+  );
+
+  const toggleVideoPlayback = React.useCallback(
+    async (clipId: string) => {
+      const video = videoRefs.current.get(clipId);
+
+      if (!video) {
+        return;
+      }
+
+      if (video.paused || video.ended) {
+        pauseAllVideos(clipId);
+
+        try {
+          await video.play();
+          showClipIndicator(clipId, "play");
+        } catch {
+          return;
+        }
+
+        return;
+      }
+
+      video.pause();
+      showClipIndicator(clipId, "pause");
+    },
+    [pauseAllVideos, showClipIndicator],
+  );
+
+  const handleLikeClick = React.useCallback(
+    (clipId: string) => {
+      const burstId = likeBurstIdRef.current++;
+      const offsetX = ((burstId % 5) - 2) * 7;
+
+      setLikeBursts((prev) => [...prev, { id: burstId, clipId, offsetX }]);
+      setLikePulseVersions((prev) => ({
+        ...prev,
+        [clipId]: (prev[clipId] ?? 0) + 1,
+      }));
+      setLikeCounts((prev) => ({
+        ...prev,
+        [clipId]: (prev[clipId] ?? 0) + 1,
+      }));
+
+      const timeoutId = window.setTimeout(() => {
+        setLikeBursts((prev) => prev.filter((burst) => burst.id !== burstId));
+        likeBurstTimeoutsRef.current = likeBurstTimeoutsRef.current.filter(
+          (item) => item !== timeoutId,
+        );
+      }, 780);
+
+      likeBurstTimeoutsRef.current.push(timeoutId);
+    },
+    [],
+  );
+
+  const handleShareClick = React.useCallback((clipId: string) => {
+    setShareCounts((prev) => ({
+      ...prev,
+      [clipId]: (prev[clipId] ?? 0) + 1,
+    }));
+  }, []);
+
   React.useEffect(() => {
     if (!show) {
       return;
@@ -170,6 +303,43 @@ const EventsModal: React.FC<EventsModalProps> = ({
 
     setActiveClipId(activeItems[0]?.id ?? null);
   }, [show, activeMedia, activeItems]);
+
+  React.useEffect(() => {
+    if (show && activeMedia === "video") {
+      return;
+    }
+
+    pauseAllVideos();
+    setClipIndicator(null);
+  }, [show, activeMedia, event?.id, pauseAllVideos]);
+
+  React.useEffect(() => {
+    if (show) {
+      return;
+    }
+
+    pauseAllVideos();
+    clearLikeBurstTimeouts();
+    if (clipIndicatorTimeoutRef.current !== null) {
+      window.clearTimeout(clipIndicatorTimeoutRef.current);
+      clipIndicatorTimeoutRef.current = null;
+    }
+    setLikeBursts([]);
+    setLikePulseVersions({});
+    setClipIndicator(null);
+  }, [show, clearLikeBurstTimeouts, pauseAllVideos]);
+
+  React.useEffect(
+    () => () => {
+      pauseAllVideos();
+      clearLikeBurstTimeouts();
+
+      if (clipIndicatorTimeoutRef.current !== null) {
+        window.clearTimeout(clipIndicatorTimeoutRef.current);
+      }
+    },
+    [clearLikeBurstTimeouts, pauseAllVideos],
+  );
 
   React.useEffect(() => {
     if (!show || activeItems.length === 0) {
@@ -274,6 +444,74 @@ const EventsModal: React.FC<EventsModalProps> = ({
     });
   };
 
+  const renderClipActions = (clipId: string, compact: boolean) => {
+    const clipLikeBursts = likeBursts.filter((burst) => burst.clipId === clipId);
+    const likePulseVersion = likePulseVersions[clipId] ?? 0;
+    const likeCount = likeCounts[clipId] ?? 0;
+    const shareCount = shareCounts[clipId] ?? 0;
+    const countClassName = `text-[10px] font-semibold text-[#6b6b6b] ${
+      compact ? "tracking-[0.06em]" : "tracking-[0.04em]"
+    }`;
+
+    return (
+      <div
+        className={`flex gap-3 lg:gap-4 shrink-0 ${
+          compact ? "w-full justify-start" : "flex-col"
+        }`}
+      >
+        <div className="flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLikeClick(clipId);
+            }}
+            className="icon-wrapper like-button border border-[#ffd0da] bg-[#fff0f4] cursor-pointer"
+            aria-label="Like clip"
+          >
+            {clipLikeBursts.map((burst) => (
+              <span
+                key={burst.id}
+                className="like-button__burst"
+                style={
+                  {
+                    "--like-burst-offset": `${burst.offsetX}px`,
+                  } as React.CSSProperties
+                }
+              >
+                +1
+              </span>
+            ))}
+            <span
+              key={`${clipId}-${likePulseVersion}`}
+              className={`like-button__heart ${
+                likePulseVersion > 0 ? "like-button__heart--pulse" : ""
+              }`}
+            >
+              <img src={like} alt="" className="icon-dk scale-90" />
+            </span>
+          </button>
+          <span className={countClassName}>{likeCount}</span>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleShareClick(clipId);
+            }}
+            className="icon-wrapper bg-[rgb(230,230,230)] cursor-pointer"
+            aria-label="Share clip"
+          >
+            <img src={share} alt="" className="icon-dk" />
+          </button>
+          <span className={countClassName}>{shareCount}</span>
+        </div>
+      </div>
+    );
+  };
+
   const renderPaneSwitch = () => (
     <div className="flex gap-1.5 flex-wrap">
       <button
@@ -374,24 +612,23 @@ const EventsModal: React.FC<EventsModalProps> = ({
         </div>
 
         <div className="flex flex-col border-[1.5px] border-[#DDD] rounded-2xl px-4 py-3 gap-4">
-          <span className="flex gap-2 pt-1">
-            <img
-              src={activeLeader.avatarUrl ?? fallbackProfile}
-              className="rounded-[50%] h-12 w-12 object-cover"
-              alt={activeLeader.name}
-            />
-            <div className="flex flex-col">
-              <h2 className="text-xl text-black font-medium">
-                {activeLeader.name}
-              </h2>
+          <ProfileCard
+            imageSrc={activeLeader.avatarUrl ?? fallbackProfile}
+            imageAlt={activeLeader.name}
+            name={activeLeader.name}
+            details={
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-[#555]">{detailVerb}</p>
                 <div className="px-2 py-px rounded-lg bg-[rgb(240,240,240)] shadow-[0_3px_10px_rgba(0,0,0,0.08)]">
                   {detailChip}
                 </div>
               </div>
-            </div>
-          </span>
+            }
+            avatarClassName="h-12 w-12"
+            nameClassName="text-xl"
+            detailsClassName="mt-1.5"
+            className="pt-1"
+          />
 
           {activeComponent === "Preaching" && (
             <div className="flex flex-col gap-3">
@@ -441,8 +678,8 @@ const EventsModal: React.FC<EventsModalProps> = ({
   ) => (
     <div
       ref={ref}
-      className={`clips h-full overflow-y-auto flex flex-col snap-y snap-mandatory scroll-smooth ${
-        compact ? "pr-1" : ""
+      className={`clips h-full overflow-y-auto overscroll-y-contain flex flex-col snap-y snap-mandatory scroll-smooth ${
+        compact ? "pr-1 pb-4" : ""
       }`}
     >
       {loading && (
@@ -472,13 +709,15 @@ const EventsModal: React.FC<EventsModalProps> = ({
             data-clip-item
             data-clip-id={clip.id}
             className={`w-full flex gap-3 lg:gap-4 items-center justify-center p-3 lg:p-4 snap-start ${
-              compact ? "min-h-[58dvh] flex-row" : "min-h-full flex-row"
+              compact
+                ? "min-h-full flex-col justify-center"
+                : "min-h-full flex-row"
             }`}
             onMouseEnter={() => setActiveClipId(clip.id)}
           >
             <div
               className={`relative ${
-                compact ? "h-[72dvh] flex-1" : "h-full w-full lg:w-[80%]"
+                compact ? "h-[58dvh] w-full sm:h-[64dvh]" : "h-full w-full lg:w-[80%]"
               }`}
             >
               <img
@@ -491,14 +730,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 {clip.component}
               </div>
             </div>
-            <div className="flex flex-col gap-3 lg:gap-4 shrink-0">
-              <div className="icon-wrapper bg-[rgb(230,230,230)]">
-                <img src={like} alt="" className="icon-dk scale-90" />
-              </div>
-              <div className="icon-wrapper bg-[rgb(230,230,230)]">
-                <img src={share} alt="" className="icon-dk" />
-              </div>
-            </div>
+            {renderClipActions(clip.id, compact)}
           </div>
         ))}
 
@@ -511,13 +743,15 @@ const EventsModal: React.FC<EventsModalProps> = ({
             data-clip-item
             data-clip-id={clip.id}
             className={`w-full flex gap-3 lg:gap-4 items-center justify-center p-3 lg:p-4 snap-start ${
-              compact ? "min-h-[58dvh] flex-row" : "min-h-full flex-row"
+              compact
+                ? "min-h-full flex-col justify-center"
+                : "min-h-full flex-row"
             }`}
             onMouseEnter={() => setActiveClipId(clip.id)}
           >
             <div
               className={`relative rounded-[34px] lg:rounded-3xl overflow-hidden bg-black ${
-                compact ? "h-[72dvh] flex-1" : "h-full w-full lg:w-[80%]"
+                compact ? "h-[58dvh] w-full sm:h-[64dvh]" : "h-full w-full lg:w-[80%]"
               }`}
             >
               <div className="absolute left-4 top-4 z-20 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#222]">
@@ -539,6 +773,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 <span>{isMuted ? "Muted" : "Sound"}</span>
               </button>
               <video
+                ref={(element) => registerVideoRef(clip.id, element)}
                 src={clip.publicUrl}
                 className="h-full w-full object-cover video-progress-only"
                 playsInline
@@ -546,7 +781,29 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 controls
                 controlsList="nofullscreen nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
+                preload="metadata"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void toggleVideoPlayback(clip.id);
+                }}
+                onPlay={() => {
+                  pauseAllVideos(clip.id);
+                  setActiveClipId(clip.id);
+                }}
               />
+              <div
+                className={`clip-pause-indicator ${
+                  clipIndicator?.clipId === clip.id ? "visible" : ""
+                }`}
+              >
+                <div className="clip-pause-indicator__wrapper">
+                  <img
+                    src={clipIndicator?.action === "pause" ? pauseIcon : playIcon}
+                    alt=""
+                    className="clip-pause-indicator__icon"
+                  />
+                </div>
+              </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
               <div className="absolute left-5 right-5 bottom-8 text-white pointer-events-none">
                 <p className="text-lg font-medium">
@@ -559,15 +816,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 </div>
               </div>
             </div>
-
-            <div className="flex flex-col gap-3 lg:gap-4 shrink-0">
-              <div className="icon-wrapper bg-[rgb(230,230,230)]">
-                <img src={like} alt="" className="icon-dk scale-90" />
-              </div>
-              <div className="icon-wrapper bg-[rgb(230,230,230)]">
-                <img src={share} alt="" className="icon-dk" />
-              </div>
-            </div>
+            {renderClipActions(clip.id, compact)}
           </div>
         ))}
     </div>
@@ -575,7 +824,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
 
   return (
     <div
-      className={`modal fixed z-30 top-0 left-0 h-screen w-screen bg-[rgba(0,0,0,.7)] flex items-center justify-center transition-opacity ease-out duration-500 ${
+      className={`modal fixed z-[140] top-0 left-0 h-screen w-screen bg-[rgba(0,0,0,.7)] flex items-center justify-center transition-opacity ease-out duration-500 ${
         show
           ? "opacity-100 pointer-events-auto"
           : "opacity-0 pointer-events-none"
@@ -610,7 +859,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
 
       {/* Modal Wrapper */}
       <div
-        className={`h-[100dvh] w-screen lg:h-[90vh] lg:w-[70vw] bg-white rounded-none lg:rounded-[50px] relative transition-transform ease-out duration-500 ${
+        className={`h-[100dvh] w-screen lg:h-[90vh] lg:w-[70vw] bg-white rounded-none lg:rounded-[50px] relative flex flex-col overflow-hidden transition-transform ease-out duration-500 ${
           show ? "scale-100" : "scale-95 lg:scale-75"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -648,7 +897,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
           </div>
         </div>
 
-        <div className="h-full w-full overflow-hidden px-4 py-4 lg:px-10 lg:py-4">
+        <div className="flex-1 min-h-0 w-full overflow-hidden px-4 pb-4 pt-4 lg:px-10 lg:py-4">
           <div className="hidden lg:flex h-full w-full overflow-hidden">
             <div className="lg:w-[50%] min-w-0 h-full py-[2.5%] px-4">
               {renderDetailsPanel(true)}
@@ -658,7 +907,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             </div>
           </div>
 
-          <div className="lg:hidden h-fit">
+          <div className="lg:hidden h-full min-h-0">
             {mobilePane === "details" && (
               <div className="h-full overflow-y-auto pr-1">
                 {renderDetailsPanel(false)}

@@ -17,6 +17,7 @@ import type { NavPage } from "../types/nav";
 import useStore from "../store";
 
 const feedTypes: FeedType[] = ["Services", "Revivals", "Specials"];
+const EVENTS_REVEAL_STEP = 5;
 const eventPageNavPages: NavPage[] = [
   { id: "home-page", label: "Home", path: "/" },
   {
@@ -28,6 +29,7 @@ const eventPageNavPages: NavPage[] = [
       { id: "Shorts", label: "Shorts", sectionId: "shorts-section" },
     ],
   },
+  { id: "family-page", label: "Family", path: "/family" },
 ];
 
 function getErrorMessage(error: unknown): string {
@@ -41,6 +43,9 @@ function getErrorMessage(error: unknown): string {
 const Events: React.FC = () => {
   const [modalShown, setModalShown] = React.useState(false);
   const [feedTypeIndex, setFeedTypeIndex] = React.useState(0);
+  const [visibleEventCount, setVisibleEventCount] = React.useState(
+    EVENTS_REVEAL_STEP,
+  );
   const [events, setEvents] = React.useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = React.useState(true);
   const [eventsError, setEventsError] = React.useState<string | null>(null);
@@ -58,6 +63,9 @@ const Events: React.FC = () => {
   const setCurrSection = useStore((state) => state.setCurrSection);
 
   const activeFeedType = feedTypes[feedTypeIndex];
+  const visibleEvents = events.slice(0, visibleEventCount);
+  const canToggleVisibleEvents = events.length > EVENTS_REVEAL_STEP;
+  const showingAllVisibleEvents = visibleEventCount >= events.length;
 
   const loadEvents = React.useCallback(async () => {
     try {
@@ -88,6 +96,10 @@ const Events: React.FC = () => {
   React.useEffect(() => {
     void loadEvents();
   }, [loadEvents]);
+
+  React.useEffect(() => {
+    setVisibleEventCount(EVENTS_REVEAL_STEP);
+  }, [activeFeedType]);
 
   React.useEffect(() => {
     void loadShorts();
@@ -177,7 +189,7 @@ const Events: React.FC = () => {
 
         <section
           id="events-section"
-          className="flex flex-col gap-12 p-4 w-full max-w-325"
+          className="flex flex-col gap-16 p-4 w-full max-w-325 sm:gap-12"
         >
           {eventsLoading && (
             <div className="rounded-[30px] bg-[rgb(240,240,240)] p-6 text-[#444]">
@@ -205,9 +217,27 @@ const Events: React.FC = () => {
 
           {!eventsLoading &&
             !eventsError &&
-            events.map((event) => (
+            visibleEvents.map((event) => (
               <EventCard key={event.id} event={event} onOpen={openEventModal} />
             ))}
+
+          {!eventsLoading && !eventsError && canToggleVisibleEvents && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleEventCount((prev) =>
+                    prev >= events.length
+                      ? EVENTS_REVEAL_STEP
+                      : Math.min(prev + EVENTS_REVEAL_STEP, events.length),
+                  )
+                }
+                className="rounded-[30px] border-[1.5px] border-black px-5 py-2 font-medium text-black transition-colors duration-300 hover:bg-black hover:text-white cursor-pointer"
+              >
+                {showingAllVisibleEvents ? "Hide" : "Show More"}
+              </button>
+            </div>
+          )}
 
           <EventsModal
             show={modalShown}

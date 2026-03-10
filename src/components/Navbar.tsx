@@ -179,10 +179,12 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
     <>
       <div
         ref={navRef}
-        className={`flex w-full fixed z-20 ${shouldShowNavbar ? "top-0" : "-top-40"} ${shellThemeClass} transition-all duration-700`}
+        className={`fixed z-[90] flex w-full ${shouldShowNavbar ? "top-0" : "-top-40"} ${shellThemeClass} transition-all duration-700`}
       >
         <div className="w-full p-2 px-4 md:px-8 flex justify-between items-center gap-4">
-          <p className={`${textClass} text-lg md:text-3xl truncate`}>Christian Leaders SU</p>
+          <p className={`${textClass} text-lg md:text-3xl truncate`}>
+            Christian Leaders SU
+          </p>
 
           <div className="hidden md:flex items-center gap-2 rounded-[15px] p-1">
             {navPages.map((page) => {
@@ -252,7 +254,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
             <button
               type="button"
               onClick={() => setShowAuthNotice(true)}
-              className={`h-10 w-10 rounded-full border ${borderClass} flex items-center justify-center backdrop-blur-sm`}
+              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-[#f0f0f0] duration-300`}
             >
               <img
                 src={login}
@@ -263,13 +265,17 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
 
             <button
               type="button"
-              className={`h-10 w-10 rounded-full border ${borderClass} flex items-center justify-center backdrop-blur-sm`}
+              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-[#f0f0f0] duration-300`}
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open navigation menu"
             >
               <span className="flex flex-col gap-1.5">
-                <span className={`h-0.5 w-4 rounded-full ${menuBarClass}`}></span>
-                <span className={`h-0.5 w-4 rounded-full ${menuBarClass}`}></span>
+                <span
+                  className={`h-0.5 w-4 rounded-full ${menuBarClass}`}
+                ></span>
+                <span
+                  className={`h-0.5 w-4 rounded-full ${menuBarClass}`}
+                ></span>
               </span>
             </button>
           </div>
@@ -286,12 +292,12 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
               : "-translate-y-2 opacity-0 pointer-events-none"
           }`}
         >
-          Auth is coming in a later phase.
+          Coming Soon!
         </div>
       </div>
 
       <div
-        className={`md:hidden fixed inset-0 z-30 transition-all duration-300 ${
+        className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
           mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
       >
@@ -310,16 +316,22 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
           }`}
         >
           <div className="flex items-center justify-between px-4 py-4 border-b border-inherit">
-            <p className="text-sm tracking-[0.08em] uppercase opacity-80">Navigate</p>
+            <p className="text-sm tracking-[0.08em] uppercase opacity-80">
+              Navigate
+            </p>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="h-9 w-9 rounded-full border border-inherit flex items-center justify-center"
+              className="h-9 w-9 rounded-full hover:bg-[#f0f0f0] duration-300 border-inherit flex items-center justify-center"
               aria-label="Close navigation menu"
             >
               <span className="relative h-3.5 w-3.5 block">
-                <span className={`absolute left-0 top-1/2 h-0.5 w-full ${menuBarClass} rotate-45`}></span>
-                <span className={`absolute left-0 top-1/2 h-0.5 w-full ${menuBarClass} -rotate-45`}></span>
+                <span
+                  className={`absolute left-0 top-1/2 h-0.5 w-full ${menuBarClass} rotate-45`}
+                ></span>
+                <span
+                  className={`absolute left-0 top-1/2 h-0.5 w-full ${menuBarClass} -rotate-45`}
+                ></span>
               </span>
             </button>
           </div>

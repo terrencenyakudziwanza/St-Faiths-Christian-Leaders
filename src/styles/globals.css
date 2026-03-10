@@ -83,7 +83,86 @@ html::-webkit-scrollbar-thumb {
   height: 64px;
   width: 64px;
   border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 0.28);
+  background-color: rgba(17, 17, 17, 0.42);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+.clip-pause-indicator__icon {
+  height: 24px;
+  width: 24px;
+  filter: invert(100%);
+}
+
+@keyframes like-burst-rise {
+  0% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--like-burst-offset, 0px)),
+        10px
+      )
+      scale(0.82);
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(
+        calc(-50% + var(--like-burst-offset, 0px)),
+        -34px
+      )
+      scale(1.08);
+  }
+}
+
+@keyframes like-heart-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.28);
+  }
+
+  62% {
+    transform: scale(0.92);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.like-button {
+  position: relative;
+  overflow: visible;
+}
+
+.like-button__heart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+}
+
+.like-button__heart--pulse {
+  animation: like-heart-pulse 460ms ease;
+}
+
+.like-button__burst {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  pointer-events: none;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ff4f7a;
+  text-shadow: 0 10px 24px rgba(255, 79, 122, 0.22);
+  animation: like-burst-rise 780ms ease-out forwards;
 }
 
 .menu-itm span.active::after {

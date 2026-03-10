@@ -8,6 +8,7 @@ import useStore from "./store";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
+import Family from "./pages/Family";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 
@@ -92,6 +93,15 @@ function App() {
         element={
           <>
             <Events />
+            <Footer />
+          </>
+        }
+      />
+      <Route
+        path="/family"
+        element={
+          <>
+            <Family />
             <Footer />
           </>
         }
