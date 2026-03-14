@@ -4,8 +4,8 @@ import introImg3 from "./assets/images/pexels-ivan-stecko-305645871-13438939.jpg
 export const introImages: { img: string; label: string }[] = [
   {img: introImg, label: 'Praise & Worship'},
   {img: introImg3, label: 'Bible Study'},
-  { img: introImg, label: "Healing" },
-  { img: introImg3, label: "Preaching" },
+  { img: introImg, label: "Intercession" },
+  { img: introImg3, label: "Soul Winning" },
 ];
 
 export const introHeroTxt: { header: string[]; secondary: string[] }[] = [

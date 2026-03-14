@@ -183,7 +183,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
       >
         <div className="w-full p-2 px-4 md:px-8 flex justify-between items-center gap-4">
           <p className={`${textClass} text-lg md:text-3xl truncate`}>
-            Christian Leaders SU
+            Christian Leaders
           </p>
 
           <div className="hidden md:flex items-center gap-2 rounded-[15px] p-1">

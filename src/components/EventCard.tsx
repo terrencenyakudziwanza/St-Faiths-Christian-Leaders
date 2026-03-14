@@ -45,7 +45,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
     <div className="flex items-center w-full gap-8 flex-col lg:flex-row">
       <button
         type="button"
-        className="relative h-[50vh] w-[60%] lg:w-100 shrink-0 text-left"
+        className="relative h-[50vh] w-[80%] sm:w-[60%] lg:w-100 shrink-0 text-left"
         onClick={() => onOpen(event)}
       >
         <div className="stacked-imgs flex items-center flex-col h-[50vh] lg:w-100">
@@ -54,7 +54,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
               key={`${event.id}-cover-${i}`}
               src={img}
               alt={event.title}
-              className="rounded-[40px] h-full w-full max-w-[60vw] left-0 top-0 object-cover absolute"
+              className="rounded-[40px] h-full w-full max-w-[80%] sm:max-w-[60vw] left-0 top-0 object-cover absolute"
             />
           ))}
         </div>
@@ -65,7 +65,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
       </button>
 
       <div className="rounded-[40px] w-[60vw] h-[50vh]  bg-[rgb(240,240,240)] flex-1 min-w-0 p-6 flex flex-col gap-4">
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-col sm:flex-row  gap-4 items-center">
           <div className="flex items-center shrink-0">
             {visibleLeaders.map((leader, index) => (
               <img
@@ -90,11 +90,11 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
             <h2 className="text-xl text-black font-semibold">
               {event.themeTopic}
             </h2>
-            <p className="text-[#555]">{subtitle}</p>
+            <p className="text-[#333]">{subtitle}</p>
           </div>
         </div>
 
-        <p className="text-[#333] line-clamp-3">{event.summary}</p>
+        <p className="text-[#666] line-clamp-3 text-sm sm:text-md">{event.summary}</p>
         <p className="text-[#666] text-sm">{formatLongDate(event.eventDate)}</p>
       </div>
     </div>

@@ -57,7 +57,8 @@ const boardMembers: BoardMember[] = [
     name: "Pastor Joel Mensah",
     position: "Board Chair",
     boardTier: "Executive Member",
-    quote: "Lead with calm conviction and keep the family aligned around prayer.",
+    quote:
+      "Lead with calm conviction and keep the family aligned around prayer.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: true,
   },
@@ -93,7 +94,8 @@ const boardMembers: BoardMember[] = [
     name: "Brother Daniel Addo",
     position: "Youth Coordinator",
     boardTier: "Board Member",
-    quote: "A healthy church always leaves room for the next generation to rise.",
+    quote:
+      "A healthy church always leaves room for the next generation to rise.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
   },
@@ -103,7 +105,7 @@ const boardMembers: BoardMember[] = [
     position: "Prayer Director",
     boardTier: "Board Member",
     quote: "Prayer keeps every family conversation anchored in grace.",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
+    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
   },
   {
@@ -121,7 +123,7 @@ const boardMembers: BoardMember[] = [
     position: "Outreach Coordinator",
     boardTier: "Board Member",
     quote: "Every outward invitation should feel as warm as the room inside.",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
+    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
   },
   {
@@ -148,7 +150,7 @@ const boardMembers: BoardMember[] = [
     position: "Discipleship Lead",
     boardTier: "Board Member",
     quote: "Growth is strongest when people feel seen before they are taught.",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
+    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
   },
   {
@@ -156,7 +158,8 @@ const boardMembers: BoardMember[] = [
     name: "Samuel Opoku",
     position: "Missions Liaison",
     boardTier: "Board Member",
-    quote: "Mission stays alive when local faithfulness keeps meeting distant need.",
+    quote:
+      "Mission stays alive when local faithfulness keeps meeting distant need.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
   },
