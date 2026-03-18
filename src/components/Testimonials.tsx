@@ -108,22 +108,27 @@ const Testimonials: React.FC = () => {
   return (
     <section
       id="testimonials-section"
-      className="min-h-screen w-screen bg-white p-4 md:p-8 lg:p-14 flex flex-col gap-15"
+      className="min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15"
     >
-      <h2 className="text-4xl font-bold text-center">Testimonials</h2>
+      {/* SECTION HEADER */}
+      <h2 className="text-heading-xl font-bold text-center text-ink">
+        Testimonials
+      </h2>
+
+      {/* MARQUEE COLUMNS */}
       <div className="h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 relative gap-6 overflow-x-hidden">
         <div
           className="absolute left-0 right-0 top-0 z-30 pointer-events-none h-[10vh]"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 55%, rgba(255,255,255,0) 100%)",
+              "linear-gradient(to bottom, var(--page-fade-strong) 0%, var(--page-fade-soft) 55%, rgba(0,0,0,0) 100%)",
           }}
         ></div>
         <div
           className="absolute left-0 right-0 bottom-0 z-30 pointer-events-none h-[10vh]"
           style={{
             background:
-              "linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 55%, rgba(255,255,255,0) 100%)",
+              "linear-gradient(to top, var(--page-fade-strong) 0%, var(--page-fade-soft) 55%, rgba(0,0,0,0) 100%)",
           }}
         ></div>
         {columns.map((testimonialCol, i) => (
@@ -137,9 +142,9 @@ const Testimonials: React.FC = () => {
               {[...testimonialCol, ...testimonialCol].map((testimonial, j) => (
                 <div
                   key={`${testimonial.avatar.name}-${j}`}
-                  className="flex flex-col border border-[#AAA] rounded-3xl p-3 gap-4 h-fit cursor-pointer bg-white"
+                  className="flex flex-col border border-subtle rounded-3xl p-3 gap-4 h-fit cursor-pointer bg-surface"
                 >
-                  <p className="text-[14px] text-[#444]">
+                  <p className="text-body-sm text-muted">
                     {testimonial.testimonial}
                   </p>
                   <ProfileCard
@@ -148,7 +153,7 @@ const Testimonials: React.FC = () => {
                     name={testimonial.avatar.name}
                     details={testimonial.avatar.personalDetails}
                     className="pt-1"
-                    nameClassName="text-xl"
+                    nameClassName="text-heading-sm"
                   />
                 </div>
               ))}

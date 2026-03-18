@@ -6,16 +6,7 @@ import arrowDown from "../assets/icons/arrow-down.svg";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
-
-type BoardMember = {
-  id: string;
-  name: string;
-  position: string;
-  boardTier: string;
-  quote: string;
-  imageSrc: string;
-  executive: boolean;
-};
+import { boardMembers, type BoardMember } from "../data/boardMembers";
 
 type OrbitLayout = {
   centerX: number;
@@ -51,119 +42,6 @@ const familyNavPages: NavPage[] = [
   },
 ];
 
-const boardMembers: BoardMember[] = [
-  {
-    id: "pastor-joel",
-    name: "Pastor Joel Mensah",
-    position: "Board Chair",
-    boardTier: "Executive Member",
-    quote:
-      "Lead with calm conviction and keep the family aligned around prayer.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: true,
-  },
-  {
-    id: "sister-ama",
-    name: "Sister Ama Boateng",
-    position: "Board Secretary",
-    boardTier: "Executive Member",
-    quote: "Order creates room for warmth, follow-through, and shared peace.",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
-    executive: true,
-  },
-  {
-    id: "elder-kojo",
-    name: "Elder Kojo Asare",
-    position: "Treasurer",
-    boardTier: "Executive Member",
-    quote: "Stewardship is worship when every decision protects the people.",
-    imageSrc: "/offline-media/presenters/elder-kojo.jpg",
-    executive: true,
-  },
-  {
-    id: "lydia-ofori",
-    name: "Deacon Lydia Ofori",
-    position: "Welfare Lead",
-    boardTier: "Board Member",
-    quote: "Care should feel practical, immediate, and impossible to miss.",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
-    executive: false,
-  },
-  {
-    id: "daniel-addo",
-    name: "Brother Daniel Addo",
-    position: "Youth Coordinator",
-    boardTier: "Board Member",
-    quote:
-      "A healthy church always leaves room for the next generation to rise.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-  {
-    id: "mabel-agyemang",
-    name: "Sister Mabel Agyemang",
-    position: "Prayer Director",
-    boardTier: "Board Member",
-    quote: "Prayer keeps every family conversation anchored in grace.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-  {
-    id: "emmanuel-owusu",
-    name: "Emmanuel Owusu",
-    position: "Worship Liaison",
-    boardTier: "Board Member",
-    quote: "Worship softens the room before strategy ever speaks.",
-    imageSrc: "/offline-media/presenters/elder-kojo.jpg",
-    executive: false,
-  },
-  {
-    id: "grace-nyarko",
-    name: "Grace Nyarko",
-    position: "Outreach Coordinator",
-    boardTier: "Board Member",
-    quote: "Every outward invitation should feel as warm as the room inside.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-  {
-    id: "ruth-mensah",
-    name: "Ruth Mensah",
-    position: "Family Care Lead",
-    boardTier: "Board Member",
-    quote: "Care becomes visible when follow-up is gentle and consistent.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-  {
-    id: "isaac-boadi",
-    name: "Isaac Boadi",
-    position: "Media Director",
-    boardTier: "Board Member",
-    quote: "Good media work should disappear into the clarity of the message.",
-    imageSrc: "/offline-media/presenters/elder-kojo.jpg",
-    executive: false,
-  },
-  {
-    id: "deborah-quaye",
-    name: "Deborah Quaye",
-    position: "Discipleship Lead",
-    boardTier: "Board Member",
-    quote: "Growth is strongest when people feel seen before they are taught.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-  {
-    id: "samuel-opoku",
-    name: "Samuel Opoku",
-    position: "Missions Liaison",
-    boardTier: "Board Member",
-    quote:
-      "Mission stays alive when local faithfulness keeps meeting distant need.",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    executive: false,
-  },
-];
 
 const mobileSlots: MobileSlot[] = [
   {
@@ -478,11 +356,11 @@ const Family: React.FC = () => {
   };
 
   const renderActiveCardContent = (memberName: string) => (
-    <div className="flex min-h-[66px] flex-col items-center justify-center px-3 py-2 text-[11px] font-semibold text-[#8b6f29]">
-      <span className="text-center text-[11px] font-semibold leading-tight text-[#3b2f1f]">
+    <div className="flex min-h-[66px] flex-col items-center justify-center px-3 py-2 text-caption font-semibold text-accent">
+      <span className="text-center text-caption font-semibold leading-tight text-ink">
         {memberName}
       </span>
-      <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-[#8b6f29]">
+      <span className="mt-1 text-micro font-semibold uppercase tracking-[0.3em] text-accent">
         Active
       </span>
     </div>
@@ -526,9 +404,9 @@ const Family: React.FC = () => {
                 className="gap-2.5 px-3.5 py-2.5"
                 avatarClassName="h-10 w-10 ring-0 sm:h-11 sm:w-11"
                 contentClassName="min-w-[92px] sm:min-w-0"
-                nameClassName="text-[12px] font-semibold leading-[1.15] sm:text-[14px]"
-                detailsClassName="mt-0.5 text-[10px] leading-[1.35]"
-                metaClassName="mt-1 text-[8px] uppercase tracking-[0.14em] text-[#7d6a52] sm:text-[9px]"
+                nameClassName="text-body-sm font-semibold leading-[1.15]"
+                detailsClassName="mt-0.5 text-micro leading-[1.35]"
+                metaClassName="mt-1 text-pico uppercase tracking-[0.14em] text-faint"
               />
             )}
           </div>
@@ -537,7 +415,7 @@ const Family: React.FC = () => {
     }
 
     return (
-      <div className="rounded-[22px] border border-black/10 bg-[rgba(255,255,255,0.9)] shadow-[0_12px_24px_rgba(35,24,12,0.08)] backdrop-blur-sm">
+      <div className="rounded-[22px] border border-subtle bg-surface-elevated shadow-[0_12px_24px_rgba(35,24,12,0.08)] backdrop-blur-sm">
         {isActive ? (
           renderActiveCardContent(member.name)
         ) : (
@@ -550,9 +428,9 @@ const Family: React.FC = () => {
             className="gap-2.5 px-3.5 py-2.5"
             avatarClassName="h-10 w-10 ring-0 sm:h-11 sm:w-11"
             contentClassName="min-w-[92px] sm:min-w-0"
-            nameClassName="text-[12px] font-semibold leading-[1.15] sm:text-[14px]"
-            detailsClassName="mt-0.5 text-[10px] leading-[1.35]"
-            metaClassName="mt-1 text-[8px] uppercase tracking-[0.14em] text-[#7d6a52] sm:text-[9px]"
+            nameClassName="text-body-sm font-semibold leading-[1.15]"
+            detailsClassName="mt-0.5 text-micro leading-[1.35]"
+            metaClassName="mt-1 text-pico uppercase tracking-[0.14em] text-faint"
           />
         )}
       </div>
@@ -569,18 +447,18 @@ const Family: React.FC = () => {
       style={portraitStyle}
     >
       <div
-        className={`absolute z-20 rounded-[20px] border border-white/60 bg-[rgba(255,255,255,0.78)] px-3 py-2.5 shadow-[0_12px_30px_rgba(31,23,13,0.12)] backdrop-blur-sm ${
+        className={`absolute z-20 rounded-[20px] border border-subtle bg-surface-elevated px-3 py-2.5 shadow-[0_12px_30px_rgba(31,23,13,0.12)] backdrop-blur-sm ${
           animatedDetails ? "family-hover-panel" : ""
         }`}
         style={detailsStyle}
       >
-        <h2 className="text-[13px] font-semibold text-[#18120d] sm:text-[14px]">
+        <h2 className="text-body-sm font-semibold text-ink">
           {activeMember.name}
         </h2>
-        <p className="mt-0.5 text-[11px] text-[#6a5843]">
+        <p className="mt-0.5 text-caption text-muted">
           {activeMember.position}
         </p>
-        <p className="mt-2 text-[11px] leading-5 text-[#4e4133]">
+        <p className="mt-2 text-caption text-subtle leading-5">
           "{activeMember.quote}"
         </p>
       </div>
@@ -610,30 +488,43 @@ const Family: React.FC = () => {
     <section
       id="family-board-section"
       data-nav-theme="light"
-      className="relative min-h-screen overflow-hidden bg-white text-[#14110d]"
+      className="relative min-h-screen overflow-hidden bg-page text-ink"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.92),transparent_36%),radial-gradient(circle_at_88%_18%,rgba(196,160,77,0.24),transparent_24%),linear-gradient(180deg,#f5efe3_0%,#efe6d7_52%,#fff_100%)]"></div>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "var(--family-hero-gradient)" }}
+      ></div>
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40"></div>
 
+      {/* MAIN NAVIGATION */}
       <Navbar navPages={familyNavPages} />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1480px] flex-col px-4 pb-16 pt-28 sm:px-6 lg:px-10">
+        {/* PAGE INTRO COPY */}
         <div className="mx-auto max-w-[620px] text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.38em] text-[#8d6d2d] sm:text-[11px]">
+          <p className="text-overline font-semibold text-accent">
             Christian Leaders Board
           </p>
-          <h1 className="mt-4 text-4xl font-semibold leading-[0.95] sm:text-5xl lg:text-7xl">
+          <h1 className="mt-4 text-display font-semibold leading-[0.95] text-ink">
             Lorem Ipsum Dolor Sit Amet
           </h1>
-          <p className="mx-auto mt-5 max-w-[520px] text-[13px] leading-7 text-[#5b4f42] sm:text-sm lg:text-base">
+          <p className="mx-auto mt-5 max-w-[520px] text-body text-muted leading-7">
             Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui doloremque dolorum quaerat magni earum neque quam blanditiis vel quos nisi repellat reiciendis aliquam aliquid, aspernatur iure cumque animi in possimus!
           </p>
         </div>
 
-        <div className="relative mt-10 min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-white/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.62),rgba(255,255,255,0.24))] shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]">
+        {/* BOARD ORBIT STAGE */}
+        <div
+          className="relative mt-10 min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"
+          style={{ background: "var(--family-panel-gradient)" }}
+        >
           {isMobile ? (
             <>
-              <div className="pointer-events-none absolute left-[8%] top-[72%] z-0 h-px w-[84%] -translate-y-1/2 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.46)_14%,rgba(255,255,255,0.58)_50%,rgba(255,255,255,0.46)_86%,rgba(255,255,255,0)_100%)]"></div>
+              {/* MOBILE PORTRAIT + RAIL */}
+              <div
+                className="pointer-events-none absolute left-[8%] top-[72%] z-0 h-px w-[84%] -translate-y-1/2"
+                style={{ background: "var(--family-divider-gradient)" }}
+              ></div>
 
               {renderPortrait(
                 {
@@ -650,6 +541,7 @@ const Family: React.FC = () => {
                 false,
               )}
 
+              {/* MOBILE MEMBER CARDS */}
               {mobileCards.map(
                 ({
                   member,
@@ -688,41 +580,44 @@ const Family: React.FC = () => {
                 ),
               )}
 
-              <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5 rounded-[22px] border border-[#1e1a14]/10 bg-white/92 px-2 py-1.5 shadow-[0_12px_34px_rgba(28,21,14,0.08)]">
+              {/* MOBILE CONTROLS */}
+              <div className="absolute bottom-4 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2.5 rounded-[22px] border border-subtle bg-surface-elevated px-2 py-1.5 shadow-[0_12px_34px_rgba(28,21,14,0.08)]">
                 <button
                   type="button"
                   onClick={() => rotateBoard("up")}
                   disabled={isAuto}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#1e1a14]/10 bg-white transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-subtle bg-surface transition-colors ${
                     isAuto
                       ? "cursor-no-drop opacity-40"
-                      : "cursor-pointer hover:bg-[#f3eee2]"
+                      : "cursor-pointer hover:bg-surface-muted"
                   }`}
                   aria-label="Rotate board backward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk rotate-90" />
+                  <img src={arrowDown} alt="" className="icon-dk icon-adapt rotate-90" />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsAuto((prev) => !prev)}
-                  className="flex flex-col items-center gap-1.5 rounded-[20px] border border-[#1e1a14]/10 bg-white px-2.5 py-1.5 shadow-[0_10px_28px_rgba(28,21,14,0.08)]"
+                  className="flex flex-col items-center gap-1.5 rounded-[20px] border border-subtle bg-surface px-2.5 py-1.5 shadow-[0_10px_28px_rgba(28,21,14,0.08)]"
                   aria-pressed={isAuto}
                   aria-label="Toggle auto rotation"
                 >
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#2b241b]">
+                  <span className="text-nano font-semibold uppercase tracking-[0.2em] text-faint">
                     Auto
                   </span>
                   <span
                     className={`relative flex h-6 w-[40px] items-center rounded-full border transition-colors ${
-                      isAuto ? "border-black bg-black" : "border-black/15 bg-white"
+                      isAuto
+                        ? "border-[color:var(--surface-contrast)] bg-contrast"
+                        : "border-subtle bg-surface"
                     }`}
                   >
                     <span
                       className={`block h-3.5 w-3.5 rounded-full transition-transform duration-300 ${
                         isAuto
-                          ? "translate-x-[20px] bg-white"
-                          : "translate-x-[4px] bg-black"
+                          ? "translate-x-[20px] bg-surface"
+                          : "translate-x-[4px] bg-contrast"
                       }`}
                     ></span>
                   </span>
@@ -732,65 +627,72 @@ const Family: React.FC = () => {
                   type="button"
                   onClick={() => rotateBoard("down")}
                   disabled={isAuto}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#1e1a14]/10 bg-white transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border border-subtle bg-surface transition-colors ${
                     isAuto
                       ? "cursor-no-drop opacity-40"
-                      : "cursor-pointer hover:bg-[#f3eee2]"
+                      : "cursor-pointer hover:bg-surface-muted"
                   }`}
                   aria-label="Rotate board forward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk -rotate-90" />
+                  <img src={arrowDown} alt="" className="icon-dk icon-adapt -rotate-90" />
                 </button>
               </div>
             </>
           ) : (
             <>
-              <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[120px] bg-[linear-gradient(90deg,rgba(255,255,255,0.98)_0%,rgba(255,255,255,0.94)_42%,rgba(255,255,255,0.54)_72%,rgba(255,255,255,0)_100%)] sm:w-[150px] lg:w-[190px]"></div>
+              {/* DESKTOP FADE + RINGS */}
+              <div
+                className="pointer-events-none absolute inset-y-0 left-0 z-20 w-[120px] sm:w-[150px] lg:w-[190px]"
+                style={{ background: "var(--family-left-fade)" }}
+              ></div>
 
               <div
-                className="pointer-events-none absolute z-0 rounded-full border border-white/55"
+                className="pointer-events-none absolute z-0 rounded-full border border-strong"
                 style={outerRingStyle}
               ></div>
               <div
-                className="pointer-events-none absolute z-0 rounded-full border border-white/28"
+                className="pointer-events-none absolute z-0 rounded-full border border-subtle"
                 style={innerRingStyle}
               ></div>
 
+              {/* DESKTOP CONTROLS */}
               <div className="absolute right-4 top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-4 sm:right-6">
                 <button
                   type="button"
                   onClick={() => rotateBoard("up")}
                   disabled={isAuto}
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1e1a14]/10 bg-white/92 shadow-[0_10px_30px_rgba(28,21,14,0.08)] transition-colors ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-subtle bg-surface-elevated shadow-[0_10px_30px_rgba(28,21,14,0.08)] transition-colors ${
                     isAuto
                       ? "cursor-no-drop opacity-40"
-                      : "cursor-pointer hover:bg-[#f3eee2]"
+                      : "cursor-pointer hover:bg-surface-muted"
                   }`}
                   aria-label="Rotate board backward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk rotate-180" />
+                  <img src={arrowDown} alt="" className="icon-dk icon-adapt rotate-180" />
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setIsAuto((prev) => !prev)}
-                  className="flex flex-col items-center gap-2 rounded-[22px] border border-[#1e1a14]/10 bg-white/92 px-2 py-3 shadow-[0_12px_34px_rgba(28,21,14,0.08)]"
+                  className="flex flex-col items-center gap-2 rounded-[22px] border border-subtle bg-surface-elevated px-2 py-3 shadow-[0_12px_34px_rgba(28,21,14,0.08)]"
                   aria-pressed={isAuto}
                   aria-label="Toggle auto rotation"
                 >
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#2b241b]">
+                  <span className="text-micro font-semibold uppercase tracking-[0.24em] text-faint">
                     Auto
                   </span>
                   <span
                     className={`relative flex h-7 w-[46px] items-center rounded-full border transition-colors ${
-                      isAuto ? "border-black bg-black" : "border-black/15 bg-white"
+                      isAuto
+                        ? "border-[color:var(--surface-contrast)] bg-contrast"
+                        : "border-subtle bg-surface"
                     }`}
                   >
                     <span
                       className={`block h-4 w-4 rounded-full transition-transform duration-300 ${
                         isAuto
-                          ? "translate-x-[24px] bg-white"
-                          : "translate-x-[5px] bg-black"
+                          ? "translate-x-[24px] bg-surface"
+                          : "translate-x-[5px] bg-contrast"
                       }`}
                     ></span>
                   </span>
@@ -800,19 +702,21 @@ const Family: React.FC = () => {
                   type="button"
                   onClick={() => rotateBoard("down")}
                   disabled={isAuto}
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-[#1e1a14]/10 bg-white/92 shadow-[0_10px_30px_rgba(28,21,14,0.08)] transition-colors ${
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-subtle bg-surface-elevated shadow-[0_10px_30px_rgba(28,21,14,0.08)] transition-colors ${
                     isAuto
                       ? "cursor-no-drop opacity-40"
-                      : "cursor-pointer hover:bg-[#f3eee2]"
+                      : "cursor-pointer hover:bg-surface-muted"
                   }`}
                   aria-label="Rotate board forward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk" />
+                  <img src={arrowDown} alt="" className="icon-dk icon-adapt" />
                 </button>
               </div>
 
+              {/* ACTIVE PORTRAIT */}
               {renderPortrait(orbitPortraitStyle, orbitDetailsStyle, true)}
 
+              {/* ORBITING MEMBER CARDS */}
               {orbitMembers.map(
                 ({
                   member,

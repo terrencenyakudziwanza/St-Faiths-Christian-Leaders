@@ -94,8 +94,12 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const [likePulseVersions, setLikePulseVersions] = React.useState<
     Record<string, number>
   >({});
-  const [likeCounts, setLikeCounts] = React.useState<Record<string, number>>({});
-  const [shareCounts, setShareCounts] = React.useState<Record<string, number>>({});
+  const [likeCounts, setLikeCounts] = React.useState<Record<string, number>>(
+    {},
+  );
+  const [shareCounts, setShareCounts] = React.useState<Record<string, number>>(
+    {},
+  );
 
   const pictureClips = React.useMemo(
     () => media.filter((item) => item.mediaType === "picture"),
@@ -152,13 +156,14 @@ const EventsModal: React.FC<EventsModalProps> = ({
   }, [activeMedia, event?.id]);
 
   const activeButtonClass =
-    "rounded-[30px] text-white border-[1.5px] bg-[#222] border-[#222] py-1 px-3 flex items-center gap-2";
+    "rounded-[30px] text-inverse text-body-sm border-[1.5px] bg-contrast border-[color:var(--surface-contrast)] py-1 px-3 flex items-center gap-2";
   const inactiveButtonClass =
-    "rounded-[30px] border-[1.5px] border-[#222] text-[#222] bg-transparent py-1 px-3 flex items-center gap-2";
+    "rounded-[30px] border-[1.5px] border-strong text-ink text-body-sm bg-transparent py-1 px-3 flex items-center gap-2";
   const compactToggleBaseClass =
-    "rounded-[16px] border-[1.5px] px-3 py-1.5 text-sm flex items-center justify-center gap-1.5 min-w-[92px]";
-  const compactToggleActiveClass = "bg-[#111] text-white border-[#111]";
-  const compactToggleInactiveClass = "bg-transparent text-[#111] border-[#BBB]";
+    "rounded-[16px] border-[1.5px] px-3 py-1.5 text-body-sm flex items-center justify-center gap-1.5 min-w-[92px]";
+  const compactToggleActiveClass =
+    "bg-contrast text-inverse border-[color:var(--surface-contrast)]";
+  const compactToggleInactiveClass = "bg-transparent text-ink border-subtle";
 
   const activeItems = activeMedia === "picture" ? pictureClips : videoClips;
   const activeClip = React.useMemo(
@@ -227,7 +232,9 @@ const EventsModal: React.FC<EventsModalProps> = ({
       setClipIndicator({ clipId, action });
       clipIndicatorTimeoutRef.current = window.setTimeout(() => {
         setClipIndicator((current) =>
-          current?.clipId === clipId && current.action === action ? null : current,
+          current?.clipId === clipId && current.action === action
+            ? null
+            : current,
         );
         clipIndicatorTimeoutRef.current = null;
       }, 560);
@@ -262,32 +269,29 @@ const EventsModal: React.FC<EventsModalProps> = ({
     [pauseAllVideos, showClipIndicator],
   );
 
-  const handleLikeClick = React.useCallback(
-    (clipId: string) => {
-      const burstId = likeBurstIdRef.current++;
-      const offsetX = ((burstId % 5) - 2) * 7;
+  const handleLikeClick = React.useCallback((clipId: string) => {
+    const burstId = likeBurstIdRef.current++;
+    const offsetX = ((burstId % 5) - 2) * 7;
 
-      setLikeBursts((prev) => [...prev, { id: burstId, clipId, offsetX }]);
-      setLikePulseVersions((prev) => ({
-        ...prev,
-        [clipId]: (prev[clipId] ?? 0) + 1,
-      }));
-      setLikeCounts((prev) => ({
-        ...prev,
-        [clipId]: (prev[clipId] ?? 0) + 1,
-      }));
+    setLikeBursts((prev) => [...prev, { id: burstId, clipId, offsetX }]);
+    setLikePulseVersions((prev) => ({
+      ...prev,
+      [clipId]: (prev[clipId] ?? 0) + 1,
+    }));
+    setLikeCounts((prev) => ({
+      ...prev,
+      [clipId]: (prev[clipId] ?? 0) + 1,
+    }));
 
-      const timeoutId = window.setTimeout(() => {
-        setLikeBursts((prev) => prev.filter((burst) => burst.id !== burstId));
-        likeBurstTimeoutsRef.current = likeBurstTimeoutsRef.current.filter(
-          (item) => item !== timeoutId,
-        );
-      }, 780);
+    const timeoutId = window.setTimeout(() => {
+      setLikeBursts((prev) => prev.filter((burst) => burst.id !== burstId));
+      likeBurstTimeoutsRef.current = likeBurstTimeoutsRef.current.filter(
+        (item) => item !== timeoutId,
+      );
+    }, 780);
 
-      likeBurstTimeoutsRef.current.push(timeoutId);
-    },
-    [],
-  );
+    likeBurstTimeoutsRef.current.push(timeoutId);
+  }, []);
 
   const handleShareClick = React.useCallback((clipId: string) => {
     setShareCounts((prev) => ({
@@ -445,11 +449,13 @@ const EventsModal: React.FC<EventsModalProps> = ({
   };
 
   const renderClipActions = (clipId: string, compact: boolean) => {
-    const clipLikeBursts = likeBursts.filter((burst) => burst.clipId === clipId);
+    const clipLikeBursts = likeBursts.filter(
+      (burst) => burst.clipId === clipId,
+    );
     const likePulseVersion = likePulseVersions[clipId] ?? 0;
     const likeCount = likeCounts[clipId] ?? 0;
     const shareCount = shareCounts[clipId] ?? 0;
-    const countClassName = `text-[10px] font-semibold text-[#6b6b6b] ${
+    const countClassName = `text-micro font-semibold text-faint ${
       compact ? "tracking-[0.06em]" : "tracking-[0.04em]"
     }`;
 
@@ -466,13 +472,13 @@ const EventsModal: React.FC<EventsModalProps> = ({
               e.stopPropagation();
               handleLikeClick(clipId);
             }}
-            className="icon-wrapper like-button border border-[#ffd0da] bg-[#fff0f4] cursor-pointer"
+            className="icon-wrapper like-button border border-like bg-like-soft cursor-pointer"
             aria-label="Like clip"
           >
             {clipLikeBursts.map((burst) => (
               <span
                 key={burst.id}
-                className="like-button__burst"
+                className="like-button__burst text-caption text-like font-semibold"
                 style={
                   {
                     "--like-burst-offset": `${burst.offsetX}px`,
@@ -488,7 +494,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 likePulseVersion > 0 ? "like-button__heart--pulse" : ""
               }`}
             >
-              <img src={like} alt="" className="icon-dk scale-90" />
+            <img src={like} alt="" className="icon-dk icon-adapt scale-90" />
             </span>
           </button>
           <span className={countClassName}>{likeCount}</span>
@@ -501,10 +507,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
               e.stopPropagation();
               handleShareClick(clipId);
             }}
-            className="icon-wrapper bg-[rgb(230,230,230)] cursor-pointer"
+            className="icon-wrapper bg-surface-muted cursor-pointer"
             aria-label="Share clip"
           >
-            <img src={share} alt="" className="icon-dk" />
+            <img src={share} alt="" className="icon-dk icon-adapt" />
           </button>
           <span className={countClassName}>{shareCount}</span>
         </div>
@@ -556,7 +562,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
       >
         <img
           src={video}
-          className={activeMedia === "video" ? "icon scale-70" : "icon-dk"}
+          className={activeMedia === "video" ? "icon scale-70" : "icon-dk icon-adapt"}
           alt=""
         />
         {compact ? (
@@ -584,7 +590,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
       >
         <img
           src={pic}
-          className={activeMedia === "picture" ? "icon scale-70" : "icon-dk"}
+          className={activeMedia === "picture" ? "icon scale-70" : "icon-dk icon-adapt"}
           alt=""
         />
         {compact ? (
@@ -599,33 +605,33 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const renderDetailsPanel = (withMediaSwitch: boolean) => (
     <div className="flex flex-col justify-between h-full min-w-0">
       <div className="flex flex-col gap-3 min-w-0">
-        <h1 className="text-[28px] md:text-[34px] lg:text-[28px] leading-tight font-bold bg-[rgb(240,240,240)] p-2 rounded-xl wrap-break-word">
+        <h1 className="text-title-fluid leading-tight font-bold bg-surface-muted text-ink p-2 rounded-xl wrap-break-word">
           {event?.themeTopic ?? event?.title ?? "Select an event"}
         </h1>
         <div className="flex gap-3 lg:gap-4 flex-wrap">
-          <p className="px-2.5 py-0.5 text-sm bg-[rgb(240,240,240)] rounded-[7px]">
+          <p className="px-2.5 py-0.5 text-body-sm bg-surface-muted text-ink rounded-[7px]">
             {event?.feedType ?? "Event"}
           </p>
-          <p className="px-2.5 py-0.5 text-sm bg-[rgb(240,240,240)] rounded-[7px]">
+          <p className="px-2.5 py-0.5 text-body-sm bg-surface-muted text-ink rounded-[7px]">
             {event ? formatLongDate(event.eventDate) : "Unknown date"}
           </p>
         </div>
 
-        <div className="flex flex-col border-[1.5px] border-[#DDD] rounded-2xl px-4 py-3 gap-4">
+        <div className="flex flex-col border-[1.5px] border-subtle rounded-2xl px-4 py-3 gap-4">
           <ProfileCard
             imageSrc={activeLeader.avatarUrl ?? fallbackProfile}
             imageAlt={activeLeader.name}
             name={activeLeader.name}
             details={
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-[#555]">{detailVerb}</p>
-                <div className="px-2 py-px rounded-lg bg-[rgb(240,240,240)] shadow-[0_3px_10px_rgba(0,0,0,0.08)]">
+                <p className="text-body-sm text-muted">{detailVerb}</p>
+                <div className="px-2 py-px rounded-lg bg-surface-muted text-body-sm text-ink shadow-[0_3px_10px_rgba(0,0,0,0.08)]">
                   {detailChip}
                 </div>
               </div>
             }
             avatarClassName="h-12 w-12"
-            nameClassName="text-xl"
+            nameClassName="text-heading-sm"
             detailsClassName="mt-1.5"
             className="pt-1"
           />
@@ -633,14 +639,14 @@ const EventsModal: React.FC<EventsModalProps> = ({
           {activeComponent === "Preaching" && (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-[rgb(230,230,230)] shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center">
-                  <img src={bookOpen} alt="" className="icon-dk scale-90" />
+                <div className="h-10 w-10 rounded-full bg-surface-muted shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center">
+                  <img src={bookOpen} alt="" className="icon-dk icon-adapt scale-90" />
                 </div>
-                <p className="text-[15px] font-semibold text-[#222]">
+                <p className="text-body font-semibold text-ink">
                   {event?.themeScriptureReference ?? "John 15:5"}
                 </p>
               </div>
-              <p className="text-[#333] leading-relaxed">
+              <p className="text-body text-muted leading-relaxed">
                 {event?.themeScriptureText ?? ""}
               </p>
             </div>
@@ -653,10 +659,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
                   key={`${activeComponent}-${index}`}
                   className="flex gap-3 items-start"
                 >
-                  <div className="h-8 w-8 rounded-full bg-[rgb(230,230,230)] shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center text-sm font-semibold text-[#222] shrink-0">
+                  <div className="h-8 w-8 rounded-full bg-surface-muted shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center text-body-sm font-semibold text-ink shrink-0">
                     {index + 1}
                   </div>
-                  <p className="text-[#333] text-[14px] leading-relaxed">
+                  <p className="text-body-sm text-muted leading-relaxed">
                     {point}
                   </p>
                 </div>
@@ -683,19 +689,19 @@ const EventsModal: React.FC<EventsModalProps> = ({
       }`}
     >
       {loading && (
-        <div className="h-full min-h-[40vh] flex items-center justify-center text-[#555]">
+        <div className="h-full min-h-[40vh] flex items-center justify-center text-body-sm text-muted">
           Loading media...
         </div>
       )}
 
       {!loading && mediaError && (
-        <div className="h-full min-h-[40vh] flex items-center justify-center text-center text-[#B91C1C] px-8">
+        <div className="h-full min-h-[40vh] flex items-center justify-center text-center text-body-sm text-danger px-8">
           {mediaError}
         </div>
       )}
 
       {!loading && !mediaError && activeItems.length === 0 && (
-        <div className="h-full min-h-[40vh] flex items-center justify-center text-[#555]">
+        <div className="h-full min-h-[40vh] flex items-center justify-center text-body-sm text-muted">
           No {activeMedia === "picture" ? "pictures" : "videos"} uploaded yet.
         </div>
       )}
@@ -717,7 +723,9 @@ const EventsModal: React.FC<EventsModalProps> = ({
           >
             <div
               className={`relative ${
-                compact ? "h-[58dvh] w-full sm:h-[64dvh]" : "h-full w-full lg:w-[80%]"
+                compact
+                  ? "h-[58dvh] w-full sm:h-[64dvh]"
+                  : "h-full w-full lg:w-[80%]"
               }`}
             >
               <img
@@ -726,7 +734,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 className="object-cover rounded-[34px] lg:rounded-3xl h-full w-full"
                 loading="eager"
               />
-              <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#222]">
+              <div className="absolute left-4 top-4 rounded-full bg-surface-elevated px-3 py-1 text-caption font-semibold text-ink">
                 {clip.component}
               </div>
             </div>
@@ -751,10 +759,12 @@ const EventsModal: React.FC<EventsModalProps> = ({
           >
             <div
               className={`relative rounded-[34px] lg:rounded-3xl overflow-hidden bg-black ${
-                compact ? "h-[58dvh] w-full sm:h-[64dvh]" : "h-full w-full lg:w-[80%]"
+                compact
+                  ? "h-[58dvh] w-full sm:h-[64dvh]"
+                  : "h-full w-full lg:w-[80%]"
               }`}
             >
-              <div className="absolute left-4 top-4 z-20 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#222]">
+              <div className="absolute left-4 top-4 z-20 rounded-full bg-surface-elevated px-3 py-1 text-caption font-semibold text-ink">
                 {clip.component}
               </div>
               <button
@@ -763,12 +773,12 @@ const EventsModal: React.FC<EventsModalProps> = ({
                   e.stopPropagation();
                   setIsMuted((prev) => !prev);
                 }}
-                className="absolute top-4 right-4 z-20 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-[#222] flex items-center gap-1.5 border border-[#DDD]"
+                className="absolute top-4 right-4 z-20 rounded-full bg-surface-elevated px-3 py-1 text-caption font-semibold text-ink flex items-center gap-1.5 border border-subtle"
               >
                 <img
                   src={isMuted ? muteIcon : volumeIcon}
                   alt=""
-                  className="h-3.5 w-3.5"
+                  className="h-3.5 w-3.5 icon-adapt"
                 />
                 <span>{isMuted ? "Muted" : "Sound"}</span>
               </button>
@@ -798,18 +808,20 @@ const EventsModal: React.FC<EventsModalProps> = ({
               >
                 <div className="clip-pause-indicator__wrapper">
                   <img
-                    src={clipIndicator?.action === "pause" ? pauseIcon : playIcon}
+                    src={
+                      clipIndicator?.action === "pause" ? pauseIcon : playIcon
+                    }
                     alt=""
                     className="clip-pause-indicator__icon"
                   />
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
-              <div className="absolute left-5 right-5 bottom-8 text-white pointer-events-none">
-                <p className="text-lg font-medium">
+              <div className="absolute left-5 right-5 bottom-8 text-inverse pointer-events-none">
+                <p className="text-heading-xs font-medium">
                   {clip.caption || event?.title || "Event video"}
                 </p>
-                <div className="flex gap-2 text-sm text-white/90">
+                <div className="flex gap-2 text-body-sm text-inverse opacity-90">
                   {clip.tags.map((tag) => (
                     <span key={`${clip.id}-${tag}`}>{tag}</span>
                   ))}
@@ -859,7 +871,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
 
       {/* Modal Wrapper */}
       <div
-        className={`h-[100dvh] w-screen lg:h-[90vh] lg:w-[70vw] bg-white rounded-none lg:rounded-[50px] relative flex flex-col overflow-hidden transition-transform ease-out duration-500 ${
+        className={`h-[100dvh] w-screen lg:h-[90vh] lg:w-[70vw] bg-surface rounded-none lg:rounded-[50px] relative flex flex-col overflow-hidden transition-transform ease-out duration-500 ${
           show ? "scale-100" : "scale-95 lg:scale-75"
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -870,12 +882,12 @@ const EventsModal: React.FC<EventsModalProps> = ({
           className="hidden lg:flex absolute top-[3%] right-[2%] icon-wrapper cursor-pointer z-20"
           onClick={onClose}
         >
-          <img src={close} alt="" className="icon-dk scale-110" />
+          <img src={close} alt="" className="icon-dk icon-adapt scale-110" />
         </button>
 
-        <div className="lg:hidden sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-[#ECECEC] px-4 py-3">
+        <div className="lg:hidden sticky top-0 z-20 bg-surface-elevated backdrop-blur-sm border-b border-subtle px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-semibold truncate">
+            <h2 className="text-heading-md font-semibold text-ink truncate">
               {event?.themeTopic ?? event?.title ?? "Event"}
             </h2>
             <button
@@ -884,7 +896,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
               onClick={onClose}
               aria-label="Close event modal"
             >
-              <img src={close} alt="" className="icon-dk scale-110" />
+              <img src={close} alt="" className="icon-dk icon-adapt scale-110" />
             </button>
           </div>
 

@@ -260,11 +260,14 @@ const Home: React.FC = () => {
       }
       ref={homeRef}
     >
+      {/* MAIN NAVIGATION */}
       <Navbar navPages={homeNavPages} />
+
+      {/* INTRO SKIP BUTTON */}
       <button
         type="button"
         onClick={handleSkipIntro}
-        className={`absolute left-6 top-6 z-30 flex items-center gap-2 rounded-full  border-white border-[1.5px] p-2 text-sm text-white transition-all ease-out duration-300 outline-0 cursor-pointer ${
+        className={`absolute left-6 top-6 z-30 flex items-center gap-2 rounded-full border-white border-[1.5px] p-2 text-body-sm text-inverse transition-all ease-out duration-300 outline-0 cursor-pointer ${
           introAnimDone
             ? "-translate-x-[180%] opacity-0 pointer-events-none duration-1000"
             : "translate-x-0 opacity-100 duration-300"
@@ -274,6 +277,7 @@ const Home: React.FC = () => {
         <span>Skip</span>
       </button>
 
+      {/* INTRO SLIDES STACK */}
       {introSlides.map((img, i) => (
         <div
           key={i}
@@ -285,13 +289,14 @@ const Home: React.FC = () => {
             alt="reveal-image"
           />
           <div className="h-full w-full flex items-center justify-center relative z-0 bg-[rgba(0,0,0,.3)]">
-            <h1 className="reveal-text relative z-0 p-2 text-5xl sm:text-7xl text-white overflow-hidden">
+            <h1 className="reveal-text relative z-0 p-2 text-display text-inverse overflow-hidden">
               {img.label}
             </h1>
           </div>
         </div>
       ))}
 
+      {/* HERO COPY + OVERLAY */}
       <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
         {/* <div className="flex justify-around absolute left-0 w-full">
           <div className="bg-[#0000ff89] rounded-full h-70 w-100  "></div>
@@ -302,10 +307,10 @@ const Home: React.FC = () => {
         {introHeroTxt[1].header.map((h, i) => (
           <div
             key={i}
-            className={`text-split text-split-heading text-5xl font-bold ${
+            className={`text-split text-split-heading text-display font-bold ${
               introAnimDone
                 ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
-                : "text-white"
+                : "text-inverse"
             }`}
           >
             {h}
@@ -314,7 +319,7 @@ const Home: React.FC = () => {
         {introHeroTxt[1].secondary.map((s, i) => (
           <div
             key={i}
-            className="text-split text-split-secondary text-white text-lg"
+            className="text-split text-split-secondary text-inverse text-body-lg"
           >
             {s}
           </div>

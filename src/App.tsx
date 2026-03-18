@@ -11,6 +11,9 @@ import Events from "./pages/Events";
 import Family from "./pages/Family";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
+import ThemeToggle from "./components/ThemeToggle";
+import Gallery from "./components/Gallery";
+// import ImmersiveWeek from "./components/ImmersiveWeek";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
 
@@ -77,36 +80,49 @@ function App() {
   }, [location.pathname, setCurrSection]);
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <>
-            <Home />
-            <Testimonials />
-            <Footer />
-          </>
-        }
-      />
-      <Route
-        path="/events"
-        element={
-          <>
-            <Events />
-            <Footer />
-          </>
-        }
-      />
-      <Route
-        path="/family"
-        element={
-          <>
-            <Family />
-            <Footer />
-          </>
-        }
-      />
-    </Routes>
+    <>
+      <ThemeToggle />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              {/* HOME PAGE */}
+              <Home />
+              {/* <ImmersiveWeek /> */}
+              {/* GALLERY PREVIEW */}
+              <Gallery />
+              {/* TESTIMONIALS */}
+              <Testimonials />
+              {/* SITE FOOTER */}
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <>
+              {/* EVENTS PAGE */}
+              <Events />
+              {/* SITE FOOTER */}
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/family"
+          element={
+            <>
+              {/* FAMILY PAGE */}
+              <Family />
+              {/* SITE FOOTER */}
+              <Footer />
+            </>
+          }
+        />
+      </Routes>
+    </>
   );
 }
 

@@ -33,7 +33,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     .filter(Boolean)
     .join(" ");
   const avatarWrapperClassName = [
-    "h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[#EAEAEA] ring-1 ring-black/10",
+    "h-14 w-14 shrink-0 overflow-hidden rounded-full bg-surface-muted ring-1 ring-[color:var(--border)]",
     avatarClassName,
   ]
     .filter(Boolean)
@@ -42,16 +42,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     .filter(Boolean)
     .join(" ");
   const titleClassName = [
-    "truncate text-lg font-medium leading-tight text-black",
+    "truncate text-heading-xs font-medium leading-tight text-ink",
     nameClassName,
   ]
     .filter(Boolean)
     .join(" ");
-  const detailsClassNames = ["mt-1 text-sm text-[#555]", detailsClassName]
+  const detailsClassNames = ["mt-1 text-body-sm text-muted", detailsClassName]
     .filter(Boolean)
     .join(" ");
   const metaClassNames = [
-    "mt-1.5 flex items-center gap-2 flex-wrap text-xs text-[#666]",
+    "mt-1.5 flex items-center gap-2 flex-wrap text-caption text-subtle",
     metaClassName,
   ]
     .filter(Boolean)

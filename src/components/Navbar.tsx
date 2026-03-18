@@ -74,13 +74,22 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   }, [showAuthNotice]);
 
   const resolveNavTheme = useCallback((): NavTheme => {
+    const globalTheme = document.documentElement.dataset.theme;
+
+    if (globalTheme === "dark") {
+      return "dark";
+    }
+
     if (location.pathname !== "/") {
       return "light";
     }
 
     const navBottom = navRef.current?.getBoundingClientRect().bottom ?? 68;
     const probeY = Math.max(0, Math.min(window.innerHeight - 1, navBottom + 8));
-    const probeX = Math.max(0, Math.min(window.innerWidth - 1, window.innerWidth / 2));
+    const probeX = Math.max(
+      0,
+      Math.min(window.innerWidth - 1, window.innerWidth / 2),
+    );
     const probeElement = document.elementFromPoint(probeX, probeY);
     const themedParent = probeElement?.closest<HTMLElement>("[data-nav-theme]");
     const theme = themedParent?.dataset.navTheme;
@@ -96,10 +105,12 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
     updateNavTheme();
     window.addEventListener("scroll", updateNavTheme, { passive: true });
     window.addEventListener("resize", updateNavTheme);
+    window.addEventListener("themechange", updateNavTheme);
 
     return () => {
       window.removeEventListener("scroll", updateNavTheme);
       window.removeEventListener("resize", updateNavTheme);
+      window.removeEventListener("themechange", updateNavTheme);
     };
   }, [resolveNavTheme]);
 
@@ -143,46 +154,44 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   const darkTheme = navTheme === "dark";
   const shellThemeClass = darkTheme
     ? isScrolling
-      ? "bg-black/15 backdrop-blur-sm"
+      ? "bg-black/20 backdrop-blur-sm"
       : "bg-transparent"
-    : "bg-white/80 backdrop-blur-md border-b border-black/10 shadow-[0_6px_24px_rgba(0,0,0,0.08)]";
+    : "bg-surface-elevated backdrop-blur-md border-b border-subtle shadow-[0_6px_24px_rgba(0,0,0,0.08)]";
 
-  const textClass = darkTheme ? "text-white" : "text-[#111]";
+  const textClass = darkTheme ? "text-inverse" : "text-ink";
   const pageBtnDefaultClass = darkTheme
-    ? "text-white hover:bg-[rgba(255,255,255,0.16)]"
-    : "text-[#111] hover:bg-[rgba(0,0,0,0.09)]";
+    ? "text-inverse hover:bg-white/15"
+    : "text-ink hover:bg-black/10";
   const pageBtnActiveClass = darkTheme
-    ? "bg-[rgba(255,255,255,0.22)] text-white"
-    : "bg-[#111] text-white";
+    ? "bg-white/20 text-inverse"
+    : "bg-contrast text-inverse";
   const sectionBtnDefaultClass = darkTheme
-    ? "text-white/95 hover:bg-[rgba(255,255,255,0.14)]"
-    : "text-[#111] hover:bg-[rgba(0,0,0,0.08)]";
+    ? "text-inverse opacity-90 hover:bg-white/10"
+    : "text-ink hover:bg-black/5";
   const sectionBtnActiveClass = darkTheme
-    ? "bg-[rgba(255,255,255,0.2)] text-white"
-    : "bg-[#111] text-white";
-  const borderClass = darkTheme ? "border-white" : "border-black/20";
-  const menuBarClass = darkTheme ? "bg-white" : "bg-[#111]";
-  const dropdownPanelClass = darkTheme
-    ? "border-white/20 bg-black/75 backdrop-blur-xl"
-    : "border-black/10 bg-white/95 backdrop-blur-xl";
+    ? "bg-white/18 text-inverse"
+    : "bg-contrast text-inverse";
+  const borderClass = "border-strong";
+  const menuBarClass = darkTheme ? "bg-inverse" : "bg-contrast";
+  const dropdownPanelClass =
+    "border border-strong bg-surface-elevated backdrop-blur-xl";
   const mobileSheetClass = darkTheme
-    ? "border-l border-white/15 bg-[#0e0e10]/95 text-white"
-    : "border-l border-black/10 bg-white text-[#111]";
-  const mobileCardClass = darkTheme
-    ? "border-white/15 bg-[rgba(255,255,255,0.02)]"
-    : "border-black/10 bg-[#f7f7f7]";
+    ? "border-l border-strong bg-surface-elevated text-inverse"
+    : "border-l border-subtle bg-surface text-ink";
+  const mobileCardClass = "border-subtle bg-surface-muted";
 
   // Keep intro-gated visibility only on home route.
   const shouldShowNavbar = location.pathname !== "/" || introAnimDone;
 
   return (
     <>
+      {/* DESKTOP / TOP NAV BAR */}
       <div
         ref={navRef}
         className={`fixed z-[90] flex w-full ${shouldShowNavbar ? "top-0" : "-top-40"} ${shellThemeClass} transition-all duration-700`}
       >
         <div className="w-full p-2 px-4 md:px-8 flex justify-between items-center gap-4">
-          <p className={`${textClass} text-lg md:text-3xl truncate`}>
+          <p className={`${textClass} text-heading-fluid truncate`}>
             Christian Leaders
           </p>
 
@@ -201,7 +210,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
                 >
                   <button
                     type="button"
-                    className={`${isPageActive ? pageBtnActiveClass : pageBtnDefaultClass} rounded-[15px] cursor-pointer px-3 py-2 duration-300 flex items-center gap-2`}
+                    className={`${isPageActive ? pageBtnActiveClass : pageBtnDefaultClass} rounded-[15px] cursor-pointer px-3 py-2 duration-300 flex items-center gap-2 text-body-sm`}
                     onClick={() => handlePageClick(page)}
                   >
                     <span>{page.label}</span>
@@ -222,7 +231,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
                             <button
                               type="button"
                               key={section.id}
-                              className={`${isActiveSection ? sectionBtnActiveClass : sectionBtnDefaultClass} w-full rounded-xl px-3 py-2 text-left text-sm transition-colors duration-200`}
+                              className={`${isActiveSection ? sectionBtnActiveClass : sectionBtnDefaultClass} w-full rounded-xl px-3 py-2 text-left text-body-sm transition-colors duration-200`}
                               onClick={() => handleSectionClick(page, section)}
                             >
                               {section.label}
@@ -238,7 +247,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
           </div>
 
           <button
-            className={`hidden md:flex login-btn outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer`}
+            className={`hidden md:flex login-btn outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer text-body-sm`}
             onClick={() => setShowAuthNotice(true)}
             type="button"
           >
@@ -254,7 +263,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
             <button
               type="button"
               onClick={() => setShowAuthNotice(true)}
-              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-[#f0f0f0] duration-300`}
+              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
             >
               <img
                 src={login}
@@ -265,7 +274,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
 
             <button
               type="button"
-              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-[#f0f0f0] duration-300`}
+              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open navigation menu"
             >
@@ -282,11 +291,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
         </div>
 
         <div
-          className={`absolute right-4 md:right-8 top-[calc(100%+8px)] rounded-xl border px-3 py-2 text-xs transition-all duration-300 ${
-            darkTheme
-              ? "border-white/40 bg-black/70 text-white"
-              : "border-black/10 bg-white/90 text-[#111]"
-          } ${
+          className={`absolute right-4 md:right-8 top-[calc(100%+8px)] rounded-xl border border-subtle bg-surface-elevated px-3 py-2 text-caption text-ink transition-all duration-300 ${
             showAuthNotice
               ? "translate-y-0 opacity-100"
               : "-translate-y-2 opacity-0 pointer-events-none"
@@ -296,6 +301,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
         </div>
       </div>
 
+      {/* MOBILE MENU OVERLAY */}
       <div
         className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
           mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none"
@@ -316,13 +322,13 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
           }`}
         >
           <div className="flex items-center justify-between px-4 py-4 border-b border-inherit">
-            <p className="text-sm tracking-[0.08em] uppercase opacity-80">
+            <p className="text-caption tracking-[0.08em] uppercase opacity-80">
               Navigate
             </p>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(false)}
-              className="h-9 w-9 rounded-full hover:bg-[#f0f0f0] duration-300 border-inherit flex items-center justify-center"
+              className="h-9 w-9 rounded-full hover:bg-surface-muted duration-300 border-inherit flex items-center justify-center"
               aria-label="Close navigation menu"
             >
               <span className="relative h-3.5 w-3.5 block">
@@ -350,7 +356,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
                   <div className="flex items-center gap-2 px-2 py-2">
                     <button
                       type="button"
-                      className={`${isPageActive ? pageBtnActiveClass : pageBtnDefaultClass} flex-1 rounded-xl px-3 py-2.5 text-left text-base transition-colors duration-200`}
+                      className={`${isPageActive ? pageBtnActiveClass : pageBtnDefaultClass} flex-1 rounded-xl px-3 py-2.5 text-left text-body transition-colors duration-200`}
                       onClick={() => handlePageClick(page)}
                     >
                       {page.label}
@@ -393,7 +399,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
                             <button
                               type="button"
                               key={section.id}
-                              className={`${isActiveSection ? sectionBtnActiveClass : sectionBtnDefaultClass} rounded-xl px-3 py-2 text-left text-sm transition-colors duration-200`}
+                              className={`${isActiveSection ? sectionBtnActiveClass : sectionBtnDefaultClass} rounded-xl px-3 py-2 text-left text-body-sm transition-colors duration-200`}
                               onClick={() => handleSectionClick(page, section)}
                             >
                               {section.label}

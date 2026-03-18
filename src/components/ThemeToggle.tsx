@@ -6,11 +6,17 @@ type Theme = "dark" | "light";
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = React.useState<Theme>(() => {
     if (typeof window === "undefined") {
-      return "dark";
+      return "light";
     }
 
     const storedTheme = window.localStorage.getItem("theme");
-    return storedTheme === "light" ? "light" : "dark";
+    if (storedTheme === "dark" || storedTheme === "light") {
+      return storedTheme;
+    }
+
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   });
 
   React.useEffect(() => {
@@ -20,19 +26,19 @@ const ThemeToggle: React.FC = () => {
     window.dispatchEvent(new Event("themechange"));
   }, [theme]);
 
+  const nextTheme = theme === "dark" ? "light" : "dark";
+
   return (
     <button
       type="button"
-      className="theme-toggle"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      className="fixed bottom-4 left-4 z-[120] flex h-10 w-10 items-center justify-center rounded-full border border-strong bg-surface-elevated text-ink shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
+      onClick={() => setTheme(nextTheme)}
+      aria-label={`Switch to ${nextTheme} mode`}
+      aria-pressed={theme === "dark"}
+      title={`Switch to ${nextTheme} mode`}
     >
-      <span className="theme-toggle__icon">
-        {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-      </span>
-      <span className="theme-toggle__label">
-        {theme === "dark" ? "Dark" : "Light"}
-      </span>
+      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+      <span className="sr-only">Switch theme</span>
     </button>
   );
 };

@@ -50,9 +50,9 @@
   z-index: 1;
   width: 100%;
   margin: 3px auto;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
   border-radius: 17px;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--surface-elevated);
   backdrop-filter: blur(10px);
 }
 

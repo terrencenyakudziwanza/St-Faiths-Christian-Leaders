@@ -43,6 +43,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
 
   return (
     <div className="flex items-center w-full gap-8 flex-col lg:flex-row">
+      {/* EVENT MEDIA STACK */}
       <button
         type="button"
         className="relative h-[50vh] w-[80%] sm:w-[60%] lg:w-100 shrink-0 text-left"
@@ -64,38 +65,43 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
         </div>
       </button>
 
-      <div className="rounded-[40px] w-[60vw] h-[50vh]  bg-[rgb(240,240,240)] flex-1 min-w-0 p-6 flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row  gap-4 items-center">
-          <div className="flex items-center shrink-0">
-            {visibleLeaders.map((leader, index) => (
-              <img
-                key={`${event.id}-${leader.component}`}
-                src={leader.avatarUrl ?? fallbackProfile}
-                className={`${index === 0 ? "" : "-ml-3"} rounded-full h-12 w-12 object-cover border-2 border-[rgb(240,240,240)]`}
-                alt={`${leader.name} (${leader.roleLabel})`}
-              />
-            ))}
+      {/* EVENT DETAILS PANEL */}
+      <div className="rounded-[40px] w-[60vw] h-[50vh] bg-surface-muted flex-1 min-w-0 p-6 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row  gap-4 items-center">
+            <div className="flex items-center shrink-0">
+              {visibleLeaders.map((leader, index) => (
+                <img
+                  key={`${event.id}-${leader.component}`}
+                  src={leader.avatarUrl ?? fallbackProfile}
+                  className={`${index === 0 ? "" : "-ml-3"} rounded-full h-12 w-12 object-cover border-2 border-[color:var(--surface-muted)]`}
+                  alt={`${leader.name} (${leader.roleLabel})`}
+                />
+              ))}
             {remainingLeaderCount > 0 && (
-              <div className="-ml-3 rounded-full h-12 w-12 border-2 border-[rgb(240,240,240)] bg-[#111] text-white flex flex-col items-center justify-center">
-                <span className="text-[11px] font-semibold leading-none">
+              <div className="-ml-3 rounded-full h-12 w-12 border-2 border-[color:var(--surface-muted)] bg-contrast text-inverse flex flex-col items-center justify-center">
+                <span className="text-micro font-semibold leading-none">
                   +{remainingLeaderCount}
                 </span>
-                <span className="text-[8px] leading-none tracking-[0.08em] uppercase opacity-90">
+                <span className="text-pico leading-none tracking-[0.08em] uppercase opacity-90">
                   more
                 </span>
               </div>
             )}
           </div>
           <div className="flex flex-col">
-            <h2 className="text-xl text-black font-semibold">
+            <h2 className="text-heading-sm text-ink font-semibold">
               {event.themeTopic}
             </h2>
-            <p className="text-[#333]">{subtitle}</p>
+            <p className="text-body-sm text-muted">{subtitle}</p>
           </div>
         </div>
 
-        <p className="text-[#666] line-clamp-3 text-sm sm:text-md">{event.summary}</p>
-        <p className="text-[#666] text-sm">{formatLongDate(event.eventDate)}</p>
+        <p className="text-body text-subtle line-clamp-3">
+          {event.summary}
+        </p>
+        <p className="text-body-sm text-subtle">
+          {formatLongDate(event.eventDate)}
+        </p>
       </div>
     </div>
   );
