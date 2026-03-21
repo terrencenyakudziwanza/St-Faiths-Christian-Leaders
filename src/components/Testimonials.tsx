@@ -108,29 +108,18 @@ const Testimonials: React.FC = () => {
   return (
     <section
       id="testimonials-section"
-      className="min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15"
+      data-nav-theme="light"
+      className="relative min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15"
     >
+      <div className="section-fade-top"></div>
+      <div className="section-fade-bottom"></div>
       {/* SECTION HEADER */}
-      <h2 className="text-heading-xl font-bold text-center text-ink">
+      <h2 className="relative z-10 text-heading-xl font-bold text-center text-ink">
         Testimonials
       </h2>
 
       {/* MARQUEE COLUMNS */}
-      <div className="h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 relative gap-6 overflow-x-hidden">
-        <div
-          className="absolute left-0 right-0 top-0 z-30 pointer-events-none h-[10vh]"
-          style={{
-            background:
-              "linear-gradient(to bottom, var(--page-fade-strong) 0%, var(--page-fade-soft) 55%, rgba(0,0,0,0) 100%)",
-          }}
-        ></div>
-        <div
-          className="absolute left-0 right-0 bottom-0 z-30 pointer-events-none h-[10vh]"
-          style={{
-            background:
-              "linear-gradient(to top, var(--page-fade-strong) 0%, var(--page-fade-soft) 55%, rgba(0,0,0,0) 100%)",
-          }}
-        ></div>
+      <div className="relative z-10 h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-hidden">
         {columns.map((testimonialCol, i) => (
           <div
             className={`testimonial-marquee relative z-[1] ${i === 1 ? "hidden md:block" : ""} ${i === 2 ? "hidden lg:block" : ""}`}

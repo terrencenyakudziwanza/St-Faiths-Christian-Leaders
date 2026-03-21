@@ -1,17 +1,85 @@
 import React from "react";
-import close from "../assets/icons/close.svg";
+import { Heart, X } from "lucide-react";
 import { boardMembers } from "../data/boardMembers";
 
 type GalleryTile = {
   src: string;
   alt: string;
+  description: string;
+  tags: string[];
+  likes: number;
+  ratio: string;
 };
 
+const galleryMeta: Array<{
+  description: string;
+  tags: string[];
+  likes: number;
+  ratio: string;
+}> = [
+  {
+    description: "Intercession at first light",
+    tags: ["#intercession", "#dawn"],
+    likes: 128,
+    ratio: "4 / 5",
+  },
+  {
+    description: "Praise rises in the sanctuary",
+    tags: ["#praise", "#worship"],
+    likes: 214,
+    ratio: "3 / 4",
+  },
+  {
+    description: "Bible study in focus",
+    tags: ["#biblestudy", "#discipleship"],
+    likes: 176,
+    ratio: "1 / 1",
+  },
+  {
+    description: "Healing prayer moment",
+    tags: ["#healing", "#miraculous"],
+    likes: 203,
+    ratio: "2 / 3",
+  },
+  {
+    description: "Hands lifted in surrender",
+    tags: ["#worship", "#revival"],
+    likes: 189,
+    ratio: "3 / 4",
+  },
+  {
+    description: "Intercession circle",
+    tags: ["#prayer", "#intercession"],
+    likes: 162,
+    ratio: "4 / 5",
+  },
+  {
+    description: "Scripture alive",
+    tags: ["#word", "#bible"],
+    likes: 147,
+    ratio: "1 / 1",
+  },
+  {
+    description: "Joyful praise",
+    tags: ["#praise", "#community"],
+    likes: 219,
+    ratio: "3 / 5",
+  },
+];
+
 const buildGalleryTiles = (): GalleryTile[] => {
-  const images = boardMembers.map((member) => ({
-    src: member.imageSrc,
-    alt: member.name,
-  }));
+  const images = boardMembers.map((member, index) => {
+    const meta = galleryMeta[index % galleryMeta.length];
+
+    return {
+      src: member.imageSrc,
+      alt: member.name,
+      description: meta.description,
+      tags: meta.tags,
+      likes: meta.likes,
+      ratio: meta.ratio,
+    };
+  });
 
   if (!images.length) {
     return [];
@@ -29,35 +97,137 @@ const buildGalleryTiles = (): GalleryTile[] => {
 interface GalleryModalProps {
   show: boolean;
   onClose: () => void;
+  tiles: GalleryTile[];
 }
 
-const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose }) => (
-  <div
-    className={`fixed inset-0 z-[150] flex items-center justify-center bg-[rgba(0,0,0,0.7)] transition-opacity duration-300 ${
-      show ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-    }`}
-    onClick={onClose}
-  >
-    <div
-      className={`relative h-[70vh] w-[92vw] max-w-[960px] rounded-[32px] border border-subtle bg-surface shadow-[0_24px_80px_rgba(0,0,0,0.35)] transition-transform duration-300 ${
-        show ? "scale-100" : "scale-95"
-      }`}
-      onClick={(event) => event.stopPropagation()}
-    >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full border border-subtle bg-surface-elevated hover:bg-surface-muted transition-colors"
-        aria-label="Close gallery modal"
-      >
-        <img src={close} alt="" className="icon-dk icon-adapt scale-110" />
-      </button>
+const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => {
+  const getColumnCount = React.useCallback(() => {
+    if (typeof window === "undefined") {
+      return 3;
+    }
 
-      {/* EMPTY MODAL BODY */}
-      <div className="h-full w-full"></div>
+    const width = window.innerWidth;
+    if (width < 640) {
+      return 1;
+    }
+    if (width < 960) {
+      return 2;
+    }
+    if (width < 1280) {
+      return 3;
+    }
+
+    return 4;
+  }, []);
+
+  const [columnsCount, setColumnsCount] = React.useState(getColumnCount);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setColumnsCount(getColumnCount());
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [getColumnCount]);
+
+  const columns = React.useMemo(() => {
+    const cols = Array.from({ length: columnsCount }, () => [] as GalleryTile[]);
+
+    tiles.forEach((tile, index) => {
+      cols[index % columnsCount].push(tile);
+    });
+
+    return cols;
+  }, [tiles, columnsCount]);
+
+  const columnOffsets = [0, 28, 12, 42];
+
+  return (
+    <div
+      className={`fixed inset-0 z-[150] flex items-center justify-center bg-[rgba(0,0,0,0.7)] transition-opacity duration-300 ${
+        show ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        className={`relative flex h-[100dvh] w-screen flex-col overflow-hidden rounded-none border border-subtle bg-surface shadow-[0_24px_90px_rgba(0,0,0,0.4)] transition-transform duration-300 lg:h-[90vh] lg:w-[90vw] lg:rounded-[36px] ${
+          show ? "scale-100" : "scale-95 lg:scale-90"
+        }`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-subtle bg-surface-elevated px-5 py-4 backdrop-blur-sm">
+          <div>
+            <p className="text-overline font-semibold text-accent">
+              Christian Leaders Gallery
+            </p>
+            <h3 className="text-heading-sm font-semibold text-ink">
+              Moments, prayers, and stories
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-subtle bg-surface transition-colors hover:bg-surface-muted"
+            aria-label="Close gallery modal"
+          >
+            <X className="h-5 w-5 text-ink" />
+          </button>
+        </div>
+
+        <div className="flex-1 min-h-0 w-full overflow-y-auto px-5 pb-10 pt-6 lg:px-8">
+          <div className="flex w-full gap-4">
+            {columns.map((column, columnIndex) => (
+              <div
+                key={`gallery-col-${columnIndex}`}
+                className="flex min-w-0 flex-1 flex-col gap-4"
+                style={{
+                  marginTop:
+                    columnsCount > 1
+                      ? `${columnOffsets[columnIndex % columnOffsets.length]}px`
+                      : "0px",
+                }}
+              >
+                {column.map((tile, tileIndex) => (
+                  <div
+                    key={`${tile.src}-${tileIndex}`}
+                    className="group relative overflow-hidden rounded-[22px] border border-subtle bg-surface-muted shadow-[0_16px_32px_rgba(0,0,0,0.16)]"
+                    style={{ aspectRatio: tile.ratio }}
+                  >
+                    <img
+                      src={tile.src}
+                      alt={tile.alt}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                      <div className="absolute left-4 right-4 bottom-4 text-inverse">
+                        <p className="text-body-sm font-semibold">
+                          {tile.description}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2 text-caption text-inverse opacity-80">
+                          {tile.tags.map((tag) => (
+                            <span key={`${tile.alt}-${tag}`}>{tag}</span>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-caption font-semibold">
+                          <Heart className="h-4 w-4 text-inverse" />
+                          <span>{tile.likes}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Gallery: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
@@ -101,6 +271,8 @@ const Gallery: React.FC = () => {
       data-nav-theme="dark"
       className="relative min-h-screen w-full overflow-hidden bg-page"
     >
+      <div className="section-fade-top"></div>
+      <div className="section-fade-bottom"></div>
       {/* MOVING GALLERY GRID */}
       <div className="gallery-grid">
         {[
@@ -109,22 +281,16 @@ const Gallery: React.FC = () => {
           "gallery-grid-row gallery-grid-row--fast",
         ].map((rowClass, rowIndex) => (
           <div key={`gallery-row-${rowIndex}`} className={rowClass}>
-            {rowTiles.map((tile, index) => (
-              <div
-                key={`${tile.key}-a-${index}`}
-                className="gallery-tile"
-              >
-                <img src={tile.src} alt={tile.alt} />
-              </div>
-            ))}
-            {rowTiles.map((tile, index) => (
-              <div
-                key={`${tile.key}-b-${index}`}
-                className="gallery-tile"
-              >
-                <img src={tile.src} alt={tile.alt} />
-              </div>
-            ))}
+            {Array.from({ length: 3 }).map((_, loopIndex) =>
+              rowTiles.map((tile, index) => (
+                <div
+                  key={`${tile.key}-${loopIndex}-${index}`}
+                  className="gallery-tile"
+                >
+                  <img src={tile.src} alt={tile.alt} />
+                </div>
+              )),
+            )}
           </div>
         ))}
       </div>
@@ -139,24 +305,28 @@ const Gallery: React.FC = () => {
             Christian Leaders Gallery
           </p>
           <h2 className="mt-4 text-display font-semibold text-inverse">
-            A Gallery Preview
+            Captured Moments
           </h2>
           <p className="mx-auto mt-4 text-body text-inverse opacity-80">
-            Explore a curated look at the moments, leaders, and stories that
-            shape the Christian Leaders family.
+            Explore the stories, services, and faces that shape the Christian
+            Leaders family.
           </p>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
             className="mt-6 inline-flex items-center justify-center rounded-full border border-subtle bg-surface-elevated px-5 py-2 text-body-sm font-semibold text-ink shadow-[0_14px_30px_rgba(0,0,0,0.25)] transition-transform duration-300 hover:-translate-y-0.5 hover:bg-contrast hover:text-inverse"
           >
-            Preview Gallery
+            Open Gallery
           </button>
         </div>
       </div>
 
       {/* GALLERY MODAL (EMPTY STATE) */}
-      <GalleryModal show={modalOpen} onClose={() => setModalOpen(false)} />
+      <GalleryModal
+        show={modalOpen}
+        onClose={() => setModalOpen(false)}
+        tiles={tiles}
+      />
     </section>
   );
 };

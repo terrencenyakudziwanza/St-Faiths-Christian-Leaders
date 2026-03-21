@@ -1,10 +1,6 @@
 import React from "react";
 
-import instagram from "../assets/icons/instagram.svg";
-import facebook from "../assets/icons/facebook.svg";
-import whatsapp from "../assets/icons/whatsapp.svg";
-import envelope from "../assets/icons/envelope.svg";
-import phone from "../assets/icons/phone.svg";
+import { Facebook, Instagram, Mail, MessageCircle, Phone } from "lucide-react";
 
 const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -17,7 +13,8 @@ const Footer: React.FC = () => {
       pageName: "Home",
       pageSections: [
         { sectionName: "Home", sectionId: "home-section" },
-        { sectionName: "About", sectionId: "about-section" },
+        { sectionName: "Focus", sectionId: "focus-section" },
+        { sectionName: "Week", sectionId: "week-section" },
         { sectionName: "Testimonials", sectionId: "testimonials-section" },
       ],
     },
@@ -25,7 +22,8 @@ const Footer: React.FC = () => {
       pageName: "Home",
       pageSections: [
         { sectionName: "Home", sectionId: "home-section" },
-        { sectionName: "About", sectionId: "about-section" },
+        { sectionName: "Focus", sectionId: "focus-section" },
+        { sectionName: "Week", sectionId: "week-section" },
         { sectionName: "Testimonials", sectionId: "testimonials-section" },
       ],
     },
@@ -33,7 +31,8 @@ const Footer: React.FC = () => {
       pageName: "Home",
       pageSections: [
         { sectionName: "Home", sectionId: "home-section" },
-        { sectionName: "About", sectionId: "about-section" },
+        { sectionName: "Focus", sectionId: "focus-section" },
+        { sectionName: "Week", sectionId: "week-section" },
         { sectionName: "Testimonials", sectionId: "testimonials-section" },
       ],
     },
@@ -71,35 +70,28 @@ const Footer: React.FC = () => {
 
           <div className="space-y-3 text-body-sm text-muted">
             <div className="flex items-center gap-3">
-              <img
-                src={phone}
-                className="h-4 w-4 opacity-70 icon-adapt"
-                alt=""
-              />
+              <Phone className="h-4 w-4 text-ink opacity-70" />
               <p>+263 000 000</p>
             </div>
 
             <div className="flex items-center gap-3">
-              <img
-                src={envelope}
-                className="h-4 w-4 opacity-70 icon-adapt"
-                alt=""
-              />
+              <Mail className="h-4 w-4 text-ink opacity-70" />
               <p>someemail@gmail.com</p>
             </div>
           </div>
 
           <div className="flex gap-3 pt-2">
-            {[instagram, facebook, whatsapp].map((icon, index) => (
+            {[
+              { Icon: Instagram, label: "Instagram" },
+              { Icon: Facebook, label: "Facebook" },
+              { Icon: MessageCircle, label: "WhatsApp" },
+            ].map(({ Icon, label }, index) => (
               <div
                 key={index}
                 className="group flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-subtle transition duration-300 hover:bg-surface-muted"
+                aria-label={label}
               >
-                <img
-                  src={icon}
-                  className="h-4 w-4 opacity-70 transition icon-adapt"
-                  alt=""
-                />
+                <Icon className="h-4 w-4 text-ink opacity-70 transition" />
               </div>
             ))}
           </div>

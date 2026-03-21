@@ -1,16 +1,18 @@
 import React from "react";
 
-import close from "../assets/icons/close.svg";
-import video from "../assets/icons/videocam.svg";
-import pic from "../assets/icons/image-fill.svg";
-import share from "../assets/icons/share.svg";
-import like from "../assets/icons/empty-heart 1.svg";
-import arrowDown from "../assets/icons/arrow-down.svg";
-import bookOpen from "../assets/icons/book-open.svg";
-import muteIcon from "../assets/icons/mute.svg";
-import volumeIcon from "../assets/icons/volume.svg";
-import pauseIcon from "../assets/icons/pause.svg";
-import playIcon from "../assets/icons/play-fill.svg";
+import {
+  BookOpen,
+  ChevronDown,
+  Heart,
+  Image,
+  Pause,
+  Play,
+  Share2,
+  Video,
+  Volume2,
+  VolumeX,
+  X,
+} from "lucide-react";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import ProfileCard from "./ProfileCard";
 
@@ -494,7 +496,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 likePulseVersion > 0 ? "like-button__heart--pulse" : ""
               }`}
             >
-            <img src={like} alt="" className="icon-dk icon-adapt scale-90" />
+            <Heart className="h-4 w-4 text-like" />
             </span>
           </button>
           <span className={countClassName}>{likeCount}</span>
@@ -510,7 +512,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             className="icon-wrapper bg-surface-muted cursor-pointer"
             aria-label="Share clip"
           >
-            <img src={share} alt="" className="icon-dk icon-adapt" />
+            <Share2 className="h-4 w-4 text-ink" />
           </button>
           <span className={countClassName}>{shareCount}</span>
         </div>
@@ -560,11 +562,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             : `${activeMedia === "video" ? activeButtonClass : inactiveButtonClass}`
         }
       >
-        <img
-          src={video}
-          className={activeMedia === "video" ? "icon scale-70" : "icon-dk icon-adapt"}
-          alt=""
-        />
+        <Video className="h-4 w-4" />
         {compact ? (
           <p className="font-semibold">{videoClips.length}</p>
         ) : (
@@ -588,11 +586,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
               }`
         }
       >
-        <img
-          src={pic}
-          className={activeMedia === "picture" ? "icon scale-70" : "icon-dk icon-adapt"}
-          alt=""
-        />
+        <Image className="h-4 w-4" />
         {compact ? (
           <p className="font-semibold">{pictureClips.length}</p>
         ) : (
@@ -640,7 +634,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-surface-muted shadow-[0_4px_12px_rgba(0,0,0,0.1)] flex items-center justify-center">
-                  <img src={bookOpen} alt="" className="icon-dk icon-adapt scale-90" />
+                  <BookOpen className="h-4 w-4 text-ink" />
                 </div>
                 <p className="text-body font-semibold text-ink">
                   {event?.themeScriptureReference ?? "John 15:5"}
@@ -775,11 +769,11 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 }}
                 className="absolute top-4 right-4 z-20 rounded-full bg-surface-elevated px-3 py-1 text-caption font-semibold text-ink flex items-center gap-1.5 border border-subtle"
               >
-                <img
-                  src={isMuted ? muteIcon : volumeIcon}
-                  alt=""
-                  className="h-3.5 w-3.5 icon-adapt"
-                />
+                {isMuted ? (
+                  <VolumeX className="h-4 w-4 text-ink" />
+                ) : (
+                  <Volume2 className="h-4 w-4 text-ink" />
+                )}
                 <span>{isMuted ? "Muted" : "Sound"}</span>
               </button>
               <video
@@ -807,13 +801,11 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 }`}
               >
                 <div className="clip-pause-indicator__wrapper">
-                  <img
-                    src={
-                      clipIndicator?.action === "pause" ? pauseIcon : playIcon
-                    }
-                    alt=""
-                    className="clip-pause-indicator__icon"
-                  />
+                  {clipIndicator?.action === "pause" ? (
+                    <Pause className="clip-pause-indicator__icon" />
+                  ) : (
+                    <Play className="clip-pause-indicator__icon" />
+                  )}
                 </div>
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
@@ -853,7 +845,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
           }}
           className="h-11 w-11 rounded-full bg-white shadow-md flex items-center justify-center"
         >
-          <img src={arrowDown} alt="" className="icon-dk rotate-180" />
+          <ChevronDown className="h-5 w-5 text-ink rotate-180" />
         </button>
 
         {/* ScrollDown Button */}
@@ -865,7 +857,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
           }}
           className="h-11 w-11 rounded-full bg-white shadow-md flex items-center justify-center"
         >
-          <img src={arrowDown} alt="" className="icon-dk" />
+          <ChevronDown className="h-5 w-5 text-ink" />
         </button>
       </div>
 
@@ -882,7 +874,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
           className="hidden lg:flex absolute top-[3%] right-[2%] icon-wrapper cursor-pointer z-20"
           onClick={onClose}
         >
-          <img src={close} alt="" className="icon-dk icon-adapt scale-110" />
+          <X className="h-5 w-5 text-ink" />
         </button>
 
         <div className="lg:hidden sticky top-0 z-20 bg-surface-elevated backdrop-blur-sm border-b border-subtle px-4 py-3">
@@ -896,7 +888,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
               onClick={onClose}
               aria-label="Close event modal"
             >
-              <img src={close} alt="" className="icon-dk icon-adapt scale-110" />
+              <X className="h-5 w-5 text-ink" />
             </button>
           </div>
 

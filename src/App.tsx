@@ -17,11 +17,12 @@ import Gallery from "./components/Gallery";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
 
-type HomeSectionName = "Home" | "About" | "Testimonials";
+type HomeSectionName = "Home" | "Focus" | "Week" | "Testimonials";
 
 const sectionIds: Record<HomeSectionName, string> = {
   Home: "home-section",
-  About: "about-section",
+  Focus: "focus-section",
+  Week: "week-section",
   Testimonials: "testimonials-section",
 };
 

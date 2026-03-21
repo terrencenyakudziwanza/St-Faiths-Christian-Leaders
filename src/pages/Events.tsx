@@ -3,7 +3,7 @@ import EventCard from "../components/EventCard";
 import EventsModal from "../components/EventsModal";
 import ShortCard from "../components/ShortCard";
 import LeaderDropdown from "../components/LeaderDropdown";
-import fire from "../assets/icons/fire.svg";
+import { Calendar, Flame, Search } from "lucide-react";
 
 import { fetchEventMedia, fetchEvents } from "../services/events";
 import { fetchShorts } from "../services/shorts";
@@ -197,7 +197,9 @@ const Events: React.FC = () => {
           {/* SEARCH INPUT */}
 
           <div className="events-search-input">
-            <span className="events-search-icon text-heading-xs">🔍</span>
+            <span className="events-search-icon text-heading-xs">
+              <Search className="h-4 w-4 text-ink" />
+            </span>
 
             <input
               type="text"
@@ -243,7 +245,9 @@ const Events: React.FC = () => {
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
               />
-              <span className="text-heading-xs">📅</span>
+              <span className="text-heading-xs">
+                <Calendar className="h-4 w-4 text-ink" />
+              </span>
             </label>
           </div>
         </div>
@@ -293,7 +297,7 @@ const Events: React.FC = () => {
         <section id="shorts-section" className="p-4 pt-8 w-full max-w-325">
           <div className="w-full h-px bg-[color:var(--border)]" />
           <div className="flex justify-center items-center gap-4 py-8">
-            <img src={fire} alt="" className="icon-dk icon-adapt scale-150" />
+            <Flame className="h-6 w-6 text-ink" />
             <h2 className="text-heading-xl font-bold">
               Latest Shorts From Media
             </h2>

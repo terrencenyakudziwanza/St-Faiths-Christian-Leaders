@@ -6,8 +6,10 @@ import { introHeroTxt, introImages } from "../data";
 import gsap from "gsap";
 import { CustomEase, SplitText } from "gsap/all";
 import useStore from "../store";
-import arrowDown from "../assets/icons/arrow-down.svg";
+import { ChevronDown } from "lucide-react";
 import type { NavPage } from "../types/nav";
+import IntercessionSection from "../components/IntercessionSection";
+import WeekInLeaders from "../components/WeekInLeaders";
 
 const homeNavPages: NavPage[] = [
   {
@@ -16,7 +18,8 @@ const homeNavPages: NavPage[] = [
     path: "/",
     sections: [
       { id: "Home", label: "Home", sectionId: "home-section" },
-      { id: "About", label: "About", sectionId: "about-section" },
+      { id: "Focus", label: "Focus", sectionId: "focus-section" },
+      { id: "Week", label: "Week", sectionId: "week-section" },
       {
         id: "Testimonials",
         label: "Testimonials",
@@ -247,85 +250,86 @@ const Home: React.FC = () => {
   };
 
   return (
-    <section
-      id="home-section"
-      data-nav-theme="dark"
-      className="h-screen w-full relative flex justify-center items-center overflow-hidden bg-cover bg-center bg-fixed"
-      style={
-        fixedBgImage
-          ? {
-              backgroundImage: `url(${fixedBgImage})`,
-            }
-          : undefined
-      }
-      ref={homeRef}
-    >
-      {/* MAIN NAVIGATION */}
-      <Navbar navPages={homeNavPages} />
-
-      {/* INTRO SKIP BUTTON */}
-      <button
-        type="button"
-        onClick={handleSkipIntro}
-        className={`absolute left-6 top-6 z-30 flex items-center gap-2 rounded-full border-white border-[1.5px] p-2 text-body-sm text-inverse transition-all ease-out duration-300 outline-0 cursor-pointer ${
-          introAnimDone
-            ? "-translate-x-[180%] opacity-0 pointer-events-none duration-1000"
-            : "translate-x-0 opacity-100 duration-300"
-        }`}
+    <>
+      <section
+        id="home-section"
+        data-nav-theme="dark"
+        className="h-screen w-full relative flex justify-center items-center overflow-hidden bg-cover bg-center bg-fixed"
+        style={
+          fixedBgImage
+            ? {
+                backgroundImage: `url(${fixedBgImage})`,
+              }
+            : undefined
+        }
+        ref={homeRef}
       >
-        <img src={arrowDown} alt="" className="h-2 w-2 -rotate-90 icon" />
-        <span>Skip</span>
-      </button>
+        {/* MAIN NAVIGATION */}
+        <Navbar navPages={homeNavPages} />
+        <div className="section-fade-top"></div>
+        <div className="section-fade-bottom"></div>
 
-      {/* INTRO SLIDES STACK */}
-      {introSlides.map((img, i) => (
-        <div
-          key={i}
-          className={`introImg absolute inset-0 z-0 flex items-center justify-center ${i === 0 ? "opacity-100" : "opacity-0"}`}
+        {/* INTRO SKIP BUTTON */}
+        <button
+          type="button"
+          onClick={handleSkipIntro}
+          className={`absolute left-6 top-6 z-30 flex items-center gap-2 rounded-full border-white border-[1.5px] p-2 text-body-sm text-inverse transition-all ease-out duration-300 outline-0 cursor-pointer ${
+            introAnimDone
+              ? "-translate-x-[180%] opacity-0 pointer-events-none duration-1000"
+              : "translate-x-0 opacity-100 duration-300"
+          }`}
         >
-          <img
-            src={img.img}
-            className="absolute inset-0 h-full w-full object-cover z-0 scale-150"
-            alt="reveal-image"
-          />
-          <div className="h-full w-full flex items-center justify-center relative z-0 bg-[rgba(0,0,0,.3)]">
-            <h1 className="reveal-text relative z-0 p-2 text-display text-inverse overflow-hidden">
-              {img.label}
-            </h1>
+          <ChevronDown className="h-3 w-3 -rotate-90 text-inverse" />
+          <span>Skip</span>
+        </button>
+
+        {/* INTRO SLIDES STACK */}
+        {introSlides.map((img, i) => (
+          <div
+            key={i}
+            className={`introImg absolute inset-0 z-0 flex items-center justify-center ${i === 0 ? "opacity-100" : "opacity-0"}`}
+          >
+            <img
+              src={img.img}
+              className="absolute inset-0 h-full w-full object-cover z-0 scale-150"
+              alt="reveal-image"
+            />
+            <div className="h-full w-full flex items-center justify-center relative z-0 bg-[rgba(0,0,0,.3)]">
+              <h1 className="reveal-text relative z-0 p-2 text-display text-inverse overflow-hidden">
+                {img.label}
+              </h1>
+            </div>
           </div>
+        ))}
+
+        {/* HERO COPY + OVERLAY */}
+        <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
+          {introHeroTxt[1].header.map((h, i) => (
+            <div
+              key={i}
+              className={`text-split text-split-heading font-bold text-[clamp(2.4rem,6.2vw,4.8rem)] leading-[0.95] ${
+                introAnimDone
+                  ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
+                  : "text-inverse"
+              }`}
+            >
+              {h}
+            </div>
+          ))}
+          {introHeroTxt[1].secondary.map((s, i) => (
+            <div
+              key={i}
+              className="text-split text-split-secondary text-inverse text-body-lg"
+            >
+              {s}
+            </div>
+          ))}
         </div>
-      ))}
+      </section>
 
-      {/* HERO COPY + OVERLAY */}
-      <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
-        {/* <div className="flex justify-around absolute left-0 w-full">
-          <div className="bg-[#0000ff89] rounded-full h-70 w-100  "></div>
-          <div className="bg-[#0000ff89] rounded-full h-70 w-100 absolute top-full "></div>
-          <div className="bg-[#0000ff89] rounded-full h-70 w-100 absolute top-full "></div>
-        </div> */}
-
-        {introHeroTxt[1].header.map((h, i) => (
-          <div
-            key={i}
-            className={`text-split text-split-heading text-display font-bold ${
-              introAnimDone
-                ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
-                : "text-inverse"
-            }`}
-          >
-            {h}
-          </div>
-        ))}
-        {introHeroTxt[1].secondary.map((s, i) => (
-          <div
-            key={i}
-            className="text-split text-split-secondary text-inverse text-body-lg"
-          >
-            {s}
-          </div>
-        ))}
-      </div>
-    </section>
+      <IntercessionSection />
+      <WeekInLeaders />
+    </>
   );
 };
 

@@ -2,7 +2,7 @@ import React from "react";
 
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
-import arrowDown from "../assets/icons/arrow-down.svg";
+import { ChevronDown } from "lucide-react";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
@@ -593,7 +593,7 @@ const Family: React.FC = () => {
                   }`}
                   aria-label="Rotate board backward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk icon-adapt rotate-90" />
+                  <ChevronDown className="h-4 w-4 text-ink rotate-90" />
                 </button>
 
                 <button
@@ -634,7 +634,7 @@ const Family: React.FC = () => {
                   }`}
                   aria-label="Rotate board forward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk icon-adapt -rotate-90" />
+                  <ChevronDown className="h-4 w-4 text-ink -rotate-90" />
                 </button>
               </div>
             </>
@@ -668,7 +668,7 @@ const Family: React.FC = () => {
                   }`}
                   aria-label="Rotate board backward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk icon-adapt rotate-180" />
+                  <ChevronDown className="h-4 w-4 text-ink rotate-180" />
                 </button>
 
                 <button
@@ -709,7 +709,7 @@ const Family: React.FC = () => {
                   }`}
                   aria-label="Rotate board forward"
                 >
-                  <img src={arrowDown} alt="" className="icon-dk icon-adapt" />
+                  <ChevronDown className="h-4 w-4 text-ink" />
                 </button>
               </div>
 

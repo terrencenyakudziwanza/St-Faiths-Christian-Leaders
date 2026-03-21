@@ -1,10 +1,10 @@
 import React from "react";
 import type { EventItem } from "../types/domain";
 import { formatLongDate } from "../utils/date";
+import { Play } from "lucide-react";
 
 import fallbackImg from "../assets/images/hand-writing.jpg";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
-import play from "../assets/icons/play-fill.svg";
 
 interface EventsCardProps {
   event: EventItem;
@@ -61,7 +61,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
         </div>
 
         <div className="absolute left-0 top-0 w-full h-full bg-[rgba(0,0,0,.3)] duration-500 rounded-[40px] flex justify-center items-center opacity-0 hover:opacity-100">
-          <img src={play} alt="" className="icon scale-200" />
+          <Play className="h-10 w-10 text-inverse" />
         </div>
       </button>
 

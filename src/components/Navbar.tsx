@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import arrowDown from "../assets/icons/arrow-down.svg";
-import login from "../assets/icons/log-in.svg";
+import { ChevronDown, LogIn } from "lucide-react";
 import useStore from "../store";
 import type { NavPage, NavSection } from "../types/nav";
 
@@ -251,10 +250,8 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
             onClick={() => setShowAuthNotice(true)}
             type="button"
           >
-            <img
-              src={login}
-              className={darkTheme ? "icon" : "icon-dk scale-110"}
-              alt=""
+            <LogIn
+              className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
             />
             <p>Login</p>
           </button>
@@ -265,10 +262,8 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
               onClick={() => setShowAuthNotice(true)}
               className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
             >
-              <img
-                src={login}
-                className={darkTheme ? "icon scale-75" : "icon-dk scale-100"}
-                alt=""
+              <LogIn
+                className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
               />
             </button>
 
@@ -373,10 +368,8 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
                         }
                         aria-label={`Toggle ${page.label} sections`}
                       >
-                        <img
-                          src={arrowDown}
-                          alt=""
-                          className={`h-2.5 w-2.5 ${darkTheme ? "icon -my-1" : "icon-dk"} transition-transform duration-200 ${
+                        <ChevronDown
+                          className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"} transition-transform duration-200 ${
                             expanded ? "rotate-180" : ""
                           }`}
                         />
