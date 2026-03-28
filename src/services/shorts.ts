@@ -16,7 +16,9 @@ function mapShort(row: ShortRow): ShortItem {
   const publicUrl = resolveMediaUrl(row.storage_path);
 
   if (!publicUrl) {
-    throw new Error(`Could not resolve short URL for path "${row.storage_path}"`);
+    throw new Error(
+      `Could not resolve highlight URL for path "${row.storage_path}"`,
+    );
   }
 
   return {
@@ -51,7 +53,7 @@ export async function fetchShorts(limit = 8): Promise<ShortItem[]> {
     .limit(limit);
 
   if (error) {
-    throw new Error(`Failed to fetch shorts: ${error.message}`);
+    throw new Error(`Failed to fetch highlights: ${error.message}`);
   }
 
   return (data ?? []).map((row) => mapShort(row as ShortRow));

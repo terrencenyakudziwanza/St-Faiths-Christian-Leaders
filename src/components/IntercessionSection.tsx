@@ -1,9 +1,7 @@
 import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-import mainImage from "../assets/images/50044.jpg";
-import slideOne from "../assets/images/pexels-ivan-stecko-305645871-13438939.jpg";
-import slideTwo from "../assets/images/hand-writing.jpg";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { resolveCmsMedia } from "../lib/cms";
 
 type FocusItem = {
   id: string;
@@ -21,32 +19,7 @@ type SliderSlot = {
   zIndex: number;
 };
 
-const focusItems: FocusItem[] = [
-  {
-    id: "intercession",
-    title: "Intercession",
-    copy: "Strategic prayer, warfare, and focused supplication for our campus.",
-    image: slideOne,
-  },
-  {
-    id: "bible-study",
-    title: "Bible Study",
-    copy: "Scripture discovery that forms conviction, clarity, and action.",
-    image: slideTwo,
-  },
-  {
-    id: "power",
-    title: "Demonstration of Power",
-    copy: "We celebrate healing and the miraculous as signs of faith.",
-    image: mainImage,
-  },
-  {
-    id: "praise",
-    title: "Praise and Worship",
-    copy: "Unreserved worship that keeps our hearts close to God.",
-    image: slideOne,
-  },
-];
+const fallbackItems: FocusItem[] = [];
 
 const sliderSlots: SliderSlot[] = [
   {
@@ -96,9 +69,18 @@ function wrapIndex(index: number, length: number): number {
 }
 
 const IntercessionSection: React.FC = () => {
+  const focusContent = useCmsSection("home.focus");
+  const focusItems: FocusItem[] = focusContent.items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    copy: item.copy,
+    image: resolveCmsMedia(item.image) ?? "",
+  }));
+  const items = focusItems.length ? focusItems : fallbackItems;
+
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
-  const activeItem = focusItems[activeIndex] ?? focusItems[0];
+  const activeItem = items[activeIndex] ?? items[0];
   const activeItemRef = React.useRef(activeItem);
   const [previousItem, setPreviousItem] = React.useState<FocusItem | null>(null);
 
@@ -108,13 +90,20 @@ const IntercessionSection: React.FC = () => {
     }
 
     const intervalId = window.setInterval(() => {
-      setActiveIndex((prev) => wrapIndex(prev + 1, focusItems.length));
+      setActiveIndex((prev) => wrapIndex(prev + 1, items.length));
     }, 3800);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isAuto]);
+  }, [isAuto, items.length]);
+
+  React.useEffect(() => {
+    if (!items.length) {
+      return;
+    }
+    setActiveIndex((prev) => wrapIndex(prev, items.length));
+  }, [items.length]);
 
   React.useEffect(() => {
     if (activeItemRef.current.id === activeItem.id) {
@@ -137,16 +126,16 @@ const IntercessionSection: React.FC = () => {
     setActiveIndex((prev) =>
       wrapIndex(
         prev + (direction === "next" ? 1 : -1),
-        focusItems.length,
+        items.length,
       ),
     );
   };
 
   const sliderItems = sliderSlots.map((slot) => {
-    const itemIndex = wrapIndex(activeIndex + slot.offset, focusItems.length);
+    const itemIndex = wrapIndex(activeIndex + slot.offset, items.length);
 
     return {
-      item: focusItems[itemIndex],
+      item: items[itemIndex],
       itemIndex,
       slot,
     };
@@ -162,20 +151,16 @@ const IntercessionSection: React.FC = () => {
       <div className="section-fade-bottom"></div>
       <div className="pointer-events-none absolute inset-0 intercession-backdrop"></div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1240px] px-6 pb-24 pt-20">
-        <div className="mx-auto max-w-[720px] text-center">
+      <div className="relative z-10 mx-auto w-full max-w-310 px-6 pb-24 pt-20">
+        <div className="mx-auto max-w-180 text-center">
           <p className="text-overline font-semibold text-accent">
-            Christian Leaders Focus
+            {focusContent.overline}
           </p>
           <h2 className="mt-4 text-display-sm font-semibold text-ink">
-            Intercession, Study, Power, and Worship
+            {focusContent.title}
           </h2>
           <p className="mt-4 text-body text-muted leading-relaxed">
-            Christian Leaders is shaped by a rhythm of prayer that births
-            transformation. We press in through intercession, grow through Bible
-            study, and testify through the demonstration of power (healing and
-            the miraculous). Every gathering culminates in praise and worship
-            that keeps our hearts aligned with heaven.
+            {focusContent.description}
           </p>
         </div>
 
@@ -198,7 +183,7 @@ const IntercessionSection: React.FC = () => {
                   }`}
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/55 via-black/10 to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-tr from-black/55 via-black/10 to-transparent"></div>
             </div>
 
             <div className="intercession-orbit intercession-orbit--outer"></div>
@@ -274,7 +259,7 @@ const IntercessionSection: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-4">
-            {focusItems.map((item) => (
+            {items.map((item) => (
               <div
                 key={item.id}
                 className={`intercession-card ${

@@ -9,10 +9,14 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import Family from "./pages/Family";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 import ThemeToggle from "./components/ThemeToggle";
 import Gallery from "./components/Gallery";
+import RequireAuth from "./components/RequireAuth";
+import ThemeRibbon from "./components/ThemeRibbon";
 // import ImmersiveWeek from "./components/ImmersiveWeek";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
@@ -34,6 +38,9 @@ type SectionEntry = {
 function App() {
   const setCurrSection = useStore((state) => state.setCurrSection);
   const location = useLocation();
+  const hideRibbon =
+    location.pathname.startsWith("/login") ||
+    location.pathname.startsWith("/dashboard");
 
   useEffect(() => {
     if (location.pathname !== "/") {
@@ -83,6 +90,7 @@ function App() {
   return (
     <>
       <ThemeToggle />
+      {!hideRibbon && <ThemeRibbon />}
       <Routes>
         <Route
           path="/"
@@ -120,6 +128,15 @@ function App() {
               {/* SITE FOOTER */}
               <Footer />
             </>
+          }
+        />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
           }
         />
       </Routes>

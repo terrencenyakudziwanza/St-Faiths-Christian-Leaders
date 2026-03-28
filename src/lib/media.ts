@@ -1,9 +1,16 @@
-import { MEDIA_BUCKET, supabase } from "./supabase";
+import {
+  CMS_BUCKET,
+  LEGACY_MEDIA_BUCKET,
+  SEED_BUCKET,
+  supabase,
+} from "./supabase";
 
 export type MediaMode = "online" | "offline" | "auto";
 
 const OFFLINE_MEDIA_BASE = "/offline-media";
 const DEFAULT_MEDIA_MODE: MediaMode = "online";
+const LEGACY_PREFIXES = ["events/", "presenters/", "shorts/"];
+const CMS_PREFIXES = ["cms/"];
 
 function parseMediaMode(value: string | undefined): MediaMode {
   if (!value) {
@@ -21,6 +28,20 @@ function parseMediaMode(value: string | undefined): MediaMode {
 
 function normalizeStoragePath(storagePath: string): string {
   return storagePath.replace(/^\/+/, "").replace(/\\/g, "/");
+}
+
+function resolveBucketForPath(storagePath: string): string {
+  const normalized = normalizeStoragePath(storagePath);
+
+  if (CMS_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return CMS_BUCKET;
+  }
+
+  if (LEGACY_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return LEGACY_MEDIA_BUCKET;
+  }
+
+  return SEED_BUCKET;
 }
 
 function toOfflineUrl(storagePath: string): string {
@@ -53,6 +74,7 @@ export function resolveMediaUrl(storagePath: string | null): string | null {
     return toOfflineUrl(normalized);
   }
 
-  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(normalized);
+  const bucket = resolveBucketForPath(normalized);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(normalized);
   return data.publicUrl;
 }

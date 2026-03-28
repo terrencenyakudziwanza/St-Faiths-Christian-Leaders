@@ -3,11 +3,14 @@ import { getSupabaseEnv } from "./env";
 
 const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
 
-export const MEDIA_BUCKET = "media";
+export const LEGACY_MEDIA_BUCKET = "media";
+export const SEED_BUCKET = "seed";
+export const CMS_BUCKET = "cms";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false,
-    autoRefreshToken: false,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
   },
 });

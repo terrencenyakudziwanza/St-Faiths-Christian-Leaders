@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { ChevronDown, LogIn } from "lucide-react";
+import { ChevronDown, LogIn, LogOut } from "lucide-react";
 import useStore from "../store";
 import type { NavPage, NavSection } from "../types/nav";
+import { useAuth } from "../contexts/AuthContext";
 
 type NavTheme = "dark" | "light";
 
@@ -14,7 +15,6 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   const navRef = useRef<HTMLDivElement>(null);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [showAuthNotice, setShowAuthNotice] = useState(false);
   const [navTheme, setNavTheme] = useState<NavTheme>("dark");
   const [hoveredPageId, setHoveredPageId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,6 +26,8 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   const location = useLocation();
 
   const { introAnimDone, currSection, setCurrSection } = useStore();
+  const { cmsUser, session, signOut } = useAuth();
+  const isAuthenticated = Boolean(session && cmsUser?.is_active);
 
   useEffect(() => {
     const onScroll = () => setIsScrolling(window.scrollY > 0);
@@ -57,20 +59,6 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
       window.cancelAnimationFrame(rafId);
     };
   }, [location.pathname, location.hash]);
-
-  useEffect(() => {
-    if (!showAuthNotice) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setShowAuthNotice(false);
-    }, 2400);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [showAuthNotice]);
 
   const resolveNavTheme = useCallback((): NavTheme => {
     const globalTheme = document.documentElement.dataset.theme;
@@ -182,6 +170,18 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   // Keep intro-gated visibility only on home route.
   const shouldShowNavbar = location.pathname !== "/" || introAnimDone;
 
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  const handleDashboard = () => {
+    navigate("/dashboard");
+  };
+
+  const handleSignOut = () => {
+    void signOut();
+  };
+
   return (
     <>
       {/* DESKTOP / TOP NAV BAR */}
@@ -245,27 +245,65 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
             })}
           </div>
 
-          <button
-            className={`hidden md:flex login-btn outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer text-body-sm`}
-            onClick={() => setShowAuthNotice(true)}
-            type="button"
-          >
-            <LogIn
-              className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
-            />
-            <p>Login</p>
-          </button>
+          <div className="hidden md:flex items-center gap-2">
+            {isAuthenticated ? (
+              <>
+                <button
+                  className={`outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer text-body-sm flex`}
+                  onClick={handleDashboard}
+                  type="button"
+                >
+                  <span>Dashboard</span>
+                </button>
+                <button
+                  className={`outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer text-body-sm flex`}
+                  onClick={handleSignOut}
+                  type="button"
+                >
+                  <LogOut
+                    className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
+                  />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <button
+                className={`login-btn outline-none h-full p-2.5 px-4 bg-transparent ${textClass} rounded-[15px] items-center gap-2 border-[1.5px] ${borderClass} cursor-pointer text-body-sm flex`}
+                onClick={handleLogin}
+                type="button"
+              >
+                <LogIn
+                  className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
+                />
+                <p>Login</p>
+              </button>
+            )}
+          </div>
 
           <div className="md:hidden flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowAuthNotice(true)}
-              className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
-            >
-              <LogIn
-                className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
-              />
-            </button>
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={handleDashboard}
+                className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
+                aria-label="Open dashboard"
+              >
+                <LogIn
+                  className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
+                />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleLogin}
+                className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
+                aria-label="Login"
+              >
+                <LogIn
+                  className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
+                />
+              </button>
+            )}
 
             <button
               type="button"
@@ -285,15 +323,6 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
           </div>
         </div>
 
-        <div
-          className={`absolute right-4 md:right-8 top-[calc(100%+8px)] rounded-xl border border-subtle bg-surface-elevated px-3 py-2 text-caption text-ink transition-all duration-300 ${
-            showAuthNotice
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-2 opacity-0 pointer-events-none"
-          }`}
-        >
-          Coming Soon!
-        </div>
       </div>
 
       {/* MOBILE MENU OVERLAY */}

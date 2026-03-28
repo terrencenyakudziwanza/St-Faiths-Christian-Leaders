@@ -87,6 +87,8 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const [mobilePane, setMobilePane] = React.useState<MobilePane>("clips");
   const [activeMedia, setActiveMedia] = React.useState<MediaType>("picture");
   const [isMuted, setIsMuted] = React.useState(true);
+  const [autoPlayRequested, setAutoPlayRequested] = React.useState(false);
+  const autoPlayRequestedRef = React.useRef(false);
   const [activeClipId, setActiveClipId] = React.useState<string | null>(null);
   const [clipIndicator, setClipIndicator] = React.useState<{
     clipId: string;
@@ -102,6 +104,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const [shareCounts, setShareCounts] = React.useState<Record<string, number>>(
     {},
   );
+
+  React.useEffect(() => {
+    autoPlayRequestedRef.current = autoPlayRequested;
+  }, [autoPlayRequested]);
 
   const pictureClips = React.useMemo(
     () => media.filter((item) => item.mediaType === "picture"),
@@ -256,6 +262,9 @@ const EventsModal: React.FC<EventsModalProps> = ({
         pauseAllVideos(clipId);
 
         try {
+          if (video.readyState < 2) {
+            video.load();
+          }
           await video.play();
           showClipIndicator(clipId, "play");
         } catch {
@@ -270,6 +279,64 @@ const EventsModal: React.FC<EventsModalProps> = ({
     },
     [pauseAllVideos, showClipIndicator],
   );
+
+  React.useEffect(() => {
+    if (!show || activeMedia !== "video" || !autoPlayRequested) {
+      return;
+    }
+
+    const firstClip = activeItems[0];
+
+    if (!firstClip) {
+      setAutoPlayRequested(false);
+      return;
+    }
+
+    let attempts = 0;
+    let cancelled = false;
+
+    const tryPlay = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const video = videoRefs.current.get(firstClip.id);
+
+      if (video) {
+        pauseAllVideos(firstClip.id);
+
+        if (video.readyState < 2) {
+          video.load();
+        }
+
+        void video.play().catch(() => null);
+        showClipIndicator(firstClip.id, "play");
+        setActiveClipId(firstClip.id);
+        setAutoPlayRequested(false);
+        return;
+      }
+
+      if (attempts < 8) {
+        attempts += 1;
+        window.requestAnimationFrame(tryPlay);
+      } else {
+        setAutoPlayRequested(false);
+      }
+    };
+
+    tryPlay();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    show,
+    activeMedia,
+    autoPlayRequested,
+    activeItems,
+    pauseAllVideos,
+    showClipIndicator,
+  ]);
 
   const handleLikeClick = React.useCallback((clipId: string) => {
     const burstId = likeBurstIdRef.current++;
@@ -333,6 +400,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
     setLikeBursts([]);
     setLikePulseVersions({});
     setClipIndicator(null);
+    setAutoPlayRequested(false);
   }, [show, clearLikeBurstTimeouts, pauseAllVideos]);
 
   React.useEffect(
@@ -551,7 +619,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
     <div className="flex gap-1.5 lg:gap-2 flex-wrap">
       <button
         type="button"
-        onClick={() => setActiveMedia("video")}
+        onClick={() => {
+          setActiveMedia("video");
+          setAutoPlayRequested(true);
+        }}
         className={
           compact
             ? `${compactToggleBaseClass} ${
@@ -571,7 +642,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
       </button>
       <button
         type="button"
-        onClick={() => setActiveMedia("picture")}
+        onClick={() => {
+          setActiveMedia("picture");
+          setAutoPlayRequested(false);
+        }}
         className={
           compact
             ? `${compactToggleBaseClass} ${
@@ -782,10 +856,11 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 className="h-full w-full object-cover video-progress-only"
                 playsInline
                 muted={isMuted}
+                autoPlay={activeMedia === "video" && clip.id === activeClipId}
                 controls
                 controlsList="nofullscreen nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
-                preload="metadata"
+                preload="auto"
                 onClick={(e) => {
                   e.stopPropagation();
                   void toggleVideoPlayback(clip.id);
@@ -793,6 +868,30 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 onPlay={() => {
                   pauseAllVideos(clip.id);
                   setActiveClipId(clip.id);
+                }}
+                onLoadedData={(event) => {
+                  if (!autoPlayRequestedRef.current) {
+                    return;
+                  }
+                  if (activeMedia !== "video") {
+                    return;
+                  }
+                  const firstClipId = activeItems[0]?.id ?? null;
+                  if (clip.id !== firstClipId && clip.id !== activeClipId) {
+                    return;
+                  }
+                  const video = event.currentTarget;
+                  pauseAllVideos(clip.id);
+                  void video.play().catch(() => null);
+                  showClipIndicator(clip.id, "play");
+                  setActiveClipId(clip.id);
+                  setAutoPlayRequested(false);
+                }}
+                onStalled={(event) => {
+                  const video = event.currentTarget;
+                  if (!video.paused) {
+                    void video.play().catch(() => null);
+                  }
                 }}
               />
               <div

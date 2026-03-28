@@ -1,8 +1,7 @@
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import Navbar from "../components/Navbar";
 import { useGSAP } from "@gsap/react";
 
-import { introHeroTxt, introImages } from "../data";
 import gsap from "gsap";
 import { CustomEase, SplitText } from "gsap/all";
 import useStore from "../store";
@@ -10,6 +9,8 @@ import { ChevronDown } from "lucide-react";
 import type { NavPage } from "../types/nav";
 import IntercessionSection from "../components/IntercessionSection";
 import WeekInLeaders from "../components/WeekInLeaders";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { resolveCmsMedia } from "../lib/cms";
 
 const homeNavPages: NavPage[] = [
   {
@@ -37,8 +38,24 @@ const Home: React.FC = () => {
 
   const { introAnimDone, setIntroAnimDone } = useStore();
 
-  const introSlides = introImages.slice(0, -1);
-  const fixedBgImage = introImages[introImages.length - 1]?.img;
+  const heroContent = useCmsSection("home.hero");
+  const heroSlides = useMemo(
+    () =>
+      heroContent.slides.map((slide) => ({
+        ...slide,
+        imageUrl: resolveCmsMedia(slide.image) ?? "",
+      })),
+    [heroContent.slides],
+  );
+  const introSlides = heroSlides.slice(0, -1);
+  const fixedBgImage = heroSlides[heroSlides.length - 1]?.imageUrl;
+  const heroKey = useMemo(
+    () =>
+      `${heroContent.heroHeader.join("|")}::${heroContent.heroSecondary.join("|")}::${heroSlides
+        .map((slide) => slide.label)
+        .join("|")}`,
+    [heroContent.heroHeader, heroContent.heroSecondary, heroSlides],
+  );
 
 
   useGSAP(() => {
@@ -190,6 +207,7 @@ const Home: React.FC = () => {
     };
 
     tl.add("hero-text-join", ">-0.1");
+    tl.call(fadeOutIntroImages, [], "hero-text-join+=0.35");
 
     if (headingChars.length) {
       tl.to(
@@ -200,7 +218,6 @@ const Home: React.FC = () => {
           duration: 0.9,
           ease: "hop",
           stagger: 0.02,
-          onStart: fadeOutIntroImages,
           onComplete: () => {
             revertHeadingSplits();
             setIntroAnimDone(true);
@@ -219,7 +236,6 @@ const Home: React.FC = () => {
           duration: 0.9,
           ease: "hop",
           stagger: 0.02,
-          onStart: fadeOutIntroImages,
           onComplete: () => {
             if (!headingChars.length) {
               setIntroAnimDone(true);
@@ -240,7 +256,7 @@ const Home: React.FC = () => {
       secondarySplits.forEach((split) => split.revert());
       introTlRef.current = null;
     };
-  }, []);
+  }, [heroKey]);
 
   const handleSkipIntro = () => {
     if (!introAnimDone) {
@@ -290,7 +306,7 @@ const Home: React.FC = () => {
             className={`introImg absolute inset-0 z-0 flex items-center justify-center ${i === 0 ? "opacity-100" : "opacity-0"}`}
           >
             <img
-              src={img.img}
+              src={img.imageUrl}
               className="absolute inset-0 h-full w-full object-cover z-0 scale-150"
               alt="reveal-image"
             />
@@ -304,10 +320,10 @@ const Home: React.FC = () => {
 
         {/* HERO COPY + OVERLAY */}
         <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
-          {introHeroTxt[1].header.map((h, i) => (
+          {heroContent.heroHeader.map((h, i) => (
             <div
               key={i}
-              className={`text-split text-split-heading font-bold text-[clamp(2.4rem,6.2vw,4.8rem)] leading-[0.95] ${
+              className={`text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] ${
                 introAnimDone
                   ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
                   : "text-inverse"
@@ -316,7 +332,7 @@ const Home: React.FC = () => {
               {h}
             </div>
           ))}
-          {introHeroTxt[1].secondary.map((s, i) => (
+          {heroContent.heroSecondary.map((s, i) => (
             <div
               key={i}
               className="text-split text-split-secondary text-inverse text-body-lg"

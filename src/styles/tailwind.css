@@ -26,6 +26,13 @@
     --like: #ff4f7a;
     --like-soft: #fff0f4;
     --like-border: #ffd0da;
+    --panel-bg: #0b0d12;
+    --panel-muted: #121621;
+    --panel-input: #141926;
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --panel-text: #f8f6f1;
+    --panel-text-muted: rgba(255, 255, 255, 0.6);
+    --panel-ink: #0b0d12;
     --family-hero-gradient: radial-gradient(circle_at_top_left, rgba(255, 255, 255, 0.92), transparent 36%),
       radial-gradient(circle_at_88%_18%, rgba(196, 160, 77, 0.24), transparent 24%),
       linear-gradient(180deg, #f5efe3 0%, #efe6d7 52%, #ffffff 100%);
@@ -60,6 +67,13 @@
     --like: #ff5a84;
     --like-soft: rgba(255, 80, 128, 0.16);
     --like-border: rgba(255, 160, 190, 0.4);
+    --panel-bg: #0a0d14;
+    --panel-muted: #121621;
+    --panel-input: #141926;
+    --panel-border: rgba(255, 255, 255, 0.14);
+    --panel-text: #fef7ee;
+    --panel-text-muted: rgba(255, 255, 255, 0.64);
+    --panel-ink: #0b0d12;
     --family-hero-gradient: radial-gradient(circle_at_top_left, rgba(20, 20, 24, 0.92), transparent 36%),
       radial-gradient(circle_at_88%_18%, rgba(214, 184, 106, 0.18), transparent 24%),
       linear-gradient(180deg, #131418 0%, #0f1116 52%, #0e0f12 100%);

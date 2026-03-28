@@ -1,8 +1,6 @@
 import React from "react";
-
-import imgWorship from "../assets/images/50044.jpg";
-import imgGather from "../assets/images/pexels-ivan-stecko-305645871-13438939.jpg";
-import imgStudy from "../assets/images/hand-writing.jpg";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { resolveCmsMedia } from "../lib/cms";
 
 type WeekSlide = {
   day: string;
@@ -12,66 +10,16 @@ type WeekSlide = {
   image: string;
 };
 
-const weekSlides: WeekSlide[] = [
-  {
-    day: "Sunday",
-    title: "Main SU Service",
-    description:
-      "We open the week with a full service that blends prayer, praise, and the Word.",
-    activities: ["Intercession", "Praise and Worship", "Preaching"],
-    image: imgWorship,
-  },
-  {
-    day: "Monday",
-    title: "Intercession",
-    description:
-      "Focused prayer that covers our families, leaders, and the campus mission.",
-    activities: ["Intercession"],
-    image: imgGather,
-  },
-  {
-    day: "Tuesday",
-    title: "Intercession",
-    description:
-      "A steady rhythm of warfare and thanksgiving that keeps the fire burning.",
-    activities: ["Intercession"],
-    image: imgWorship,
-  },
-  {
-    day: "Wednesday",
-    title: "Intercession + Unending Praise",
-    description:
-      "Midweek we mix sustained prayer with unending praise to reset our focus.",
-    activities: ["Intercession", "Praise and Worship"],
-    image: imgGather,
-  },
-  {
-    day: "Thursday",
-    title: "Intercession",
-    description:
-      "We contend for breakthrough and alignment across every sphere of influence.",
-    activities: ["Intercession"],
-    image: imgWorship,
-  },
-  {
-    day: "Friday",
-    title: "SU Service",
-    description:
-      "A high-energy service anchored in worship and preaching to close the week.",
-    activities: ["Praise and Worship", "Preaching"],
-    image: imgGather,
-  },
-  {
-    day: "Saturday",
-    title: "Bible Discussion",
-    description:
-      "We gather in smaller circles to discuss Scripture and live it out.",
-    activities: ["Bible Discussion"],
-    image: imgStudy,
-  },
-];
-
 const WeekInLeaders: React.FC = () => {
+  const weekContent = useCmsSection("home.week");
+  const weekSlides: WeekSlide[] = weekContent.slides.map((slide) => ({
+    day: slide.day,
+    title: slide.title,
+    description: slide.description,
+    activities: slide.activities,
+    image: resolveCmsMedia(slide.image) ?? "",
+  }));
+
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [previousIndex, setPreviousIndex] = React.useState<number | null>(null);
 
@@ -79,7 +27,7 @@ const WeekInLeaders: React.FC = () => {
     const intervalId = window.setInterval(() => {
       setActiveIndex((prev) => {
         setPreviousIndex(prev);
-        return (prev + 1) % weekSlides.length;
+        return weekSlides.length ? (prev + 1) % weekSlides.length : 0;
       });
     }, 5200);
 
@@ -87,6 +35,13 @@ const WeekInLeaders: React.FC = () => {
       window.clearInterval(intervalId);
     };
   }, []);
+
+  React.useEffect(() => {
+    if (!weekSlides.length) {
+      return;
+    }
+    setActiveIndex((prev) => Math.min(prev, weekSlides.length - 1));
+  }, [weekSlides.length]);
 
   return (
     <section
@@ -98,22 +53,21 @@ const WeekInLeaders: React.FC = () => {
       <div className="section-fade-bottom"></div>
       <div className="pointer-events-none absolute inset-0 week-backdrop"></div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[1200px] px-6 pt-20">
-        <div className="mx-auto max-w-[680px] text-center">
+      <div className="relative z-10 mx-auto w-full max-w-300 px-6 pt-20">
+        <div className="mx-auto max-w-170 text-center">
           <p className="text-overline font-semibold text-accent-strong">
-            Weekly Rhythm
+            {weekContent.overline}
           </p>
           <h2 className="mt-4 text-display-sm font-semibold text-ink">
-            A Week In Christian Leaders
+            {weekContent.title}
           </h2>
           <p className="mt-3 text-body-sm text-muted">
-            Every day carries a distinct expression of faith. Watch the week
-            unfold through the rhythm of prayer, worship, and study.
+            {weekContent.description}
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto mt-10 w-full max-w-[1200px] px-6 pb-24">
+      <div className="relative z-10 mx-auto mt-10 w-full max-w-300 px-6 pb-24">
         <div className="week-slider relative h-[90vh] w-full overflow-hidden rounded-[36px] border border-subtle shadow-[0_30px_80px_rgba(0,0,0,0.18)]">
           <div className="week-halo"></div>
 

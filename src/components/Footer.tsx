@@ -19,21 +19,17 @@ const Footer: React.FC = () => {
       ],
     },
     {
-      pageName: "Home",
+      pageName: "Events",
       pageSections: [
-        { sectionName: "Home", sectionId: "home-section" },
-        { sectionName: "Focus", sectionId: "focus-section" },
-        { sectionName: "Week", sectionId: "week-section" },
-        { sectionName: "Testimonials", sectionId: "testimonials-section" },
+        { sectionName: "Services", sectionId: "home-section" },
+        { sectionName: "Highlights", sectionId: "highlights-section" },
       ],
     },
     {
-      pageName: "Home",
+      pageName: "Family",
       pageSections: [
-        { sectionName: "Home", sectionId: "home-section" },
-        { sectionName: "Focus", sectionId: "focus-section" },
-        { sectionName: "Week", sectionId: "week-section" },
-        { sectionName: "Testimonials", sectionId: "testimonials-section" },
+        { sectionName: "Board", sectionId: "home-section" },
+        { sectionName: "Departments", sectionId: "focus-section" },
       ],
     },
   ];
@@ -134,7 +130,7 @@ const Footer: React.FC = () => {
       {/* FOOTER BASELINE */}
       <div className="flex flex-col items-center justify-between gap-4 border-t border-subtle px-8 py-4 text-body-sm text-muted md:flex-row">
         <p>
-          Copyright {year} Christian Leaders St Faith&apos;s. All rights
+          Copyright {year} Christian Leaders @ St Faith&apos;s. All rights
           reserved.
         </p>
         <p className="text-caption">

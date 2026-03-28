@@ -29,7 +29,7 @@ const eventPageNavPages: NavPage[] = [
     path: "/events",
     sections: [
       { id: "Events", label: "Events", sectionId: "events-section" },
-      { id: "Shorts", label: "Shorts", sectionId: "shorts-section" },
+      { id: "Highlights", label: "Highlights", sectionId: "highlights-section" },
     ],
   },
   { id: "family-page", label: "Family", path: "/family" },
@@ -187,7 +187,8 @@ const Events: React.FC = () => {
   /* ---------------- PAGE ---------------- */
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="relative w-full overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 events-backdrop"></div>
       {/* MAIN NAVIGATION */}
       <Navbar navPages={eventPageNavPages} />
 
@@ -293,14 +294,12 @@ const Events: React.FC = () => {
           />
         </section>
 
-        {/* SHORTS GRID */}
-        <section id="shorts-section" className="p-4 pt-8 w-full max-w-325">
+        {/* HIGHLIGHTS GRID */}
+        <section id="highlights-section" className="p-4 pt-8 w-full max-w-325">
           <div className="w-full h-px bg-[color:var(--border)]" />
           <div className="flex justify-center items-center gap-4 py-8">
             <Flame className="h-6 w-6 text-ink" />
-            <h2 className="text-heading-xl font-bold">
-              Latest Shorts From Media
-            </h2>
+            <h2 className="text-heading-xl font-bold">Highlights</h2>
           </div>
 
           <div className="flex justify-center flex-wrap sm:gap-10 gap-16 py-8 pb-12">
