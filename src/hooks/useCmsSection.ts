@@ -5,7 +5,7 @@ import type {
   CmsContentMap,
   CmsFocusContent,
   CmsHeroContent,
-  CmsSectionKey,
+  CmsContentKey,
   CmsWeekContent,
 } from "../types/cms";
 
@@ -94,10 +94,37 @@ function mergeWeek(
       Array.isArray(incoming.slides) && incoming.slides.length
         ? (incoming.slides as CmsWeekContent["slides"])
         : fallback.slides,
+    themeOfWeek: isRecord(incoming.themeOfWeek)
+      ? {
+          title:
+            typeof incoming.themeOfWeek.title === "string" &&
+            incoming.themeOfWeek.title.trim()
+              ? incoming.themeOfWeek.title
+              : fallback.themeOfWeek.title,
+          verseReference:
+            typeof incoming.themeOfWeek.verseReference === "string" &&
+            incoming.themeOfWeek.verseReference.trim()
+              ? incoming.themeOfWeek.verseReference
+              : fallback.themeOfWeek.verseReference,
+          verseVersion:
+            typeof incoming.themeOfWeek.verseVersion === "string"
+              ? incoming.themeOfWeek.verseVersion
+              : fallback.themeOfWeek.verseVersion,
+          verseText:
+            typeof incoming.themeOfWeek.verseText === "string" &&
+            incoming.themeOfWeek.verseText.trim()
+              ? incoming.themeOfWeek.verseText
+              : fallback.themeOfWeek.verseText,
+          verseTranslation:
+            typeof incoming.themeOfWeek.verseTranslation === "string"
+              ? incoming.themeOfWeek.verseTranslation
+              : fallback.themeOfWeek.verseTranslation,
+        }
+      : fallback.themeOfWeek,
   };
 }
 
-function mergeContent<T extends CmsSectionKey>(
+function mergeContent<T extends CmsContentKey>(
   key: T,
   incoming: unknown,
   fallback: CmsContentMap[T],
@@ -117,7 +144,7 @@ function mergeContent<T extends CmsSectionKey>(
   }
 }
 
-export function useCmsSection<T extends CmsSectionKey>(
+export function useCmsSection<T extends CmsContentKey>(
   key: T,
   fallback: CmsContentMap[T] = cmsDefaults[key] as CmsContentMap[T],
 ): CmsContentMap[T] {

@@ -8,7 +8,7 @@ import type {
   CmsSectionKey,
   CmsWeekContent,
 } from "../types/cms";
-import { resolveCmsMedia, normalizeText } from "../lib/cms";
+import { resolveCmsMedia, normalizeText, slugify } from "../lib/cms";
 import { uploadMediaFile } from "../services/mediaUpload";
 import { upsertCmsContent } from "../services/cmsContent";
 import { useCmsSection } from "../hooks/useCmsSection";
@@ -18,12 +18,26 @@ import {
   fetchEditorsWithPermissions,
   setEditorPermissions,
 } from "../services/cmsUsers";
+import { BIBLE_TRANSLATIONS, fetchBibleVerse } from "../services/bibleApi";
 import { supabase } from "../lib/supabase";
 import {
   validateFocus,
   validateHero,
   validateWeek,
 } from "../lib/cmsValidation";
+import type { FeedType } from "../types/domain";
+import {
+  createEvent,
+  deleteEvent,
+  fetchAllEvents,
+  updateEvent,
+} from "../services/eventsAdmin";
+import {
+  createTestimonial,
+  deleteTestimonial,
+  fetchTestimonials,
+  updateTestimonial,
+} from "../services/testimonials";
 
 const panelShellClass =
   "rounded-[28px] border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] text-[color:var(--panel-text)] shadow-[0_24px_60px_rgba(0,0,0,0.22)]";
@@ -70,7 +84,7 @@ const Dashboard: React.FC = () => {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-6 pb-16 pt-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-overline text-accent">CMS Dashboard</p>
+            <p className="text-overline text-accent">Dashboard</p>
             <h1 className="mt-2 text-heading-xl font-semibold">
               {cmsUser?.display_name
                 ? `Welcome, ${cmsUser.display_name}`
@@ -157,6 +171,16 @@ const Dashboard: React.FC = () => {
             )}
             {activeSection === "home.week" && (
               <WeekEditor canEdit={isAdmin || permissions.includes("home.week")} />
+            )}
+            {activeSection === "content.events" && (
+              <EventsEditor
+                canEdit={isAdmin || permissions.includes("content.events")}
+              />
+            )}
+            {activeSection === "content.testimonials" && (
+              <TestimonialsEditor
+                canEdit={isAdmin || permissions.includes("content.testimonials")}
+              />
             )}
           </main>
         </div>
@@ -635,32 +659,63 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const handleSave = async () => {
     if (!canEdit) return;
 
-    const sanitized: CmsWeekContent = {
-      ...draft,
-      overline: normalizeText(draft.overline),
-      title: normalizeText(draft.title),
-      description: normalizeText(draft.description),
-      slides: draft.slides.map((slide) => ({
-        ...slide,
-        day: normalizeText(slide.day),
-        title: normalizeText(slide.title),
-        description: normalizeText(slide.description),
-        activities: slide.activities.map(normalizeText).filter(Boolean),
-      })),
-    };
-
-    const validation = validateWeek(sanitized);
-    setErrors(validation.errors);
-
-    if (!validation.valid) {
-      return;
-    }
-
     setSaving(true);
     setStatus(null);
 
     try {
+      const themeTitle = normalizeText(draft.themeOfWeek.title);
+      const themeVerseReference = normalizeText(
+        draft.themeOfWeek.verseReference,
+      );
+      const themeVerseVersion = draft.themeOfWeek.verseVersion?.trim() || null;
+
+      let resolvedVerseText = draft.themeOfWeek.verseText;
+      let resolvedTranslation = draft.themeOfWeek.verseTranslation ?? null;
+      let resolvedReference = themeVerseReference;
+      let resolvedVersion = themeVerseVersion;
+
+      if (themeVerseReference) {
+        const verse = await fetchBibleVerse(
+          themeVerseReference,
+          themeVerseVersion,
+        );
+        resolvedVerseText = verse.text;
+        resolvedReference = verse.reference;
+        resolvedVersion = verse.translationId;
+        resolvedTranslation = verse.translationName;
+      }
+
+      const sanitized: CmsWeekContent = {
+        ...draft,
+        overline: normalizeText(draft.overline),
+        title: normalizeText(draft.title),
+        description: normalizeText(draft.description),
+        themeOfWeek: {
+          title: themeTitle,
+          verseReference: resolvedReference,
+          verseVersion: resolvedVersion,
+          verseText: resolvedVerseText,
+          verseTranslation: resolvedTranslation,
+        },
+        slides: draft.slides.map((slide) => ({
+          ...slide,
+          day: normalizeText(slide.day),
+          title: normalizeText(slide.title),
+          description: normalizeText(slide.description),
+          activities: slide.activities.map(normalizeText).filter(Boolean),
+        })),
+      };
+
+      const validation = validateWeek(sanitized);
+      setErrors(validation.errors);
+
+      if (!validation.valid) {
+        setSaving(false);
+        return;
+      }
+
       await upsertCmsContent("home.week", sanitized);
+      setDraft(sanitized);
       setStatus("Week content saved.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed.";
@@ -718,6 +773,88 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           disabled={!canEdit}
         />
       </label>
+
+      <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+        <h3 className="text-heading-sm font-semibold">Theme of the Week</h3>
+        <p className={`${panelSubtextClass} mt-1`}>
+          Enter a verse reference and optional translation. We&apos;ll fetch the
+          verse text from bible-api.com on save.
+        </p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="text-body-sm font-medium">Theme title</span>
+            <input
+              type="text"
+              value={draft.themeOfWeek.title}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  themeOfWeek: {
+                    ...prev.themeOfWeek,
+                    title: event.target.value,
+                  },
+                }))
+              }
+              className={panelInputClass}
+              disabled={!canEdit}
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span className="text-body-sm font-medium">Verse reference</span>
+            <input
+              type="text"
+              value={draft.themeOfWeek.verseReference}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  themeOfWeek: {
+                    ...prev.themeOfWeek,
+                    verseReference: event.target.value,
+                  },
+                }))
+              }
+              className={panelInputClass}
+              disabled={!canEdit}
+              placeholder="e.g. John 3:16"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2">
+            <span className="text-body-sm font-medium">Verse version</span>
+            <select
+              value={draft.themeOfWeek.verseVersion ?? ""}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  themeOfWeek: {
+                    ...prev.themeOfWeek,
+                    verseVersion: event.target.value || null,
+                  },
+                }))
+              }
+              className={panelInputClass}
+              disabled={!canEdit}
+            >
+              <option value="">Default (WEB)</option>
+              {BIBLE_TRANSLATIONS.map((translation) => (
+                <option key={translation.id} value={translation.id}>
+                  {translation.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="flex flex-col gap-2">
+            <span className="text-body-sm font-medium">Resolved verse</span>
+            <div className="rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-input)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)] min-h-[72px]">
+              {draft.themeOfWeek.verseText
+                ? draft.themeOfWeek.verseText
+                : "Verse text will populate after saving."}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="grid gap-6">
         {draft.slides.map((slide, index) => (
@@ -824,6 +961,755 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         ))}
       </div>
     </SectionShell>
+  );
+};
+
+const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
+  const [errors, setErrors] = React.useState<string[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [items, setItems] = React.useState<
+    Awaited<ReturnType<typeof fetchTestimonials>>
+  >([]);
+  const [draft, setDraft] = React.useState({
+    name: "",
+    profileDetails: "",
+    testimonial: "",
+    avatarPath: null as string | null,
+    avatarUrl: null as string | null,
+    isPublished: true,
+  });
+
+  const loadTestimonials = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchTestimonials(true);
+      setItems(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void loadTestimonials();
+  }, [loadTestimonials]);
+
+  const handleAvatarUpload = async (file: File) => {
+    const result = await uploadMediaFile(file, {
+      folder: "cms/testimonials",
+      prefix: draft.name || "testimonial",
+    });
+
+    setDraft((prev) => ({
+      ...prev,
+      avatarPath: result.storagePath,
+      avatarUrl: result.publicUrl,
+    }));
+  };
+
+  const handleCreate = async () => {
+    if (!canEdit) return;
+
+    const nextErrors: string[] = [];
+    if (!normalizeText(draft.name)) {
+      nextErrors.push("Name is required.");
+    }
+    if (!normalizeText(draft.testimonial)) {
+      nextErrors.push("Testimonial text is required.");
+    }
+    setErrors(nextErrors);
+
+    if (nextErrors.length) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus(null);
+
+    try {
+      await createTestimonial({
+        name: normalizeText(draft.name),
+        profileDetails: normalizeText(draft.profileDetails) || null,
+        avatarPath: draft.avatarPath,
+        testimonial: normalizeText(draft.testimonial),
+        isPublished: draft.isPublished,
+      });
+      setStatus("Testimonial added.");
+      setDraft({
+        name: "",
+        profileDetails: "",
+        testimonial: "",
+        avatarPath: null,
+        avatarUrl: null,
+        isPublished: true,
+      });
+      await loadTestimonials();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Save failed.";
+      setStatus(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePublish = async (id: string, nextValue: boolean) => {
+    if (!canEdit) return;
+    await updateTestimonial(id, { isPublished: nextValue });
+    await loadTestimonials();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!canEdit) return;
+    const confirmDelete = window.confirm("Delete this testimonial?");
+    if (!confirmDelete) return;
+    await deleteTestimonial(id);
+    await loadTestimonials();
+  };
+
+  return (
+    <section className={`${panelShellClass} p-6`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-heading-md font-semibold">Testimonials</h2>
+          <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">
+            Register new testimonials and manage what appears on the site.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={!canEdit || saving}
+          className="rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Add testimonial"}
+        </button>
+      </div>
+
+      {!canEdit && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
+          You can view testimonials but you do not have edit permissions.
+        </div>
+      )}
+
+      {errors.length > 0 && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
+          <p className="font-semibold">Validation issues</p>
+          <ul className="mt-2 list-disc pl-5">
+            {errors.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {status && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
+          {status}
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Name</span>
+          <input
+            type="text"
+            value={draft.name}
+            onChange={(event) =>
+              setDraft((prev) => ({ ...prev, name: event.target.value }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Profile details</span>
+          <input
+            type="text"
+            value={draft.profileDetails}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                profileDetails: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+            placeholder="e.g. Form 3, Alumni, Parent"
+          />
+        </label>
+      </div>
+
+      <label className="mt-4 flex flex-col gap-2">
+        <span className="text-body-sm font-medium">Testimonial</span>
+        <textarea
+          value={draft.testimonial}
+          onChange={(event) =>
+            setDraft((prev) => ({
+              ...prev,
+              testimonial: event.target.value,
+            }))
+          }
+          className={`${panelTextareaClass} min-h-[120px]`}
+          disabled={!canEdit}
+        />
+      </label>
+
+      <div className="mt-4">
+        <MediaUploadField
+          label="Profile image"
+          helper="Optional. Upload a headshot."
+          value={draft.avatarUrl}
+          onUpload={handleAvatarUpload}
+        />
+      </div>
+
+      <label className="mt-4 flex items-center gap-3 text-body-sm">
+        <input
+          type="checkbox"
+          checked={draft.isPublished}
+          onChange={(event) =>
+            setDraft((prev) => ({ ...prev, isPublished: event.target.checked }))
+          }
+          disabled={!canEdit}
+        />
+        Publish immediately
+      </label>
+
+      <div className="mt-8">
+        <h3 className="text-heading-sm font-semibold">Existing testimonials</h3>
+        {loading && <p className={panelSubtextClass}>Loading...</p>}
+        {error && <p className="text-body-sm text-danger">{error}</p>}
+        {!loading && !error && items.length === 0 && (
+          <p className={panelSubtextClass}>No testimonials yet.</p>
+        )}
+        <div className="mt-4 grid gap-3">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-body font-semibold">{item.name}</p>
+                  {item.profileDetails && (
+                    <p className={panelSubtextClass}>{item.profileDetails}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePublish(item.id, !item.isPublished)}
+                    className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs text-[color:var(--panel-text-muted)] hover:text-[color:var(--panel-text)]"
+                    disabled={!canEdit}
+                  >
+                    {item.isPublished ? "Unpublish" : "Publish"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger"
+                    disabled={!canEdit}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <p className="mt-3 text-body-sm text-[color:var(--panel-text-muted)]">
+                {item.testimonial}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
+  const [errors, setErrors] = React.useState<string[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  const [events, setEvents] = React.useState<
+    Awaited<ReturnType<typeof fetchAllEvents>>
+  >([]);
+  const [slugTouched, setSlugTouched] = React.useState(false);
+  const [draft, setDraft] = React.useState({
+    title: "",
+    slug: "",
+    feedType: "Services" as FeedType,
+    summary: "",
+    eventDate: "",
+    presenterName: "",
+    presenterRole: "",
+    presenterAvatarPath: null as string | null,
+    presenterAvatarUrl: null as string | null,
+    themeTopic: "",
+    verseReference: "",
+    verseVersion: "",
+    intercessionPrayerPoints: "",
+    praiseHighlights: "",
+    isPublished: true,
+  });
+
+  const loadEvents = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchAllEvents();
+      setEvents(data);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void loadEvents();
+  }, [loadEvents]);
+
+  const handleTitleChange = (value: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      title: value,
+      slug: slugTouched ? prev.slug : slugify(value),
+    }));
+  };
+
+  const handleAvatarUpload = async (file: File) => {
+    const result = await uploadMediaFile(file, {
+      folder: "cms/events/presenters",
+      prefix: draft.presenterName || "presenter",
+    });
+    setDraft((prev) => ({
+      ...prev,
+      presenterAvatarPath: result.storagePath,
+      presenterAvatarUrl: result.publicUrl,
+    }));
+  };
+
+  const handleCreate = async () => {
+    if (!canEdit) return;
+
+    const nextErrors: string[] = [];
+    if (!normalizeText(draft.title)) nextErrors.push("Title is required.");
+    if (!normalizeText(draft.slug)) nextErrors.push("Slug is required.");
+    if (!normalizeText(draft.eventDate)) nextErrors.push("Event date is required.");
+    if (!normalizeText(draft.presenterName))
+      nextErrors.push("Presenter name is required.");
+    if (!normalizeText(draft.themeTopic))
+      nextErrors.push("Theme topic is required.");
+    if (!normalizeText(draft.verseReference))
+      nextErrors.push("Verse reference is required.");
+
+    setErrors(nextErrors);
+
+    if (nextErrors.length) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus(null);
+
+    try {
+      const verse = await fetchBibleVerse(
+        draft.verseReference,
+        draft.verseVersion || null,
+      );
+
+      const prayerPoints = draft.intercessionPrayerPoints
+        .split("\n")
+        .map((item) => normalizeText(item))
+        .filter(Boolean);
+      const praiseHighlights = draft.praiseHighlights
+        .split("\n")
+        .map((item) => normalizeText(item))
+        .filter(Boolean);
+
+      await createEvent({
+        slug: normalizeText(draft.slug),
+        title: normalizeText(draft.title),
+        feedType: draft.feedType,
+        summary: normalizeText(draft.summary),
+        eventDate: new Date(draft.eventDate).toISOString(),
+        presenterName: normalizeText(draft.presenterName),
+        presenterRole: normalizeText(draft.presenterRole),
+        presenterAvatarPath: draft.presenterAvatarPath,
+        themeTopic: normalizeText(draft.themeTopic),
+        themeScriptureReference: verse.reference,
+        themeScriptureVersion: verse.translationId,
+        themeScriptureText: verse.text,
+        intercessionPrayerPoints: prayerPoints,
+        praiseHighlights,
+        isPublished: draft.isPublished,
+      });
+
+      setStatus("Event registered.");
+      setDraft({
+        title: "",
+        slug: "",
+        feedType: "Services",
+        summary: "",
+        eventDate: "",
+        presenterName: "",
+        presenterRole: "",
+        presenterAvatarPath: null,
+        presenterAvatarUrl: null,
+        themeTopic: "",
+        verseReference: "",
+        verseVersion: "",
+        intercessionPrayerPoints: "",
+        praiseHighlights: "",
+        isPublished: true,
+      });
+      setSlugTouched(false);
+      await loadEvents();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Save failed.";
+      setStatus(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTogglePublish = async (id: string, nextValue: boolean) => {
+    if (!canEdit) return;
+    await updateEvent(id, { isPublished: nextValue });
+    await loadEvents();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!canEdit) return;
+    const confirmDelete = window.confirm("Delete this event?");
+    if (!confirmDelete) return;
+    await deleteEvent(id);
+    await loadEvents();
+  };
+
+  return (
+    <section className={`${panelShellClass} p-6`}>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-heading-md font-semibold">Events</h2>
+          <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">
+            Register new events and keep preacher verses synced from
+            bible-api.com.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={!canEdit || saving}
+          className="rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Add event"}
+        </button>
+      </div>
+
+      {!canEdit && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
+          You can view events but you do not have edit permissions.
+        </div>
+      )}
+
+      {errors.length > 0 && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
+          <p className="font-semibold">Validation issues</p>
+          <ul className="mt-2 list-disc pl-5">
+            {errors.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {status && (
+        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
+          {status}
+        </div>
+      )}
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Title</span>
+          <input
+            type="text"
+            value={draft.title}
+            onChange={(event) => handleTitleChange(event.target.value)}
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Slug</span>
+          <input
+            type="text"
+            value={draft.slug}
+            onChange={(event) => {
+              setSlugTouched(true);
+              setDraft((prev) => ({ ...prev, slug: event.target.value }));
+            }}
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Feed type</span>
+          <select
+            value={draft.feedType}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                feedType: event.target.value as FeedType,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          >
+            {(["Services", "Revivals", "Specials"] as FeedType[]).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Event date</span>
+          <input
+            type="date"
+            value={draft.eventDate}
+            onChange={(event) =>
+              setDraft((prev) => ({ ...prev, eventDate: event.target.value }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+      </div>
+
+      <label className="mt-4 flex flex-col gap-2">
+        <span className="text-body-sm font-medium">Summary</span>
+        <textarea
+          value={draft.summary}
+          onChange={(event) =>
+            setDraft((prev) => ({ ...prev, summary: event.target.value }))
+          }
+          className={`${panelTextareaClass} min-h-[110px]`}
+          disabled={!canEdit}
+        />
+      </label>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Presenter name</span>
+          <input
+            type="text"
+            value={draft.presenterName}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                presenterName: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Presenter role</span>
+          <input
+            type="text"
+            value={draft.presenterRole}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                presenterRole: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+      </div>
+
+      <div className="mt-4">
+        <MediaUploadField
+          label="Presenter avatar"
+          helper="Optional. Upload a headshot for the preacher."
+          value={draft.presenterAvatarUrl}
+          onUpload={handleAvatarUpload}
+        />
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Theme topic</span>
+          <input
+            type="text"
+            value={draft.themeTopic}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                themeTopic: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Verse reference</span>
+          <input
+            type="text"
+            value={draft.verseReference}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                verseReference: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+            placeholder="e.g. John 3:16"
+          />
+        </label>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Verse version</span>
+          <select
+            value={draft.verseVersion}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                verseVersion: event.target.value,
+              }))
+            }
+            className={panelInputClass}
+            disabled={!canEdit}
+          >
+            <option value="">Default (WEB)</option>
+            {BIBLE_TRANSLATIONS.map((translation) => (
+              <option key={translation.id} value={translation.id}>
+                {translation.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Publishing</span>
+          <label className="flex items-center gap-3 text-body-sm">
+            <input
+              type="checkbox"
+              checked={draft.isPublished}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  isPublished: event.target.checked,
+                }))
+              }
+              disabled={!canEdit}
+            />
+            Publish immediately
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Prayer points</span>
+          <textarea
+            value={draft.intercessionPrayerPoints}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                intercessionPrayerPoints: event.target.value,
+              }))
+            }
+            className={`${panelTextareaClass} min-h-[120px]`}
+            disabled={!canEdit}
+            placeholder="One point per line"
+          />
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-body-sm font-medium">Praise highlights</span>
+          <textarea
+            value={draft.praiseHighlights}
+            onChange={(event) =>
+              setDraft((prev) => ({
+                ...prev,
+                praiseHighlights: event.target.value,
+              }))
+            }
+            className={`${panelTextareaClass} min-h-[120px]`}
+            disabled={!canEdit}
+            placeholder="One highlight per line"
+          />
+        </label>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-heading-sm font-semibold">Existing events</h3>
+        {loading && <p className={panelSubtextClass}>Loading...</p>}
+        {error && <p className="text-body-sm text-danger">{error}</p>}
+        {!loading && !error && events.length === 0 && (
+          <p className={panelSubtextClass}>No events yet.</p>
+        )}
+        <div className="mt-4 grid gap-3">
+          {events.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-body font-semibold">{item.title}</p>
+                  <p className={panelSubtextClass}>
+                    {new Date(item.eventDate).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleTogglePublish(item.id, !item.isPublished)
+                    }
+                    className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs text-[color:var(--panel-text-muted)] hover:text-[color:var(--panel-text)]"
+                    disabled={!canEdit}
+                  >
+                    {item.isPublished ? "Unpublish" : "Publish"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger"
+                    disabled={!canEdit}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <p className={`${panelSubtextClass} mt-2`}>
+                {item.feedType} · {item.slug}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 };
 

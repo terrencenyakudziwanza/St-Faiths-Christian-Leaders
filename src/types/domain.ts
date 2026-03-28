@@ -39,6 +39,8 @@ export interface EventItem {
   serviceLeaders: ServiceLeader[];
   themeScriptureReference: string;
   themeScriptureText: string;
+  themeScriptureVersion?: string | null;
+  themeScriptureTranslation?: string | null;
   intercessionPrayerPoints: string[];
   praiseHighlights: string[];
   media: EventMedia[];

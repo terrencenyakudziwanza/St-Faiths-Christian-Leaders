@@ -5,6 +5,7 @@ import type {
   CmsContentMap,
   CmsFocusContent,
   CmsHeroContent,
+  CmsSectionKey,
   CmsWeekContent,
 } from "../types/cms";
 
@@ -73,6 +74,13 @@ const weekContent: CmsWeekContent = {
   title: "A Week In Christian Leaders",
   description:
     "Every day carries a distinct expression of faith. Watch the week unfold through the rhythm of prayer, worship, and study.",
+  themeOfWeek: {
+    title: "Unshakable Faith",
+    verseReference: "Isaiah 41:10",
+    verseVersion: "web",
+    verseText: "Do not fear, for I am with you; do not be dismayed, for I am your God.",
+    verseTranslation: "World English Bible",
+  },
   slides: [
     {
       id: "week-sun",
@@ -146,14 +154,18 @@ export const cmsDefaults: CmsContentMap = {
   "home.week": weekContent,
 };
 
-export const cmsSectionLabels: Record<keyof CmsContentMap, string> = {
+export const cmsSectionLabels: Record<CmsSectionKey, string> = {
   "home.hero": "Home Hero",
   "home.focus": "Focus Section",
   "home.week": "Week In Leaders",
+  "content.events": "Events",
+  "content.testimonials": "Testimonials",
 };
 
-export const cmsSectionOrder: Array<keyof CmsContentMap> = [
+export const cmsSectionOrder: CmsSectionKey[] = [
   "home.hero",
   "home.focus",
   "home.week",
+  "content.events",
+  "content.testimonials",
 ];

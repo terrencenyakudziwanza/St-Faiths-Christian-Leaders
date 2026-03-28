@@ -1,7 +1,10 @@
 import React, { useMemo } from "react";
 import ProfileCard from "./ProfileCard";
+import { fetchTestimonials } from "../services/testimonials";
+import { isOffline } from "../lib/media";
 
 interface TestimonialsState {
+  id: string;
   avatar: { img: string; name: string; personalDetails: string };
   testimonial: string;
 }
@@ -13,9 +16,10 @@ const avatars = {
 } as const;
 
 const Testimonials: React.FC = () => {
-  const testimonials = useMemo(() => {
+  const fallbackTestimonials = useMemo(() => {
     const testimonials: TestimonialsState[] = [
       {
+        id: "fallback-1",
         avatar: {
           img: avatars.elderKojo,
           name: "Tavonga Nyamaropa",
@@ -25,6 +29,7 @@ const Testimonials: React.FC = () => {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate.",
       },
       {
+        id: "fallback-2",
         avatar: {
           img: avatars.pastorJoel,
           name: "Jeid Knoner",
@@ -34,6 +39,7 @@ const Testimonials: React.FC = () => {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate. uidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate.",
       },
       {
+        id: "fallback-3",
         avatar: {
           img: avatars.sisterAma,
           name: "Ryan Zheing",
@@ -43,6 +49,7 @@ const Testimonials: React.FC = () => {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate. Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate.Lo",
       },
       {
+        id: "fallback-4",
         avatar: {
           img: avatars.sisterAma,
           name: "Ryan Zheing",
@@ -52,6 +59,7 @@ const Testimonials: React.FC = () => {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate. Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate.Lo",
       },
       {
+        id: "fallback-5",
         avatar: {
           img: avatars.pastorJoel,
           name: "Jeid Knoner",
@@ -61,6 +69,7 @@ const Testimonials: React.FC = () => {
           "Lorem ipsum dolor sit amet consectetur adipisicing elit. Repudiandae commodi possimus voluptatibus minima perferendis ex quidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate. uidem natus necessitatibus at maxime itaque cupiditate autem, hic molestias, quo molestiae explicabo, saepe voluptate.",
       },
       {
+        id: "fallback-6",
         avatar: {
           img: avatars.pastorJoel,
           name: "Jeid Knoner",
@@ -72,6 +81,45 @@ const Testimonials: React.FC = () => {
     ];
     return testimonials;
   }, []);
+
+  const [testimonials, setTestimonials] =
+    React.useState<TestimonialsState[]>(fallbackTestimonials);
+
+  React.useEffect(() => {
+    if (isOffline) {
+      return;
+    }
+
+    let isActive = true;
+
+    fetchTestimonials()
+      .then((items) => {
+        if (!isActive || !items.length) {
+          return;
+        }
+
+        const mapped: TestimonialsState[] = items.map((item) => ({
+          id: item.id,
+          avatar: {
+            img: item.avatarUrl ?? avatars.elderKojo,
+            name: item.name,
+            personalDetails: item.profileDetails ?? "",
+          },
+          testimonial: item.testimonial,
+        }));
+
+        setTestimonials(mapped);
+      })
+      .catch(() => {
+        if (isActive) {
+          setTestimonials(fallbackTestimonials);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [fallbackTestimonials]);
 
   function spread(
     testimonials: TestimonialsState[],
@@ -130,7 +178,7 @@ const Testimonials: React.FC = () => {
             >
               {[...testimonialCol, ...testimonialCol].map((testimonial, j) => (
                 <div
-                  key={`${testimonial.avatar.name}-${j}`}
+                  key={`${testimonial.id}-${j}`}
                   className="flex flex-col border border-subtle rounded-3xl p-3 gap-4 h-fit cursor-pointer bg-surface"
                 >
                   <p className="text-body-sm text-muted">

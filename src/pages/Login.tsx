@@ -59,7 +59,7 @@ const Login: React.FC = () => {
     }
 
     setMessage(
-      "Invite activated. Check your email for confirmation if required, then sign in.",
+      "Invite accepted. Check your email for confirmation if required, then sign in.",
     );
   };
 
@@ -112,7 +112,7 @@ const Login: React.FC = () => {
                   : "text-[color:var(--panel-text-muted)] hover:text-[color:var(--panel-text)]"
               }`}
             >
-              Activate Invite
+              Accept Invite
             </button>
           </div>
 
@@ -152,11 +152,6 @@ const Login: React.FC = () => {
               >
                 Forgot password?
               </button>
-              <span>
-                {mode === "activate"
-                  ? "Invited editors should activate once, then sign in."
-                  : "Need access? Ask an admin for an invite."}
-              </span>
             </div>
 
             {error && (

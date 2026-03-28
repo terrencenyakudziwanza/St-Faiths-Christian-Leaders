@@ -57,6 +57,13 @@ const Home: React.FC = () => {
     [heroContent.heroHeader, heroContent.heroSecondary, heroSlides],
   );
 
+  const heroGradientStyle = introAnimDone
+    ? {
+        backgroundImage:
+          "linear-gradient(110deg, var(--accent), var(--accent-purple))",
+      }
+    : undefined;
+
 
   useGSAP(() => {
     if (!homeRef.current) {
@@ -319,15 +326,17 @@ const Home: React.FC = () => {
         ))}
 
         {/* HERO COPY + OVERLAY */}
-        <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)]">
+        <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)] relative">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,var(--accent-soft),transparent_55%),radial-gradient(circle_at_78%_30%,var(--accent-purple-soft),transparent_60%),linear-gradient(180deg,rgba(0,0,0,0.7),rgba(0,0,0,0.6))]"></div>
           {heroContent.heroHeader.map((h, i) => (
             <div
               key={i}
-              className={`text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] ${
+              className={`text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] relative ${
                 introAnimDone
-                  ? "text-transparent bg-clip-text bg-linear-to-r from-gray-700 to-white"
+                  ? "text-transparent bg-clip-text"
                   : "text-inverse"
               }`}
+              style={heroGradientStyle}
             >
               {h}
             </div>

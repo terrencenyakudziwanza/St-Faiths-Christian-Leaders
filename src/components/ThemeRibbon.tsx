@@ -1,19 +1,35 @@
 import React from "react";
 import { BookOpen, X } from "lucide-react";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { fetchBibleVerse } from "../services/bibleApi";
 
 type RibbonTextState = "active" | "exit" | "hidden";
-
-const THEME_OF_WEEK = "Unshakable Faith";
-const VERSE_REFERENCE = "Isaiah 41:10";
-const VERSE_TEXT = "Do not fear, for I am with you.";
-
-const verseLine = `${VERSE_REFERENCE} — ${VERSE_TEXT}`;
-const themeLine = `THEME OF THE WEEK: ${THEME_OF_WEEK}`;
 
 const ThemeRibbon: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(true);
   const [showTheme, setShowTheme] = React.useState(false);
   const [exiting, setExiting] = React.useState<"verse" | "theme" | null>(null);
+  const [resolvedVerse, setResolvedVerse] = React.useState<string | null>(null);
+
+  const weekContent = useCmsSection("home.week");
+  const themeTitle = weekContent.themeOfWeek.title || "Theme of the Week";
+  const verseReference = weekContent.themeOfWeek.verseReference || "";
+  const verseVersion = weekContent.themeOfWeek.verseVersion;
+  const verseText = weekContent.themeOfWeek.verseText || "";
+
+  const verseLine = React.useMemo(() => {
+    const resolved = resolvedVerse ?? verseText;
+    if (verseReference && resolved) {
+      const versionLabel = verseVersion ? ` (${verseVersion.toUpperCase()})` : "";
+      return `${verseReference}${versionLabel} — ${resolved}`;
+    }
+    return resolved || verseReference || "Add a theme verse in the dashboard.";
+  }, [verseReference, verseText, verseVersion, resolvedVerse]);
+
+  const themeLine = React.useMemo(
+    () => `THEME OF THE WEEK: ${themeTitle}`,
+    [themeTitle],
+  );
 
   React.useEffect(() => {
     if (!isOpen) {
@@ -45,6 +61,31 @@ const ThemeRibbon: React.FC = () => {
       window.clearTimeout(timeoutId);
     };
   }, [exiting]);
+
+  React.useEffect(() => {
+    if (!verseReference || verseText) {
+      setResolvedVerse(null);
+      return;
+    }
+
+    let isActive = true;
+
+    fetchBibleVerse(verseReference, verseVersion)
+      .then((verse) => {
+        if (isActive) {
+          setResolvedVerse(verse.text);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setResolvedVerse(null);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [verseReference, verseVersion, verseText]);
 
   if (!isOpen) {
     return null;

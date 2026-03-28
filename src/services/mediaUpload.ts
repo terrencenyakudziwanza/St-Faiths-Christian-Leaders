@@ -34,7 +34,7 @@ export async function uploadMediaFile(
     const lowered = error.message.toLowerCase();
     if (lowered.includes("bucket") && lowered.includes("not found")) {
       throw new Error(
-        "Upload failed: storage bucket \"cms\" was not found. Make sure the 0002_cms.sql migration has been applied to this Supabase project (or create the bucket manually).",
+        "Upload failed: storage bucket \"media\" was not found. This project expects a single bucket named \"media\" with a \"cms/\" folder inside it.",
       );
     }
     throw new Error(`Upload failed: ${error.message}`);

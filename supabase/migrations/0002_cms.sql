@@ -29,13 +29,7 @@ create table if not exists public.cms_invites (
 );
 
 insert into storage.buckets (id, name, public)
-values ('seed', 'seed', true)
-on conflict (id) do update
-set name = excluded.name,
-    public = excluded.public;
-
-insert into storage.buckets (id, name, public)
-values ('cms', 'cms', true)
+values ('media', 'media', true)
 on conflict (id) do update
 set name = excluded.name,
     public = excluded.public;
@@ -209,7 +203,8 @@ create policy "cms_media_uploads" on storage.objects
 for insert
 to authenticated
 with check (
-  bucket_id = 'cms'
+  bucket_id = 'media'
+  and name like 'cms/%'
   and (public.is_admin() or public.is_editor())
 );
 
@@ -217,6 +212,7 @@ create policy "cms_media_updates" on storage.objects
 for update
 to authenticated
 using (
-  bucket_id = 'cms'
+  bucket_id = 'media'
+  and name like 'cms/%'
   and (public.is_admin() or public.is_editor())
 );

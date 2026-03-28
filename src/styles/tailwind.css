@@ -17,9 +17,14 @@
     --ink-subtle: #6a5843;
     --ink-faint: #7d6a52;
     --ink-inverse: #ffffff;
-    --accent: #8d6d2d;
-    --accent-strong: #c3a260;
-    --accent-soft: rgba(141, 109, 45, 0.15);
+    --accent: #ffd500;
+    --accent-strong: #ffd500;
+    --accent-soft: rgba(255, 213, 0, 0.18);
+    --accent-soft-faint: rgba(255, 213, 0, 0.1);
+    --accent-soft-subtle: rgba(255, 213, 0, 0.06);
+    --accent-purple: #7c3aed;
+    --accent-purple-soft: rgba(124, 58, 237, 0.14);
+    --accent-purple-glow: rgba(124, 58, 237, 0.28);
     --danger: #b91c1c;
     --scrollbar-thumb: rgba(0, 0, 0, 0.25);
     --icon-adapt-filter: invert(0);
@@ -34,7 +39,7 @@
     --panel-text-muted: rgba(255, 255, 255, 0.6);
     --panel-ink: #0b0d12;
     --family-hero-gradient: radial-gradient(circle_at_top_left, rgba(255, 255, 255, 0.92), transparent 36%),
-      radial-gradient(circle_at_88%_18%, rgba(196, 160, 77, 0.24), transparent 24%),
+      radial-gradient(circle_at_88%_18%, var(--accent-soft), transparent 24%),
       linear-gradient(180deg, #f5efe3 0%, #efe6d7 52%, #ffffff 100%);
     --family-panel-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.24));
     --family-divider-gradient: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.46) 14%, rgba(255, 255, 255, 0.58) 50%, rgba(255, 255, 255, 0.46) 86%, rgba(255, 255, 255, 0) 100%);
@@ -58,9 +63,14 @@
     --ink-subtle: #a79f93;
     --ink-faint: #8f877b;
     --ink-inverse: #ffffff;
-    --accent: #d6b86a;
-    --accent-strong: #f0d48a;
-    --accent-soft: rgba(214, 184, 106, 0.18);
+    --accent: #ffd500;
+    --accent-strong: #ffd500;
+    --accent-soft: rgba(255, 213, 0, 0.18);
+    --accent-soft-faint: rgba(255, 213, 0, 0.1);
+    --accent-soft-subtle: rgba(255, 213, 0, 0.06);
+    --accent-purple: #a78bfa;
+    --accent-purple-soft: rgba(167, 139, 250, 0.18);
+    --accent-purple-glow: rgba(167, 139, 250, 0.28);
     --danger: #f87171;
     --scrollbar-thumb: rgba(255, 255, 255, 0.25);
     --icon-adapt-filter: invert(1);
@@ -75,7 +85,7 @@
     --panel-text-muted: rgba(255, 255, 255, 0.64);
     --panel-ink: #0b0d12;
     --family-hero-gradient: radial-gradient(circle_at_top_left, rgba(20, 20, 24, 0.92), transparent 36%),
-      radial-gradient(circle_at_88%_18%, rgba(214, 184, 106, 0.18), transparent 24%),
+      radial-gradient(circle_at_88%_18%, var(--accent-soft), transparent 24%),
       linear-gradient(180deg, #131418 0%, #0f1116 52%, #0e0f12 100%);
     --family-panel-gradient: linear-gradient(135deg, rgba(20, 22, 28, 0.72), rgba(20, 22, 28, 0.35));
     --family-divider-gradient: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.14) 14%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.14) 86%, rgba(255, 255, 255, 0) 100%);
@@ -213,6 +223,10 @@
     color: var(--accent-strong);
   }
 
+  .text-accent-purple {
+    color: var(--accent-purple);
+  }
+
   .text-danger {
     color: var(--danger);
   }
@@ -261,6 +275,10 @@
     background-color: var(--accent-strong);
   }
 
+  .bg-accent-purple-soft {
+    background-color: var(--accent-purple-soft);
+  }
+
   .bg-like-soft {
     background-color: var(--like-soft);
   }
@@ -275,6 +293,10 @@
 
   .border-accent {
     border-color: var(--accent);
+  }
+
+  .border-accent-purple {
+    border-color: var(--accent-purple);
   }
 
   .border-like {

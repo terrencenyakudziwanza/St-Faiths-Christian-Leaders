@@ -375,7 +375,7 @@ const Family: React.FC = () => {
       return (
         <div
           className={`relative h-[92px] w-[92px] overflow-hidden rounded-full shadow-[0_10px_24px_rgba(31,23,13,0.12)] ${
-            isActive ? "ring-2 ring-[#c3a260]" : ""
+            isActive ? "ring-2 ring-[color:var(--accent)]" : ""
           }`}
         >
           <img

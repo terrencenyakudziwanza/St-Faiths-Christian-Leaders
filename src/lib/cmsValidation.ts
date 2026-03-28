@@ -4,6 +4,7 @@ import type {
   CmsWeekContent,
 } from "../types/cms";
 import { normalizeText } from "./cms";
+import { isSupportedTranslation } from "../services/bibleApi";
 
 export type ValidationResult = {
   valid: boolean;
@@ -117,6 +118,8 @@ export function validateWeek(content: CmsWeekContent): ValidationResult {
   const overline = normalizeText(content.overline);
   const title = normalizeText(content.title);
   const description = normalizeText(content.description);
+  const themeTitle = normalizeText(content.themeOfWeek.title);
+  const themeVerseRef = normalizeText(content.themeOfWeek.verseReference);
 
   if (overline.length < 4 || overline.length > 36) {
     errors.push(rangeMessage("Week overline", 4, 36));
@@ -128,6 +131,25 @@ export function validateWeek(content: CmsWeekContent): ValidationResult {
 
   if (description.length < 30 || description.length > 200) {
     errors.push(rangeMessage("Week description", 30, 200));
+  }
+
+  if (themeTitle.length < 4 || themeTitle.length > 60) {
+    errors.push(rangeMessage("Theme title", 4, 60));
+  }
+
+  if (themeVerseRef.length < 3 || themeVerseRef.length > 60) {
+    errors.push(rangeMessage("Theme verse reference", 3, 60));
+  }
+
+  if (!normalizeText(content.themeOfWeek.verseText)) {
+    errors.push("Theme verse text could not be resolved from the API.");
+  }
+
+  if (
+    content.themeOfWeek.verseVersion &&
+    !isSupportedTranslation(content.themeOfWeek.verseVersion)
+  ) {
+    errors.push("Theme verse version is not supported by bible-api.com.");
   }
 
   if (content.slides.length !== 7) {

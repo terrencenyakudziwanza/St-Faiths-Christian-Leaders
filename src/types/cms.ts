@@ -1,6 +1,10 @@
 type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
-export type CmsSectionKey = "home.hero" | "home.focus" | "home.week";
+export type CmsContentKey = "home.hero" | "home.focus" | "home.week";
+export type CmsSectionKey =
+  | CmsContentKey
+  | "content.testimonials"
+  | "content.events";
 
 export type CmsMediaRef = {
   storagePath?: string | null;
@@ -42,11 +46,20 @@ export type CmsWeekSlide = {
   image: CmsMediaRef;
 };
 
+export type CmsThemeOfWeek = {
+  title: string;
+  verseReference: string;
+  verseVersion?: string | null;
+  verseText: string;
+  verseTranslation?: string | null;
+};
+
 export type CmsWeekContent = {
   overline: string;
   title: string;
   description: string;
   slides: CmsWeekSlide[];
+  themeOfWeek: CmsThemeOfWeek;
 };
 
 export type CmsContentMap = {
@@ -74,7 +87,7 @@ export type CmsInvite = {
 };
 
 export type CmsContentRow = {
-  section_key: CmsSectionKey;
+  section_key: CmsContentKey;
   content: Json;
   is_published: boolean;
   updated_at: string;

@@ -199,6 +199,10 @@ const EventsModal: React.FC<EventsModalProps> = ({
     activeComponent === "Intercession"
       ? (event?.intercessionPrayerPoints ?? [])
       : (event?.praiseHighlights ?? []);
+  const verseLabel = event?.themeScriptureReference ?? "John 15:5";
+  const verseVersionLabel = event?.themeScriptureVersion
+    ? ` (${event.themeScriptureVersion.toUpperCase()})`
+    : "";
 
   const registerVideoRef = React.useCallback(
     (clipId: string, element: HTMLVideoElement | null) => {
@@ -711,7 +715,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
                   <BookOpen className="h-4 w-4 text-ink" />
                 </div>
                 <p className="text-body font-semibold text-ink">
-                  {event?.themeScriptureReference ?? "John 15:5"}
+                  {`${verseLabel}${verseVersionLabel}`}
                 </p>
               </div>
               <p className="text-body text-muted leading-relaxed">

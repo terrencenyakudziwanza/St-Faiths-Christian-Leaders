@@ -31,7 +31,7 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       type="button"
-      className="fixed bottom-4 left-4 z-[120] flex h-10 w-10 items-center justify-center rounded-full border border-strong bg-surface-elevated text-ink shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
+      className="fixed bottom-10 left-4 z-[120] flex h-10 w-10 items-center justify-center rounded-full border border-strong bg-surface-elevated text-ink shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
       onClick={() => setTheme(nextTheme)}
       aria-label={`Switch to ${nextTheme} mode`}
       aria-pressed={theme === "dark"}

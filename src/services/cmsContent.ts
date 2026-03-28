@@ -1,8 +1,8 @@
 import { supabase } from "../lib/supabase";
-import type { CmsContentMap, CmsContentRow, CmsSectionKey } from "../types/cms";
+import type { CmsContentKey, CmsContentMap, CmsContentRow } from "../types/cms";
 
 export async function fetchCmsContent(
-  keys: CmsSectionKey[],
+  keys: CmsContentKey[],
 ): Promise<Partial<CmsContentMap>> {
   if (!keys.length) {
     return {};
@@ -22,13 +22,14 @@ export async function fetchCmsContent(
 
   (data ?? []).forEach((row) => {
     const typedRow = row as CmsContentRow;
-    contentMap[typedRow.section_key] = typedRow.content as CmsContentMap[CmsSectionKey];
+    contentMap[typedRow.section_key] =
+      typedRow.content as CmsContentMap[CmsContentKey];
   });
 
   return contentMap;
 }
 
-export async function upsertCmsContent<T extends CmsSectionKey>(
+export async function upsertCmsContent<T extends CmsContentKey>(
   key: T,
   content: CmsContentMap[T],
 ): Promise<void> {

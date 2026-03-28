@@ -6,6 +6,7 @@ import {
 } from "../data/offlineContent";
 import { isOffline, resolveMediaUrl } from "../lib/media";
 import { supabase } from "../lib/supabase";
+import { fetchBibleVerse } from "./bibleApi";
 import type {
   EventItem,
   EventMedia,
@@ -30,11 +31,17 @@ type EventRow = {
   slug: string;
   title: string;
   feed_type: FeedType;
+  theme_topic: string | null;
   summary: string;
   event_date: string;
   presenter_name: string;
   presenter_role: string;
   presenter_avatar_path: string | null;
+  theme_scripture_reference: string | null;
+  theme_scripture_version: string | null;
+  theme_scripture_text: string | null;
+  intercession_prayer_points: string[] | null;
+  praise_highlights: string[] | null;
   event_media: EventMediaRow[] | null;
 };
 
@@ -92,6 +99,55 @@ const scriptureBySlug: Record<
     text: "Give thanks in all circumstances; for this is God's will for you in Christ Jesus.",
   },
 };
+
+async function resolveScripture(
+  row: EventRow,
+  allowNetwork: boolean,
+): Promise<{
+  reference: string;
+  text: string;
+  translationId: string | null;
+  translationName: string | null;
+}> {
+  if (row.theme_scripture_reference && row.theme_scripture_text) {
+    return {
+      reference: row.theme_scripture_reference,
+      text: row.theme_scripture_text,
+      translationId: row.theme_scripture_version,
+      translationName: null,
+    };
+  }
+
+  const fallback = scriptureBySlug[row.slug] ?? defaultScripture;
+  const reference = row.theme_scripture_reference ?? fallback.reference;
+  const version = row.theme_scripture_version;
+
+  if (!allowNetwork) {
+    return {
+      reference,
+      text: row.theme_scripture_text ?? fallback.text,
+      translationId: version ?? null,
+      translationName: null,
+    };
+  }
+
+  try {
+    const verse = await fetchBibleVerse(reference, version);
+    return {
+      reference: verse.reference,
+      text: verse.text,
+      translationId: verse.translationId,
+      translationName: verse.translationName,
+    };
+  } catch {
+    return {
+      reference,
+      text: row.theme_scripture_text ?? fallback.text,
+      translationId: version ?? null,
+      translationName: null,
+    };
+  }
+}
 
 const prayerPointsBySlug: Record<string, string[]> = {
   "sunday-prayer-service": [
@@ -288,20 +344,38 @@ function buildServiceLeaders(row: EventRow): ServiceLeader[] {
   }));
 }
 
-function mapEvent(row: EventRow): EventItem {
+function mapEvent(
+  row: EventRow,
+  scripture: {
+    reference: string;
+    text: string;
+    translationId: string | null;
+    translationName: string | null;
+  },
+): EventItem {
   const sortedMediaRows = [...(row.event_media ?? [])].sort(byMediaRowSortOrder);
   const media = sortedMediaRows
     .map((mediaRow, index) =>
       mapMedia(mediaRow, inferMediaComponent(mediaRow, index)),
     )
     .sort(bySortOrder);
-  const scripture = scriptureBySlug[row.slug] ?? defaultScripture;
+  const themeTopic = row.theme_topic?.trim()
+    ? row.theme_topic
+    : themeTopicBySlug[row.slug] ?? row.title;
+  const intercessionPrayerPoints =
+    row.intercession_prayer_points && row.intercession_prayer_points.length
+      ? row.intercession_prayer_points
+      : prayerPointsBySlug[row.slug] ?? [...defaultPrayerPoints];
+  const praiseHighlights =
+    row.praise_highlights && row.praise_highlights.length
+      ? row.praise_highlights
+      : praiseHighlightsBySlug[row.slug] ?? [...defaultPraiseHighlights];
 
   return {
     id: row.id,
     slug: row.slug,
     title: row.title,
-    themeTopic: themeTopicBySlug[row.slug] ?? row.title,
+    themeTopic,
     feedType: row.feed_type,
     summary: row.summary,
     eventDate: row.event_date,
@@ -312,16 +386,17 @@ function mapEvent(row: EventRow): EventItem {
     serviceLeaders: buildServiceLeaders(row),
     themeScriptureReference: scripture.reference,
     themeScriptureText: scripture.text,
-    intercessionPrayerPoints:
-      prayerPointsBySlug[row.slug] ?? [...defaultPrayerPoints],
-    praiseHighlights: praiseHighlightsBySlug[row.slug] ?? [...defaultPraiseHighlights],
+    themeScriptureVersion: scripture.translationId,
+    themeScriptureTranslation: scripture.translationName,
+    intercessionPrayerPoints,
+    praiseHighlights,
     media,
   };
 }
 
 export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
   if (isOffline) {
-    const data = offlineEventRows
+    const rows = offlineEventRows
       .filter((row) => row.is_published && row.feed_type === feedType)
       .sort(byDateDescending)
       .map((row) => {
@@ -329,11 +404,18 @@ export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
           (mediaRow) => mediaRow.event_id === row.id,
         );
 
-        return mapEvent({
+        return {
           ...(row as OfflineEventRow),
           event_media: eventMedia as OfflineEventMediaRow[],
-        } as EventRow);
+        } as EventRow;
       });
+
+    const data = await Promise.all(
+      rows.map(async (row) => {
+        const scripture = await resolveScripture(row, false);
+        return mapEvent(row, scripture);
+      }),
+    );
 
     return data;
   }
@@ -351,6 +433,12 @@ export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
         presenter_name,
         presenter_role,
         presenter_avatar_path,
+        theme_topic,
+        theme_scripture_reference,
+        theme_scripture_version,
+        theme_scripture_text,
+        intercession_prayer_points,
+        praise_highlights,
         event_media (
           id,
           event_id,
@@ -370,7 +458,16 @@ export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
     throw new Error(`Failed to fetch events: ${error.message}`);
   }
 
-  return (data ?? []).map((row) => mapEvent(row as EventRow));
+  const rows = data ?? [];
+
+  const events = await Promise.all(
+    rows.map(async (row) => {
+      const scripture = await resolveScripture(row as EventRow, true);
+      return mapEvent(row as EventRow, scripture);
+    }),
+  );
+
+  return events;
 }
 
 export async function fetchEventMedia(eventId: string): Promise<EventMedia[]> {
