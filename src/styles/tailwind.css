@@ -22,9 +22,9 @@
     --accent-soft: rgba(255, 213, 0, 0.18);
     --accent-soft-faint: rgba(255, 213, 0, 0.1);
     --accent-soft-subtle: rgba(255, 213, 0, 0.06);
-    --accent-purple: #7c3aed;
-    --accent-purple-soft: rgba(124, 58, 237, 0.14);
-    --accent-purple-glow: rgba(124, 58, 237, 0.28);
+    --accent-purple: #6f00ff;
+    --accent-purple-soft: rgba(93, 0, 255, 0.14);
+    --accent-purple-glow: rgba(93, 0, 255, 0.53);
     --danger: #b91c1c;
     --scrollbar-thumb: rgba(0, 0, 0, 0.25);
     --icon-adapt-filter: invert(0);

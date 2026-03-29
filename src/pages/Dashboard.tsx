@@ -9,6 +9,7 @@ import type {
   CmsWeekContent,
 } from "../types/cms";
 import { resolveCmsMedia, normalizeText, slugify } from "../lib/cms";
+import { CMS_MEDIA_FOLDERS } from "../lib/cmsMedia";
 import { uploadMediaFile } from "../services/mediaUpload";
 import { upsertCmsContent } from "../services/cmsContent";
 import { useCmsSection } from "../hooks/useCmsSection";
@@ -319,7 +320,7 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   const handleSlideUpload = async (index: number, file: File) => {
     const result = await uploadMediaFile(file, {
-      folder: "cms/home-hero",
+      folder: CMS_MEDIA_FOLDERS.homeHero,
       prefix: `slide-${index + 1}`,
     });
 
@@ -476,7 +477,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   const handleItemUpload = async (index: number, file: File) => {
     const result = await uploadMediaFile(file, {
-      folder: "cms/home-focus",
+      folder: CMS_MEDIA_FOLDERS.homeFocus,
       prefix: draft.items[index]?.title ?? `focus-${index + 1}`,
     });
 
@@ -642,7 +643,7 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   const handleSlideUpload = async (index: number, file: File) => {
     const result = await uploadMediaFile(file, {
-      folder: "cms/home-week",
+      folder: CMS_MEDIA_FOLDERS.homeWeek,
       prefix: draft.slides[index]?.day ?? `week-${index + 1}`,
     });
 
@@ -1002,7 +1003,7 @@ const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   const handleAvatarUpload = async (file: File) => {
     const result = await uploadMediaFile(file, {
-      folder: "cms/testimonials",
+      folder: CMS_MEDIA_FOLDERS.testimonials,
       prefix: draft.name || "testimonial",
     });
 
@@ -1287,7 +1288,7 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   const handleAvatarUpload = async (file: File) => {
     const result = await uploadMediaFile(file, {
-      folder: "cms/events/presenters",
+      folder: CMS_MEDIA_FOLDERS.presenterAvatars,
       prefix: draft.presenterName || "presenter",
     });
     setDraft((prev) => ({

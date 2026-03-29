@@ -20,7 +20,7 @@ values
     '2026-02-10T18:00:00Z',
     'Pastor Joel Mensah',
     'Lead Pastor',
-    'presenters/pastor-joel.jpg',
+    'seed/presenters/pastor-joel.jpg',
     true
   ),
   (
@@ -32,7 +32,7 @@ values
     '2026-02-15T19:30:00Z',
     'Sister Ama Boateng',
     'Revival Lead',
-    'presenters/sister-ama.jpg',
+    'seed/presenters/sister-ama.jpg',
     true
   ),
   (
@@ -44,7 +44,7 @@ values
     '2026-02-21T17:00:00Z',
     'Elder Kojo Asare',
     'Special Programs',
-    'presenters/elder-kojo.jpg',
+    'seed/presenters/elder-kojo.jpg',
     true
   ),
   (
@@ -56,7 +56,7 @@ values
     '2026-03-07T18:30:00Z',
     'Pastor Joel Mensah',
     'Lead Pastor',
-    'presenters/pastor-joel.jpg',
+    'seed/presenters/pastor-joel.jpg',
     true
   ),
   (
@@ -68,7 +68,7 @@ values
     '2026-03-05T17:30:00Z',
     'Sister Ama Boateng',
     'Service Lead',
-    'presenters/sister-ama.jpg',
+    'seed/presenters/sister-ama.jpg',
     true
   ),
   (
@@ -80,7 +80,7 @@ values
     '2026-03-03T06:30:00Z',
     'Elder Kojo Asare',
     'Morning Service Lead',
-    'presenters/elder-kojo.jpg',
+    'seed/presenters/elder-kojo.jpg',
     true
   ),
   (
@@ -92,7 +92,7 @@ values
     '2026-03-01T16:00:00Z',
     'Pastor Joel Mensah',
     'Prayer Minister',
-    'presenters/pastor-joel.jpg',
+    'seed/presenters/pastor-joel.jpg',
     true
   ),
   (
@@ -104,7 +104,7 @@ values
     '2026-02-27T18:00:00Z',
     'Sister Ama Boateng',
     'Prayer Lead',
-    'presenters/sister-ama.jpg',
+    'seed/presenters/sister-ama.jpg',
     true
   ),
   (
@@ -116,7 +116,7 @@ values
     '2026-02-25T17:00:00Z',
     'Elder Kojo Asare',
     'Teaching Lead',
-    'presenters/elder-kojo.jpg',
+    'seed/presenters/elder-kojo.jpg',
     true
   ),
   (
@@ -128,7 +128,7 @@ values
     '2026-02-23T19:00:00Z',
     'Pastor Joel Mensah',
     'Night Service Lead',
-    'presenters/pastor-joel.jpg',
+    'seed/presenters/pastor-joel.jpg',
     true
   ),
   (
@@ -140,7 +140,7 @@ values
     '2026-02-19T17:30:00Z',
     'Sister Ama Boateng',
     'Family Care Lead',
-    'presenters/sister-ama.jpg',
+    'seed/presenters/sister-ama.jpg',
     true
   )
 on conflict (id) do nothing;

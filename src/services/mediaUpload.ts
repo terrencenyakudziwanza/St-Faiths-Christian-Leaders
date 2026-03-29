@@ -1,5 +1,7 @@
 import { CMS_BUCKET, supabase } from "../lib/supabase";
 import { slugify } from "../lib/cms";
+import { isCmsMediaFolder } from "../lib/cmsMedia";
+import type { CmsMediaFolder } from "../types/cms";
 
 export type UploadResult = {
   storagePath: string;
@@ -16,8 +18,14 @@ function getFileExtension(fileName: string): string {
 
 export async function uploadMediaFile(
   file: File,
-  options: { folder: string; prefix?: string },
+  options: { folder: CmsMediaFolder; prefix?: string },
 ): Promise<UploadResult> {
+  if (!isCmsMediaFolder(options.folder)) {
+    throw new Error(
+      "Upload failed: CMS uploads must target a known cms/ folder.",
+    );
+  }
+
   const extension = getFileExtension(file.name);
   const prefix = options.prefix ? `${slugify(options.prefix)}-` : "";
   const storagePath = `${options.folder}/${prefix}${crypto.randomUUID()}.${extension}`;

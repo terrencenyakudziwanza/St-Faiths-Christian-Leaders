@@ -6,6 +6,13 @@ export type CmsSectionKey =
   | "content.testimonials"
   | "content.events";
 
+export type CmsMediaFolder =
+  | "cms/home/hero"
+  | "cms/home/focus"
+  | "cms/home/week"
+  | "cms/content/testimonials"
+  | "cms/content/events/presenters";
+
 export type CmsMediaRef = {
   storagePath?: string | null;
   url?: string | null;

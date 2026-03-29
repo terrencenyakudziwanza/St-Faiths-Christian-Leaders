@@ -327,7 +327,7 @@ const Home: React.FC = () => {
 
         {/* HERO COPY + OVERLAY */}
         <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)] relative">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,var(--accent-soft),transparent_55%),radial-gradient(circle_at_78%_30%,var(--accent-purple-soft),transparent_60%),linear-gradient(180deg,rgba(0,0,0,0.7),rgba(0,0,0,0.6))]"></div>
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,var(--accent-soft),transparent_35%),radial-gradient(circle_at_78%_30%,var(--accent-purple-soft),transparent_30%),linear-gradient(180deg,rgba(0,0,0,0.7),rgba(0,0,0,0.6))]"></div>
           {heroContent.heroHeader.map((h, i) => (
             <div
               key={i}
