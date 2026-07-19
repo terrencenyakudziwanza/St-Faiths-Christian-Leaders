@@ -506,6 +506,111 @@ html::-webkit-scrollbar-thumb {
   object-fit: cover;
 }
 
+.highlight-flip-card {
+  width: min(320px, 88vw);
+  height: 420px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  perspective: 1200px;
+  cursor: pointer;
+}
+
+.highlight-flip-card__inner {
+  position: relative;
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 720ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.highlight-flip-card.is-flipped .highlight-flip-card__inner {
+  transform: rotateY(180deg);
+}
+
+.highlight-flip-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  background: var(--surface-elevated);
+  box-shadow: 0 24px 54px rgba(16, 12, 7, 0.14);
+  backface-visibility: hidden;
+}
+
+.highlight-flip-card__front {
+  justify-content: flex-end;
+}
+
+.highlight-flip-card__back {
+  justify-content: center;
+  padding: 1.35rem;
+  text-align: left;
+  transform: rotateY(180deg);
+}
+
+.highlight-stack {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.highlight-stack__image {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: 30px;
+  object-fit: cover;
+  transition: transform 420ms ease;
+}
+
+.highlight-stack__image--1 {
+  z-index: 4;
+}
+
+.highlight-stack__image--2 {
+  z-index: 3;
+  transform: translateY(-12px) scaleX(0.9);
+  opacity: 0.9;
+}
+
+.highlight-stack__image--3 {
+  z-index: 2;
+  transform: translateY(-22px) scaleX(0.8);
+  opacity: 0.76;
+}
+
+.highlight-stack__image--4 {
+  z-index: 1;
+  transform: translateY(-30px) scaleX(0.72);
+  opacity: 0.55;
+}
+
+.highlight-flip-card:hover .highlight-stack__image--1 {
+  transform: translateY(4px);
+}
+
+.highlight-flip-card__title {
+  position: relative;
+  z-index: 6;
+  display: block;
+  margin: 1rem;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.56);
+  padding: 0.9rem 1rem;
+  color: #ffffff;
+  font-size: 1.08rem;
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: left;
+  backdrop-filter: blur(10px);
+}
+
 @keyframes gallery-marquee {
   0% {
     transform: translateX(0);

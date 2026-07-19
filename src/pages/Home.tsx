@@ -21,6 +21,7 @@ const homeNavPages: NavPage[] = [
       { id: "Home", label: "Home", sectionId: "home-section" },
       { id: "Focus", label: "Focus", sectionId: "focus-section" },
       { id: "Week", label: "Week", sectionId: "week-section" },
+      { id: "Gallery", label: "Gallery", sectionId: "gallery-section" },
       {
         id: "Testimonials",
         label: "Testimonials",
@@ -28,8 +29,24 @@ const homeNavPages: NavPage[] = [
       },
     ],
   },
-  { id: "events-page", label: "Events", path: "/events" },
-  { id: "family-page", label: "Family", path: "/family" },
+  {
+    id: "events-page",
+    label: "Events",
+    path: "/events",
+    sections: [
+      { id: "Events", label: "Events", sectionId: "events-section" },
+      { id: "Highlights", label: "Highlights", sectionId: "highlights-section" },
+    ],
+  },
+  {
+    id: "family-page",
+    label: "Family",
+    path: "/family",
+    sections: [
+      { id: "PatronMatron", label: "Patron & Matron", sectionId: "family-patron-matron-section" },
+      { id: "Board", label: "Board", sectionId: "family-board-section" },
+    ],
+  },
 ];
 
 const Home: React.FC = () => {

@@ -2,7 +2,8 @@ import React from "react";
 
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
-import { ChevronDown } from "lucide-react";
+import Departments from "../components/Departments";
+import { ChevronDown, Mail, Phone } from "lucide-react";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
@@ -32,13 +33,36 @@ type MobileSlot = {
 };
 
 const familyNavPages: NavPage[] = [
-  { id: "home-page", label: "Home", path: "/" },
-  { id: "events-page", label: "Events", path: "/events" },
+  {
+    id: "home-page",
+    label: "Home",
+    path: "/",
+    sections: [
+      { id: "Home", label: "Home", sectionId: "home-section" },
+      { id: "Focus", label: "Focus", sectionId: "focus-section" },
+      { id: "Week", label: "Week", sectionId: "week-section" },
+      { id: "Gallery", label: "Gallery", sectionId: "gallery-section" },
+      { id: "Testimonials", label: "Testimonials", sectionId: "testimonials-section" },
+    ],
+  },
+  {
+    id: "events-page",
+    label: "Events",
+    path: "/events",
+    sections: [
+      { id: "Events", label: "Events", sectionId: "events-section" },
+      { id: "Highlights", label: "Highlights", sectionId: "highlights-section" },
+    ],
+  },
   {
     id: "family-page",
     label: "Family",
     path: "/family",
-    sections: [{ id: "Board", label: "Board", sectionId: "family-board-section" }],
+    sections: [
+      { id: "PatronMatron", label: "Patron & Matron", sectionId: "family-patron-matron-section" },
+      { id: "Departments", label: "Departments", sectionId: "departments-section" },
+      { id: "Board", label: "Board", sectionId: "family-board-section" },
+    ],
   },
 ];
 
@@ -188,6 +212,33 @@ function getOrbitLayout(viewportWidth: number): OrbitLayout {
 }
 
 const PORTRAIT_TRANSITION_MS = 900;
+
+const patronMatronProfiles = [
+  {
+    id: "patron",
+    role: "Patron",
+    name: "Pastor Joel Mensah",
+    about:
+      "A steady covering for the Christian Leaders family, offering counsel, prayer, and pastoral direction through every season.",
+    contact: "patron@christianleaders.org",
+    phone: "+27 71 234 5678",
+    email: "patron@christianleaders.org",
+    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
+    imageAlt: "Pastor Joel Mensah portrait",
+  },
+  {
+    id: "matron",
+    role: "Matron",
+    name: "Sister Ama Boateng",
+    about:
+      "A gracious presence nurturing care, hospitality, and continuity across the family with warmth and practical wisdom.",
+    contact: "matron@christianleaders.org",
+    phone: "+27 72 345 6789",
+    email: "matron@christianleaders.org",
+    imageSrc: "/offline-media/presenters/sister-ama.jpg",
+    imageAlt: "Sister Ama Boateng portrait",
+  },
+];
 
 const Family: React.FC = () => {
   const setCurrSection = useStore((state) => state.setCurrSection);
@@ -458,9 +509,11 @@ const Family: React.FC = () => {
         <p className="mt-0.5 text-caption text-muted">
           {activeMember.position}
         </p>
-        <p className="mt-2 text-caption text-subtle leading-5">
-          "{activeMember.quote}"
-        </p>
+        {!isMobile && (
+          <p className="mt-2 text-caption text-subtle leading-5">
+            "{activeMember.quote}"
+          </p>
+        )}
       </div>
 
       <div className="relative family-portrait-shell h-full w-full overflow-hidden rounded-[22px]">
@@ -486,7 +539,7 @@ const Family: React.FC = () => {
 
   return (
     <section
-      id="family-board-section"
+      id="family-section"
       data-nav-theme="light"
       className="relative min-h-screen overflow-hidden bg-page text-ink"
     >
@@ -513,8 +566,71 @@ const Family: React.FC = () => {
           </p>
         </div>
 
+        {/* PATRON + MATRON */}
+        <div id="family-patron-matron-section" className="patron-matron-stage mt-10">
+          <div className="patron-matron-divider" aria-hidden="true"></div>
+          {patronMatronProfiles.map((profile, index) => {
+            const isPatron = index === 0;
+
+            return (
+              <div
+                key={profile.id}
+                className={`patron-matron-slide ${
+                  isPatron
+                    ? "patron-matron-slide--patron"
+                    : "patron-matron-slide--matron"
+                }`}
+              >
+                <div
+                  className={`patron-matron-info ${
+                    isPatron
+                      ? "patron-matron-info--left"
+                      : "patron-matron-info--right"
+                  }`}
+                >
+                  <div>
+                    <p className="patron-matron-label">{profile.role}</p>
+                    <h2>{profile.name}</h2>
+                  </div>
+                  <div>
+                    <p className="patron-matron-label">About</p>
+                    <p>{profile.about}</p>
+                  </div>
+                  <div>
+                    <p className="patron-matron-label">Contact Details</p>
+                    <div className="patron-matron-contact-list">
+                      <a href={`tel:${profile.phone.replace(/\s/g, "")}`}>
+                        <Phone className="h-4 w-4" />
+                        <span>{profile.phone}</span>
+                      </a>
+                      <a href={`mailto:${profile.email}`}>
+                        <Mail className="h-4 w-4" />
+                        <span>{profile.email}</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={`patron-matron-image ${
+                    isPatron
+                      ? "patron-matron-image--right"
+                      : "patron-matron-image--left"
+                  }`}
+                >
+                  <img src={profile.imageSrc} alt={profile.imageAlt} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* DEPARTMENTS SECTION */}
+        <Departments />
+
         {/* BOARD ORBIT STAGE */}
         <div
+          id="family-board-section"
           className="relative mt-10 min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"
           style={{ background: "var(--family-panel-gradient)" }}
         >
@@ -536,7 +652,7 @@ const Family: React.FC = () => {
                 {
                   width: "min(200px,58vw)",
                   right: "11%",
-                  bottom: "16%",
+                  bottom: "20px",
                 },
                 false,
               )}

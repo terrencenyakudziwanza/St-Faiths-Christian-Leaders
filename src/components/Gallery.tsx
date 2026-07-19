@@ -3,12 +3,14 @@ import { Heart, X } from "lucide-react";
 import { boardMembers } from "../data/boardMembers";
 
 type GalleryTile = {
+  id: string;
   src: string;
   alt: string;
   description: string;
   tags: string[];
   likes: number;
   ratio: string;
+  termId: string;
 };
 
 const galleryMeta: Array<{
@@ -67,17 +69,30 @@ const galleryMeta: Array<{
   },
 ];
 
+const galleryTerms = [
+  {
+    id: "term-2-2026",
+    title: "Term 2, 2026",
+    theme: "Faith in Motion",
+    tint: "rgba(255, 213, 0, 0.01)",
+    border: "rgba(219, 179, 81, 0.2)",
+  },
+];
+
 const buildGalleryTiles = (): GalleryTile[] => {
   const images = boardMembers.map((member, index) => {
     const meta = galleryMeta[index % galleryMeta.length];
+    const term = galleryTerms[index % galleryTerms.length];
 
     return {
+      id: `${member.id}-${index}`,
       src: member.imageSrc,
       alt: member.name,
       description: meta.description,
       tags: meta.tags,
       likes: meta.likes,
       ratio: meta.ratio,
+      termId: term.id,
     };
   });
 
@@ -101,6 +116,12 @@ interface GalleryModalProps {
 }
 
 const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => {
+  const [likeCounts, setLikeCounts] = React.useState<Record<string, number>>(
+    () =>
+      Object.fromEntries(tiles.map((tile) => [tile.id, tile.likes])),
+  );
+  const [likedTiles, setLikedTiles] = React.useState<Record<string, boolean>>({});
+
   const getColumnCount = React.useCallback(() => {
     if (typeof window === "undefined") {
       return 3;
@@ -133,15 +154,44 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
     };
   }, [getColumnCount]);
 
-  const columns = React.useMemo(() => {
-    const cols = Array.from({ length: columnsCount }, () => [] as GalleryTile[]);
+  const groupedTerms = React.useMemo(
+    () =>
+      galleryTerms
+        .map((term) => ({
+          ...term,
+          tiles: tiles.filter((tile) => tile.termId === term.id),
+        }))
+        .filter((term) => term.tiles.length > 0),
+    [tiles],
+  );
 
-    tiles.forEach((tile, index) => {
-      cols[index % columnsCount].push(tile);
+  const buildColumns = React.useCallback(
+    (termTiles: GalleryTile[]) => {
+      const cols = Array.from({ length: columnsCount }, () => [] as GalleryTile[]);
+
+      termTiles.forEach((tile, index) => {
+        cols[index % columnsCount].push(tile);
+      });
+
+      return cols;
+    },
+    [columnsCount],
+  );
+
+  const handleLike = (tileId: string) => {
+    const nextLiked = !likedTiles[tileId];
+
+    setLikedTiles((prev) => {
+      return {
+        ...prev,
+        [tileId]: nextLiked,
+      };
     });
-
-    return cols;
-  }, [tiles, columnsCount]);
+    setLikeCounts((counts) => ({
+      ...counts,
+      [tileId]: (counts[tileId] ?? 0) + (nextLiked ? 1 : -1),
+    }));
+  };
 
   const columnOffsets = [0, 28, 12, 42];
 
@@ -178,50 +228,93 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
         </div>
 
         <div className="flex-1 min-h-0 w-full overflow-y-auto px-5 pb-10 pt-6 lg:px-8">
-          <div className="flex w-full gap-4">
-            {columns.map((column, columnIndex) => (
-              <div
-                key={`gallery-col-${columnIndex}`}
-                className="flex min-w-0 flex-1 flex-col gap-4"
-                style={{
-                  marginTop:
-                    columnsCount > 1
-                      ? `${columnOffsets[columnIndex % columnOffsets.length]}px`
-                      : "0px",
-                }}
-              >
-                {column.map((tile, tileIndex) => (
+          <div className="flex flex-col gap-10">
+            {groupedTerms.map((term) => {
+              const columns = buildColumns(term.tiles);
+
+              return (
+                <section key={term.id}>
+                  <div className="mb-5 text-center">
+                    <h4 className="text-heading-sm font-semibold text-ink">
+                      {term.title}
+                    </h4>
+                    <p className="mt-1 text-body-sm italic text-muted">
+                      {term.theme}
+                    </p>
+                  </div>
+
                   <div
-                    key={`${tile.src}-${tileIndex}`}
-                    className="group relative overflow-hidden rounded-[22px] border border-subtle bg-surface-muted shadow-[0_16px_32px_rgba(0,0,0,0.16)]"
-                    style={{ aspectRatio: tile.ratio }}
+                    className="rounded-[26px] border p-4 sm:p-5"
+                    style={{
+                      backgroundColor: term.tint,
+                      borderColor: term.border,
+                    }}
                   >
-                    <img
-                      src={tile.src}
-                      alt={tile.alt}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <div className="absolute left-4 right-4 bottom-4 text-inverse">
-                        <p className="text-body-sm font-semibold">
-                          {tile.description}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2 text-caption text-inverse opacity-80">
-                          {tile.tags.map((tag) => (
-                            <span key={`${tile.alt}-${tag}`}>{tag}</span>
-                          ))}
+                    <div className="flex w-full gap-4">
+                      {columns.map((column, columnIndex) => (
+                        <div
+                          key={`${term.id}-gallery-col-${columnIndex}`}
+                          className="flex min-w-0 flex-1 flex-col gap-4"
+                          style={{
+                            marginTop:
+                              columnsCount > 1
+                                ? `${columnOffsets[columnIndex % columnOffsets.length]}px`
+                                : "0px",
+                          }}
+                        >
+                          {column.map((tile) => {
+                            const isLiked = likedTiles[tile.id] ?? false;
+
+                            return (
+                              <div
+                                key={tile.id}
+                                className="group relative overflow-hidden rounded-[22px] border border-subtle bg-surface-muted shadow-[0_16px_32px_rgba(0,0,0,0.16)]"
+                                style={{ aspectRatio: tile.ratio }}
+                              >
+                                <img
+                                  src={tile.src}
+                                  alt={tile.alt}
+                                  loading="lazy"
+                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                  <div className="absolute left-4 right-4 bottom-4 text-inverse">
+                                    <p className="text-body-sm font-semibold">
+                                      {tile.description}
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-2 text-caption text-inverse opacity-80">
+                                      {tile.tags.map((tag) => (
+                                        <span key={`${tile.alt}-${tag}`}>{tag}</span>
+                                      ))}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleLike(tile.id)}
+                                      className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-caption font-semibold backdrop-blur-sm transition-colors hover:bg-white/24"
+                                      aria-pressed={isLiked}
+                                      aria-label={`${isLiked ? "Unlike" : "Like"} ${tile.description}`}
+                                    >
+                                      <Heart
+                                        className={`h-4 w-4 ${
+                                          isLiked
+                                            ? "fill-[color:var(--like)] text-like"
+                                            : "text-inverse"
+                                        }`}
+                                      />
+                                      <span>{likeCounts[tile.id] ?? tile.likes}</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="mt-3 flex items-center gap-2 text-caption font-semibold">
-                          <Heart className="h-4 w-4 text-inverse" />
-                          <span>{tile.likes}</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            ))}
+                </section>
+              );
+            })}
           </div>
         </div>
       </div>

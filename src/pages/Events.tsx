@@ -1,17 +1,15 @@
 import React from "react";
 import EventCard from "../components/EventCard";
 import EventsModal from "../components/EventsModal";
-import ShortCard from "../components/ShortCard";
 import LeaderDropdown from "../components/LeaderDropdown";
 import { Calendar, Flame, Search } from "lucide-react";
+import fallbackHighlight from "../assets/images/hand-writing.jpg";
 
 import { fetchEventMedia, fetchEvents } from "../services/events";
-import { fetchShorts } from "../services/shorts";
 import type {
   EventItem,
   EventMedia,
   FeedType,
-  ShortItem,
 } from "../types/domain";
 
 import Navbar from "../components/Navbar";
@@ -22,7 +20,18 @@ const feedTypes: FeedType[] = ["Services", "Revivals", "Specials"];
 const EVENTS_REVEAL_STEP = 5;
 
 const eventPageNavPages: NavPage[] = [
-  { id: "home-page", label: "Home", path: "/" },
+  {
+    id: "home-page",
+    label: "Home",
+    path: "/",
+    sections: [
+      { id: "Home", label: "Home", sectionId: "home-section" },
+      { id: "Focus", label: "Focus", sectionId: "focus-section" },
+      { id: "Week", label: "Week", sectionId: "week-section" },
+      { id: "Gallery", label: "Gallery", sectionId: "gallery-section" },
+      { id: "Testimonials", label: "Testimonials", sectionId: "testimonials-section" },
+    ],
+  },
   {
     id: "events-page",
     label: "Events",
@@ -32,13 +41,75 @@ const eventPageNavPages: NavPage[] = [
       { id: "Highlights", label: "Highlights", sectionId: "highlights-section" },
     ],
   },
-  { id: "family-page", label: "Family", path: "/family" },
+  {
+    id: "family-page",
+    label: "Family",
+    path: "/family",
+    sections: [
+      { id: "PatronMatron", label: "Patron & Matron", sectionId: "family-patron-matron-section" },
+      { id: "Board", label: "Board", sectionId: "family-board-section" },
+    ],
+  },
 ];
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "Something went wrong. Please try again.";
 }
+
+const HighlightCard: React.FC<{ event: EventItem }> = ({ event }) => {
+  const [flipped, setFlipped] = React.useState(false);
+  const pictures = event.media
+    .filter((item) => item.mediaType === "picture")
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .slice(0, 4);
+  const stackImages = pictures.length
+    ? pictures.map((picture) => picture.publicUrl)
+    : [event.presenterAvatarUrl ?? fallbackHighlight];
+  const story = [
+    event.summary,
+    event.praiseHighlights[0],
+    event.intercessionPrayerPoints[0],
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <button
+      type="button"
+      className={`highlight-flip-card ${flipped ? "is-flipped" : ""}`}
+      onClick={() => setFlipped((prev) => !prev)}
+      aria-pressed={flipped}
+    >
+      <span className="highlight-flip-card__inner">
+        <span className="highlight-flip-card__face highlight-flip-card__front">
+          <span className="highlight-stack">
+            {stackImages.map((src, index) => (
+              <img
+                key={`${event.id}-highlight-${index}`}
+                src={src}
+                alt={event.title}
+                className={`highlight-stack__image highlight-stack__image--${index + 1}`}
+              />
+            ))}
+          </span>
+          <span className="highlight-flip-card__title">{event.themeTopic}</span>
+        </span>
+        <span className="highlight-flip-card__face highlight-flip-card__back">
+          <span className="text-overline font-semibold text-accent">
+            Highlight Story
+          </span>
+          <span className="mt-3 block text-heading-xs font-semibold text-ink">
+            {event.themeTopic}
+          </span>
+          <span className="mt-3 block text-body-sm text-muted leading-6">
+            {story}
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+};
 
 const Events: React.FC = () => {
   const [modalShown, setModalShown] = React.useState(false);
@@ -57,9 +128,7 @@ const Events: React.FC = () => {
   const [mediaLoading, setMediaLoading] = React.useState(false);
   const [mediaError, setMediaError] = React.useState<string | null>(null);
 
-  const [shorts, setShorts] = React.useState<ShortItem[]>([]);
-  const [shortsLoading, setShortsLoading] = React.useState(true);
-  const [shortsError, setShortsError] = React.useState<string | null>(null);
+  const [highlightEvents, setHighlightEvents] = React.useState<EventItem[]>([]);
 
   const setCurrSection = useStore((state) => state.setCurrSection);
 
@@ -69,7 +138,7 @@ const Events: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [leaderFilter, setLeaderFilter] = React.useState("All");
-  const [eventTypeFilter, setEventTypeFilter] = React.useState("All");
+  const [eventTypeFilter] = React.useState("All");
   const [dateFilter, setDateFilter] = React.useState("");
 
   /* ---------------- FETCH DATA ---------------- */
@@ -87,16 +156,12 @@ const Events: React.FC = () => {
     }
   }, [activeFeedType]);
 
-  const loadShorts = React.useCallback(async () => {
+  const loadHighlightEvents = React.useCallback(async () => {
     try {
-      setShortsLoading(true);
-      setShortsError(null);
-      const data = await fetchShorts(8);
-      setShorts(data);
+      const data = await fetchEvents("Specials");
+      setHighlightEvents(data);
     } catch (error) {
-      setShortsError(getErrorMessage(error));
-    } finally {
-      setShortsLoading(false);
+      console.error(getErrorMessage(error));
     }
   }, []);
 
@@ -105,8 +170,12 @@ const Events: React.FC = () => {
   }, [loadEvents]);
 
   React.useEffect(() => {
-    void loadShorts();
-  }, [loadShorts]);
+    void loadHighlightEvents();
+  }, [loadHighlightEvents]);
+
+  React.useEffect(() => {
+    setCurrSection("Events");
+  }, [setCurrSection]);
 
   React.useEffect(() => {
     setVisibleEventCount(EVENTS_REVEAL_STEP);
@@ -258,6 +327,14 @@ const Events: React.FC = () => {
           id="events-section"
           className="flex flex-col gap-16 p-4 w-full max-w-325 sm:gap-12"
         >
+          {eventsLoading && (
+            <p className="text-center text-body-sm text-muted">Loading events...</p>
+          )}
+
+          {eventsError && (
+            <p className="text-center text-body-sm text-danger">{eventsError}</p>
+          )}
+
           {visibleEvents.map((event) => (
             <EventCard key={event.id} event={event} onOpen={openEventModal} />
           ))}
@@ -303,8 +380,8 @@ const Events: React.FC = () => {
           </div>
 
           <div className="flex justify-center flex-wrap sm:gap-10 gap-16 py-8 pb-12">
-            {shorts.map((short) => (
-              <ShortCard key={short.id} short={short} />
+            {highlightEvents.map((event) => (
+              <HighlightCard key={event.id} event={event} />
             ))}
           </div>
         </section>
