@@ -4,7 +4,6 @@ import {
   ArrowRight,
   KeyRound,
   Mail,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
