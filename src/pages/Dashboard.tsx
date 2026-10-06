@@ -42,6 +42,8 @@ import {
   updateTestimonial,
 } from "../services/testimonials";
 import { fetchBoardMembers, removeBoardMember, saveBoardMember } from "../services/boardMembers";
+import { fetchEvents } from "../services/events";
+import type { EventItem } from "../types/domain";
 
 const panelShellClass =
   "rounded-[28px] border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] text-[color:var(--panel-text)] shadow-[0_24px_60px_rgba(0,0,0,0.22)]";
@@ -210,7 +212,7 @@ const Dashboard: React.FC = () => {
   ];
   const areaSections: Record<DashboardArea, { label: string; id: string }[]> = {
     home: [{ label: "Hero", id: "dashboard-hero" }, { label: "Focus", id: "dashboard-focus" }, { label: "Week", id: "dashboard-week" }, { label: "Gallery", id: "dashboard-gallery" }, { label: "Testimonials", id: "dashboard-testimonials" }],
-    events: [{ label: "Events", id: "dashboard-events" }],
+    events: [{ label: "Events", id: "dashboard-events" }, { label: "Highlights", id: "dashboard-highlights" }],
     family: [{ label: "Family details", id: "dashboard-family" }, { label: "Board", id: "dashboard-board" }],
   };
   const goToDashboardSection = (area: DashboardArea, id: string) => {
@@ -316,9 +318,12 @@ const Dashboard: React.FC = () => {
               </>
             )}
             {activeArea === "events" && (
-              <div id="dashboard-events"><EventsEditor
-                canEdit={isAdmin || permissions.includes("content.events")}
-              /></div>
+              <>
+                <div id="dashboard-events"><EventsEditor
+                  canEdit={isAdmin || permissions.includes("content.events")}
+                /></div>
+                <div id="dashboard-highlights"><HighlightsEditor canEdit={isAdmin || permissions.includes("content.events")} /></div>
+              </>
             )}
             {activeArea === "family" && (
               <>
@@ -2028,6 +2033,64 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   );
 };
 
+type HighlightEntry = { eventId: string; mediaId: string; activity: string; label: string };
+const highlightActivityOptions = ["Praise and Worship", "Intercession", "Bible Study", "Preaching"];
+
+const HighlightsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const [events, setEvents] = React.useState<EventItem[]>([]);
+  const [entries, setEntries] = React.useState<HighlightEntry[]>([]);
+  const [eventId, setEventId] = React.useState("");
+  const [mediaId, setMediaId] = React.useState("");
+  const [activity, setActivity] = React.useState(highlightActivityOptions[0]);
+  const [label, setLabel] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try {
+      const groups = await Promise.all((["Services", "Revivals", "Specials"] as const).map((type) => fetchEvents(type)));
+      setEvents(groups.flat());
+      const { data } = await supabase.from("cms_content").select("content").eq("section_key", "site.highlights").maybeSingle();
+      const content = data?.content as { items?: HighlightEntry[] } | undefined;
+      setEntries(Array.isArray(content?.items) ? content.items : []);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not load highlights."); }
+    finally { setLoading(false); }
+  }, []);
+  React.useEffect(() => { void load(); }, [load]);
+  const selectedEvent = events.find((item) => item.id === eventId);
+  const availableMedia = selectedEvent?.media ?? [];
+  const add = () => {
+    const event = events.find((item) => item.id === eventId);
+    const media = event?.media.find((item) => item.id === mediaId);
+    if (!event || !media) return;
+    setEntries((previous) => [...previous, { eventId, mediaId, activity, label: label.trim() || media.caption || event.themeTopic }]);
+    setMediaId(""); setLabel("");
+  };
+  const save = async () => {
+    if (!canEdit) return;
+    setSaving(true); setMessage("");
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.highlights", content: { items: entries }, is_published: true }, { onConflict: "section_key" });
+    setSaving(false); setMessage(error ? `Could not save highlights: ${error.message}` : "Highlights saved.");
+  };
+  return <section className={`${panelShellClass} p-6`}>
+    <h2 className="text-heading-md font-semibold">Highlights</h2>
+    <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Choose event photos or videos, then tag each one so visitors can filter highlights by activity.</p>
+    {loading ? <p className={`${panelSubtextClass} mt-4`}>Loading events and highlights…</p> : <>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Event</span><select className={panelInputClass} value={eventId} onChange={(event) => { setEventId(event.target.value); setMediaId(""); }} disabled={!canEdit}><option value="">Choose an event</option>{events.map((item) => <option key={item.id} value={item.id}>{item.title} · {new Date(item.eventDate).toLocaleDateString()}</option>)}</select></label>
+        <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Photo or video</span><select className={panelInputClass} value={mediaId} onChange={(event) => setMediaId(event.target.value)} disabled={!canEdit || !availableMedia.length}><option value="">Choose media</option>{availableMedia.map((item) => <option key={item.id} value={item.id}>{item.mediaType === "video" ? "Video" : "Photo"} · {item.caption || item.storagePath.split("/").pop()}</option>)}</select></label>
+        <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Activity</span><select className={panelInputClass} value={activity} onChange={(event) => setActivity(event.target.value)} disabled={!canEdit}>{highlightActivityOptions.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Display title (optional)</span><input className={panelInputClass} value={label} onChange={(event) => setLabel(event.target.value)} disabled={!canEdit} placeholder="Uses the media caption or event theme" /></label>
+      </div>
+      <button type="button" onClick={add} disabled={!canEdit || !eventId || !mediaId} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50">Add highlight</button>
+      <div className="mt-6 grid gap-3">{entries.map((entry, index) => { const event = events.find((item) => item.id === entry.eventId); const media = event?.media.find((item) => item.id === entry.mediaId); return <article key={`${entry.eventId}-${entry.mediaId}-${index}`} className="flex items-center gap-3 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-3">{media && <img src={media.publicUrl} alt="" className="h-14 w-20 rounded-lg object-cover" />}<div className="min-w-0 flex-1"><p className="truncate font-semibold">{entry.label}</p><p className={panelSubtextClass}>{event?.title ?? "Event unavailable"} · {entry.activity}</p></div><button type="button" onClick={() => setEntries((previous) => previous.filter((_, itemIndex) => itemIndex !== index))} disabled={!canEdit} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger">Remove</button></article>; })}</div>
+      <button type="button" onClick={() => void save()} disabled={!canEdit || saving} className="mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50">{saving ? "Saving…" : "Save highlights"}</button>
+    </>}
+    {message && <p className="mt-3 text-body-sm text-[color:var(--panel-text-muted)]">{message}</p>}
+  </section>;
+};
+
 const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initial = useCmsSection("family.content");
   const [draft, setDraft] = React.useState<CmsFamilyContent>(initial);
@@ -2068,7 +2131,7 @@ const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
 const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   type Member = Awaited<ReturnType<typeof fetchBoardMembers>>[number];
-  const empty = { name: "", position: "", boardTier: "Board Member", quote: "", imagePath: null as string | null, executive: false };
+  const empty = { name: "", position: "", boardTier: "Board Member", quote: "", imagePath: null as string | null, executive: false, boardYear: new Date().getFullYear() };
   const [members, setMembers] = React.useState<Member[]>([]);
   const [draft, setDraft] = React.useState(empty);
   const [editingId, setEditingId] = React.useState<string | null>(null);
@@ -2086,7 +2149,7 @@ const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   React.useEffect(() => { void load(); }, [load]);
 
   const startEdit = (member: Member) => {
-    const next = { name: member.name, position: member.position, boardTier: member.boardTier, quote: member.quote, imagePath: member.imagePath, executive: member.executive };
+    const next = { name: member.name, position: member.position, boardTier: member.boardTier, quote: member.quote, imagePath: member.imagePath, executive: member.executive, boardYear: member.boardYear };
     setDraft(next);
     setSavedSnapshot(JSON.stringify(next));
     setEditingId(member.id);
@@ -2123,6 +2186,7 @@ const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Name</span><input className={panelInputClass} value={draft.name} onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))} disabled={!canEdit} /></label>
           <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Position</span><input className={panelInputClass} value={draft.position} onChange={(event) => setDraft((prev) => ({ ...prev, position: event.target.value }))} disabled={!canEdit} /></label>
           <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Board tier</span><select className={panelInputClass} value={draft.boardTier} onChange={(event) => setDraft((prev) => ({ ...prev, boardTier: event.target.value }))} disabled={!canEdit}><option>Board Member</option><option>Executive Member</option></select></label>
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Board year</span><input type="number" min="1900" max="2200" className={panelInputClass} value={draft.boardYear} onChange={(event) => setDraft((prev) => ({ ...prev, boardYear: Number(event.target.value) }))} disabled={!canEdit} /></label>
           <label className="flex items-center gap-3 text-body-sm"><input type="checkbox" checked={draft.executive} onChange={(event) => setDraft((prev) => ({ ...prev, executive: event.target.checked }))} disabled={!canEdit} />Executive member</label>
           <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Quote</span><textarea className={`${panelTextareaClass} min-h-[90px]`} value={draft.quote} onChange={(event) => setDraft((prev) => ({ ...prev, quote: event.target.value }))} disabled={!canEdit} /></label>
           <div className="md:col-span-2"><MediaUploadField label="Portrait" value={resolveCmsMedia(draft.imagePath ? { storagePath: draft.imagePath } : null)} onUpload={uploadPortrait} /></div>
@@ -2136,7 +2200,7 @@ const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         {!loading && members.length === 0 && <p className={`${panelSubtextClass} mt-3`}>No board members registered.</p>}
         <div className="mt-3 grid gap-3 sm:grid-cols-2">{members.map((member) => <article key={member.id} className="flex items-center gap-3 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-3">
           <img src={member.imageSrc} alt="" className="h-14 w-14 rounded-xl object-cover" />
-          <div className="min-w-0 flex-1"><p className="truncate font-semibold">{member.name}</p><p className={panelSubtextClass}>{member.position}</p></div>
+          <div className="min-w-0 flex-1"><p className="truncate font-semibold">{member.name}</p><p className={panelSubtextClass}>{member.position} · {member.boardYear}</p></div>
           <div className="flex gap-2"><button type="button" disabled={!canEdit} onClick={() => startEdit(member)} className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs">Edit</button><button type="button" disabled={!canEdit} onClick={() => void remove(member)} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger">Delete</button></div>
         </article>)}</div>
       </div>

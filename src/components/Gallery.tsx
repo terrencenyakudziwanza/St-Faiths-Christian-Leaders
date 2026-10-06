@@ -420,7 +420,7 @@ const Gallery: React.FC = () => {
   return (
     <section
       id="gallery-section"
-      data-nav-theme="dark"
+      data-nav-theme="light"
       className="relative min-h-screen w-full overflow-hidden bg-page"
     >
       <div className="section-fade-top"></div>
@@ -448,7 +448,7 @@ const Gallery: React.FC = () => {
       </div>
 
       {/* GRADIENT OVERLAY */}
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(115deg,rgba(8,8,12,0.92)_0%,rgba(8,8,12,0.68)_45%,rgba(8,8,12,0.2)_100%)]"></div>
+      <div className="gallery-section-overlay absolute inset-0 pointer-events-none"></div>
 
       {/* CENTER COPY */}
       <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
@@ -456,10 +456,10 @@ const Gallery: React.FC = () => {
           <p className="text-overline font-semibold text-accent-strong">
             Christian Leaders Gallery
           </p>
-          <h2 className="mt-4 text-display font-semibold text-inverse">
+          <h2 className="gallery-section-copy mt-4 text-display font-semibold">
             Captured Moments
           </h2>
-          <p className="mx-auto mt-4 text-body text-inverse opacity-80">
+          <p className="gallery-section-copy mx-auto mt-4 text-body opacity-90">
             Explore the stories, services, and faces that shape the Christian
             Leaders family.
           </p>

@@ -16,6 +16,7 @@ import Navbar from "../components/Navbar";
 import type { NavPage } from "../types/nav";
 import useStore from "../store";
 import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 const feedTypes: FeedType[] = ["Services", "Revivals", "Specials"];
 const EVENTS_REVEAL_STEP = 5;
@@ -58,7 +59,7 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-type HighlightMoment = { event: EventItem; media: EventMedia; activity: string };
+type HighlightMoment = { event: EventItem; media: EventMedia; activity: string; label?: string };
 const highlightActivities = ["Praise and Worship", "Intercession", "Bible Study", "Preaching"];
 const activityForMedia = (media: EventMedia): string => {
   const text = `${media.component} ${media.caption} ${media.tags.join(" ")}`.toLowerCase();
@@ -73,7 +74,7 @@ const HighlightCard: React.FC<{ moment: HighlightMoment; featured?: boolean; onO
     {moment.media.mediaType === "video" ? <video src={moment.media.publicUrl} poster={moment.event.presenterAvatarUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" muted playsInline preload="metadata" /> : <img src={moment.media.publicUrl || fallbackHighlight} alt={moment.media.caption || moment.event.themeTopic} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />}
     <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
     <span className="absolute left-4 top-4 rounded-full border border-white/35 bg-black/30 px-3 py-1.5 text-body-xs text-white backdrop-blur-sm">{moment.activity}</span>
-    <span className="absolute inset-x-5 bottom-5 text-white"><span className="block text-heading-sm font-semibold">{moment.media.caption || moment.event.themeTopic}</span><span className="mt-1 block text-body-xs text-white/80">{moment.event.title} · {moment.event.presenterName}</span><span className="mt-1 block text-body-xs text-white/70">{new Date(moment.event.eventDate).toLocaleDateString()}</span></span>
+    <span className="absolute inset-x-5 bottom-5 text-white"><span className="block text-heading-sm font-semibold">{moment.label || moment.media.caption || moment.event.themeTopic}</span><span className="mt-1 block text-body-xs text-white/80">{moment.event.title} · {moment.event.presenterName}</span><span className="mt-1 block text-body-xs text-white/70">{new Date(moment.event.eventDate).toLocaleDateString()}</span></span>
     {moment.media.mediaType === "video" && <span aria-hidden="true" className="absolute right-5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-black/35 text-white">▶</span>}
   </button>
 );
@@ -99,6 +100,8 @@ const Events: React.FC = () => {
   const [mediaError, setMediaError] = React.useState<string | null>(null);
 
   const [highlightEvents, setHighlightEvents] = React.useState<EventItem[]>([]);
+  const [configuredHighlights, setConfiguredHighlights] = React.useState<HighlightMoment[] | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = React.useState<EventItem[]>([]);
   const highlightsRef = React.useRef<HTMLElement | null>(null);
   const [activityFilter, setActivityFilter] = React.useState(() => new URLSearchParams(window.location.search).get("activity") ?? "All");
 
@@ -130,8 +133,21 @@ const Events: React.FC = () => {
 
   const loadHighlightEvents = React.useCallback(async () => {
     try {
-      const data = await fetchEvents("Specials");
-      setHighlightEvents(data);
+      const groups = await Promise.all(feedTypes.map((type) => fetchEvents(type)));
+      const allEvents = groups.flat();
+      setHighlightEvents(groups[feedTypes.indexOf("Specials")] ?? []);
+      const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+      setUpcomingEvents(allEvents.filter((event) => new Date(event.eventDate) >= startOfToday).sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()));
+      const { data } = await supabase.from("cms_content").select("content").eq("section_key", "site.highlights").eq("is_published", true).maybeSingle();
+      const content = data?.content as { items?: { eventId: string; mediaId: string; activity: string; label: string }[] } | undefined;
+      if (Array.isArray(content?.items)) {
+        const moments = content.items.flatMap((entry) => {
+          const event = allEvents.find((item) => item.id === entry.eventId);
+          const media = event?.media.find((item) => item.id === entry.mediaId);
+          return event && media ? [{ event, media, activity: entry.activity, label: entry.label }] : [];
+        });
+        setConfiguredHighlights(moments);
+      }
     } catch (error) {
       console.error(getErrorMessage(error));
     }
@@ -221,6 +237,7 @@ const Events: React.FC = () => {
   const visibleEvents = filteredEvents.slice(0, visibleEventCount);
 
   const highlightMoments = React.useMemo(() => {
+    if (configuredHighlights) return configuredHighlights;
     const ordered = highlightEvents.map((event) => [...event.media].sort((a, b) => a.sortOrder - b.sortOrder));
     const moments: HighlightMoment[] = [];
     for (let index = 0; moments.length < 6 && ordered.some((media) => media[index]); index += 1) {
@@ -231,7 +248,7 @@ const Events: React.FC = () => {
       });
     }
     return moments.slice(0, 6);
-  }, [highlightEvents]);
+  }, [configuredHighlights, highlightEvents]);
   const filteredHighlights = activityFilter === "All" ? highlightMoments : highlightMoments.filter((moment) => moment.activity === activityFilter);
   const selectActivity = (activity: string) => {
     setActivityFilter(activity);
@@ -351,6 +368,11 @@ const Events: React.FC = () => {
             </label>
           </div>
         </div>
+
+        {upcomingEvents.length > 0 && <section className="w-full max-w-325 px-4 pt-8" aria-labelledby="upcoming-events-title">
+          <div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-overline font-semibold text-accent">Mark your calendar</p><h2 id="upcoming-events-title" className="mt-1 text-heading-lg font-semibold text-ink">Upcoming Events</h2></div><span className="rounded-full border border-subtle bg-surface-elevated px-3 py-1 text-body-xs text-muted">{upcomingEvents.length} scheduled</span></div>
+          <div className="grid gap-4 md:grid-cols-2">{upcomingEvents.slice(0, 4).map((event) => <button key={`upcoming-${event.id}`} type="button" onClick={() => openEventModal(event)} className="flex items-center justify-between gap-4 rounded-2xl border border-subtle bg-surface-elevated p-4 text-left shadow-sm transition hover:-translate-y-0.5"><span className="min-w-0"><span className="block truncate font-semibold text-ink">{event.title}</span><span className="mt-1 block truncate text-body-xs text-muted">{event.themeTopic}</span></span><time dateTime={event.eventDate} className="shrink-0 rounded-xl bg-accent-soft px-3 py-2 text-center text-body-sm font-semibold text-ink">{new Date(event.eventDate).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</time></button>)}</div>
+        </section>}
 
         {/* EVENTS LIST */}
         <section

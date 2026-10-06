@@ -12,6 +12,11 @@
     --border-strong: rgba(17, 17, 17, 0.22);
     --page-fade-strong: rgba(255, 255, 255, 0.95);
     --page-fade-soft: rgba(255, 255, 255, 0.35);
+    --hero-content-tint: rgba(255, 255, 255, 0.02);
+    --hero-overlay-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.12));
+    --hero-copy-color: #14110d;
+    --gallery-overlay-gradient: linear-gradient(115deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.06) 100%);
+    --gallery-copy-color: #14110d;
     --ink: #14110d;
     --ink-muted: #5b4f42;
     --ink-subtle: #6a5843;
@@ -58,6 +63,11 @@
     --border-strong: rgba(255, 255, 255, 0.22);
     --page-fade-strong: rgba(14, 15, 18, 0.95);
     --page-fade-soft: rgba(14, 15, 18, 0.35);
+    --hero-content-tint: rgba(0, 0, 0, 0.06);
+    --hero-overlay-gradient: linear-gradient(180deg, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0.36));
+    --hero-copy-color: #ffffff;
+    --gallery-overlay-gradient: linear-gradient(115deg, rgba(8,8,12,0.82) 0%, rgba(8,8,12,0.58) 45%, rgba(8,8,12,0.18) 100%);
+    --gallery-copy-color: #ffffff;
     --ink: #f5f2ed;
     --ink-muted: #c7bfb4;
     --ink-subtle: #a79f93;

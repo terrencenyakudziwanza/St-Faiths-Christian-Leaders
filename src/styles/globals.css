@@ -714,6 +714,27 @@ html::-webkit-scrollbar-thumb {
 
 /* SECTION FADE OVERLAYS */
 
+.hero-content {
+  background-color: var(--hero-content-tint);
+  transition: background-color 300ms ease;
+}
+
+.hero-content__overlay {
+  background:
+    radial-gradient(circle at 18% 25%, var(--accent-soft), transparent 35%),
+    radial-gradient(circle at 78% 30%, var(--accent-purple-soft), transparent 30%),
+    var(--hero-overlay-gradient);
+}
+
+.hero-copy {
+  color: var(--hero-copy-color);
+  text-shadow: 0 2px 18px color-mix(in srgb, var(--page-bg), transparent 38%);
+  transition: color 300ms ease;
+}
+
+.gallery-section-overlay { background: var(--gallery-overlay-gradient); }
+.gallery-section-copy { color: var(--gallery-copy-color); text-shadow: 0 2px 18px color-mix(in srgb, var(--page-bg), transparent 35%); }
+
 .section-fade-top,
 .section-fade-bottom {
   position: absolute;
@@ -730,7 +751,7 @@ html::-webkit-scrollbar-thumb {
     to bottom,
     var(--page-fade-strong) 0%,
     var(--page-fade-soft) 55%,
-    rgba(0, 0, 0, 0) 100%
+    transparent 100%
   );
 }
 
@@ -740,7 +761,7 @@ html::-webkit-scrollbar-thumb {
     to top,
     var(--page-fade-strong) 0%,
     var(--page-fade-soft) 55%,
-    rgba(0, 0, 0, 0) 100%
+    transparent 100%
   );
 }
 

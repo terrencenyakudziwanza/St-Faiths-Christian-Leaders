@@ -688,6 +688,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
         <div className="flex flex-col border-[1.5px] border-subtle rounded-2xl px-4 py-3 gap-4">
           <ProfileCard
             imageSrc={activeLeader.avatarUrl ?? fallbackProfile}
+            fallbackImageSrc={activeLeader.avatarPath ? `/offline-media/${activeLeader.avatarPath.replace(/^\/+/, "")}` : fallbackProfile}
             imageAlt={activeLeader.name}
             name={activeLeader.name}
             details={

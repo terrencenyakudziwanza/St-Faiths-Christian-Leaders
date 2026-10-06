@@ -294,7 +294,7 @@ const Home: React.FC = () => {
     <>
       <section
         id="home-section"
-        data-nav-theme="dark"
+        data-nav-theme="light"
         className="h-screen w-full relative flex justify-center items-center overflow-hidden bg-cover bg-center bg-fixed"
         style={
           fixedBgImage
@@ -344,15 +344,15 @@ const Home: React.FC = () => {
         ))}
 
         {/* HERO COPY + OVERLAY */}
-        <div className="hero-content absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-2 bg-[rgba(0,0,0,.6)] relative">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_25%,var(--accent-soft),transparent_35%),radial-gradient(circle_at_78%_30%,var(--accent-purple-soft),transparent_30%),linear-gradient(180deg,rgba(0,0,0,0.7),rgba(0,0,0,0.6))]"></div>
+        <div className="hero-content absolute inset-0 z-10 relative flex h-full w-full flex-col items-center justify-center gap-2">
+          <div className="hero-content__overlay pointer-events-none absolute inset-0"></div>
           {heroContent.heroHeader.map((h, i) => (
             <div
               key={i}
-              className={`text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] relative ${
+              className={`hero-copy text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] relative ${
                 introAnimDone
                   ? "text-transparent bg-clip-text"
-                  : "text-inverse"
+                  : ""
               }`}
               style={heroGradientStyle}
             >
@@ -362,7 +362,7 @@ const Home: React.FC = () => {
           {heroContent.heroSecondary.map((s, i) => (
             <div
               key={i}
-              className="text-split text-split-secondary text-inverse text-body-lg"
+              className="hero-copy text-split text-split-secondary text-body-lg"
             >
               {s}
             </div>

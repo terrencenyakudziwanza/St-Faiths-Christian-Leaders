@@ -74,6 +74,18 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
                 <img
                   key={`${event.id}-${leader.component}`}
                   src={leader.avatarUrl ?? fallbackProfile}
+                  onError={(event) => {
+                    const image = event.currentTarget;
+                    if (image.dataset.fallbackStage === "local") {
+                      image.dataset.fallbackStage = "bundled";
+                      image.src = fallbackProfile;
+                      return;
+                    }
+                    if (leader.avatarPath) {
+                      image.dataset.fallbackStage = "local";
+                      image.src = `/offline-media/${leader.avatarPath.replace(/^\/+/, "")}`;
+                    }
+                  }}
                   className={`${index === 0 ? "" : "-ml-3"} rounded-full h-12 w-12 object-cover border-2 border-[color:var(--surface-muted)]`}
                   alt={`${leader.name} (${leader.roleLabel})`}
                 />
@@ -100,7 +112,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
         <p className="text-body text-subtle line-clamp-3">
           {event.summary}
         </p>
-        <p className="text-body-sm text-subtle">
+        <p className="inline-flex w-fit items-center rounded-full border border-accent/30 bg-accent-soft px-3 py-1.5 text-body-sm font-semibold text-ink">
           {formatLongDate(event.eventDate)}
         </p>
         {(orderedMedia.length > 0) && <p className="text-body-xs text-muted">{orderedMedia.filter((item) => item.mediaType === "picture").length} photos · {orderedMedia.filter((item) => item.mediaType === "video").length} videos</p>}

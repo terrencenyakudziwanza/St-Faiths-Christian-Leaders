@@ -220,7 +220,10 @@ const PORTRAIT_TRANSITION_MS = 900;
 const Family: React.FC = () => {
   const familyContent = useCmsSection("family.content");
   const setCurrSection = useStore((state) => state.setCurrSection);
-  const [boardMembers, setBoardMembers] = React.useState<BoardMember[]>(defaultBoardMembers);
+  const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>(defaultBoardMembers);
+  const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
+  const [selectedBoardYear, setSelectedBoardYear] = React.useState(2026);
+  const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === selectedBoardYear), [allBoardMembers, selectedBoardYear]);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
   const [toastMessage, setToastMessage] = React.useState("");
@@ -247,7 +250,8 @@ const Family: React.FC = () => {
     let active = true;
     fetchBoardMembers().then((members) => {
       if (active) {
-        setBoardMembers(members.map((member) => ({ ...member, imageSrc: member.imageSrc ?? fallbackProfile })));
+        setAllBoardMembers(members.map((member) => ({ ...member, imageSrc: member.imageSrc ?? fallbackProfile })));
+        if (members.length) setSelectedBoardYear(Math.max(...members.map((member) => member.boardYear)));
         setActiveIndex(0);
       }
     }).catch(() => undefined);
@@ -648,6 +652,7 @@ const Family: React.FC = () => {
         {/* BOARD ORBIT STAGE */}
         <section id="family-board-section" className="mt-12 scroll-mt-24 rounded-[38px] border border-subtle bg-surface-elevated p-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
           <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><h2 className="text-heading-md font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.boardDescription}</p></div>
+          {boardYears.length > 1 && <div className="mb-5 flex items-center justify-center gap-3"><label htmlFor="board-history-year" className="text-body-sm font-semibold text-ink">Board year</label><select id="board-history-year" value={selectedBoardYear} onChange={(event) => { setSelectedBoardYear(Number(event.target.value)); setActiveIndex(0); }} className="rounded-full border border-subtle bg-surface px-4 py-2 text-body-sm text-ink">{boardYears.map((year) => <option key={year} value={year}>{year} Board</option>)}</select></div>}
         <div
           className="relative min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"
           style={{ background: "var(--family-panel-gradient)" }}

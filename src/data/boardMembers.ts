@@ -6,6 +6,7 @@ export type BoardMember = {
   quote: string;
   imageSrc: string;
   executive: boolean;
+  boardYear: number;
 };
 
 export const boardMembers: BoardMember[] = [
@@ -17,6 +18,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Lead with calm conviction and keep the family aligned around prayer.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: true,
+    boardYear: 2026,
   },
   {
     id: "sister-ama",
@@ -26,6 +28,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Order creates room for warmth, follow-through, and shared peace.",
     imageSrc: "/offline-media/presenters/sister-ama.jpg",
     executive: true,
+    boardYear: 2026,
   },
   {
     id: "elder-kojo",
@@ -35,6 +38,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Stewardship is worship when every decision protects the people.",
     imageSrc: "/offline-media/presenters/elder-kojo.jpg",
     executive: true,
+    boardYear: 2026,
   },
   {
     id: "lydia-ofori",
@@ -44,6 +48,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Care should feel practical, immediate, and impossible to miss.",
     imageSrc: "/offline-media/presenters/sister-ama.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "daniel-addo",
@@ -53,6 +58,7 @@ export const boardMembers: BoardMember[] = [
     quote: "A healthy church always leaves room for the next generation to rise.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "mabel-agyemang",
@@ -62,6 +68,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Prayer keeps every family conversation anchored in grace.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "emmanuel-owusu",
@@ -71,6 +78,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Worship softens the room before strategy ever speaks.",
     imageSrc: "/offline-media/presenters/elder-kojo.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "grace-nyarko",
@@ -80,6 +88,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Every outward invitation should feel as warm as the room inside.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "ruth-mensah",
@@ -89,6 +98,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Care becomes visible when follow-up is gentle and consistent.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "isaac-boadi",
@@ -98,6 +108,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Good media work should disappear into the clarity of the message.",
     imageSrc: "/offline-media/presenters/elder-kojo.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "deborah-quaye",
@@ -107,6 +118,7 @@ export const boardMembers: BoardMember[] = [
     quote: "Growth is strongest when people feel seen before they are taught.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
   {
     id: "samuel-opoku",
@@ -116,5 +128,6 @@ export const boardMembers: BoardMember[] = [
     quote: "Mission stays alive when local faithfulness keeps meeting distant need.",
     imageSrc: "/offline-media/presenters/pastor-joel.jpg",
     executive: false,
+    boardYear: 2026,
   },
 ];
