@@ -407,7 +407,7 @@ export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
         return {
           ...(row as OfflineEventRow),
           event_media: eventMedia as OfflineEventMediaRow[],
-        } as EventRow;
+        } as unknown as EventRow;
       });
 
     const data = await Promise.all(

@@ -54,6 +54,78 @@ const panelTextareaClass =
 const panelSubtextClass = "text-body-xs text-[color:var(--panel-text-muted)]";
 type DashboardArea = "home" | "events" | "family";
 
+type RestorePoint = { id: string; label: string; createdAt: string; content: Record<string, unknown> };
+const isImageField = (key: string) => /image|avatar|photo|media|thumbnail|storage.?path|url/i.test(key);
+const withoutImages = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(withoutImages);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !isImageField(key)).map(([key, item]) => [key, withoutImages(item)]));
+};
+const restoreWithCurrentImages = (saved: unknown, current: unknown): unknown => {
+  if (Array.isArray(saved)) return saved.map((item, index) => restoreWithCurrentImages(item, Array.isArray(current) ? current[index] : undefined));
+  if (!saved || typeof saved !== "object") return saved;
+  const savedRecord = saved as Record<string, unknown>;
+  const currentRecord = current && typeof current === "object" ? current as Record<string, unknown> : {};
+  return Object.fromEntries([...new Set([...Object.keys(savedRecord), ...Object.keys(currentRecord).filter(isImageField)])].map((key) => [key, isImageField(key) ? currentRecord[key] : restoreWithCurrentImages(savedRecord[key], currentRecord[key])]));
+};
+
+const SiteAppearanceEditor: React.FC = () => {
+  const [accent, setAccent] = React.useState("#ffd500");
+  const [status, setStatus] = React.useState("");
+  React.useEffect(() => {
+    void supabase.from("cms_content").select("content").eq("section_key", "site.theme").maybeSingle().then(({ data }) => {
+      const value = (data?.content as { accent?: string } | undefined)?.accent;
+      if (value && /^#[0-9a-f]{6}$/i.test(value)) setAccent(value);
+    });
+  }, []);
+  const save = async () => {
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme", content: { accent }, is_published: true }, { onConflict: "section_key" });
+    if (error) { setStatus(error.message); return; }
+    document.documentElement.style.setProperty("--accent", accent);
+    document.documentElement.style.setProperty("--accent-strong", accent);
+    document.documentElement.style.setProperty("--accent-purple", accent);
+    document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${accent} 22%, transparent)`);
+    setStatus("Accent color saved.");
+  };
+  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Site appearance</h2><p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Choose the accent color used across the site.</p><div className="mt-4 flex flex-wrap items-center gap-3"><input aria-label="Accent color" type="color" value={accent} onChange={(event) => setAccent(event.target.value)} disabled={false} className="h-11 w-16 cursor-pointer rounded-lg border border-[color:var(--panel-border)] bg-transparent"/><span className="text-body-sm">{accent}</span><button type="button" onClick={() => void save()} className="rounded-full bg-[color:var(--panel-text)] px-4 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)]">Save accent</button></div>{status && <p className={`mt-3 ${panelSubtextClass}`}>{status}</p>}</section>;
+};
+
+const RestorePointsEditor: React.FC = () => {
+  const [points, setPoints] = React.useState<RestorePoint[]>([]);
+  const [status, setStatus] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  const load = React.useCallback(async () => {
+    const { data } = await supabase.from("cms_content").select("content").eq("section_key", "site.restore_points").maybeSingle();
+    const items = (data?.content as { items?: RestorePoint[] } | undefined)?.items;
+    setPoints(Array.isArray(items) ? items : []);
+  }, []);
+  React.useEffect(() => { void load(); }, [load]);
+  const create = async () => {
+    setBusy(true); setStatus("");
+    const { data, error } = await supabase.from("cms_content").select("section_key,content").neq("section_key", "site.restore_points");
+    if (error) { setStatus(error.message); setBusy(false); return; }
+    const point: RestorePoint = { id: crypto.randomUUID(), label: `Restore point ${new Date().toLocaleString()}`, createdAt: new Date().toISOString(), content: Object.fromEntries((data ?? []).map((row) => [row.section_key, withoutImages(row.content)])) };
+    const next = [...points, point].slice(-2);
+    const result = await supabase.from("cms_content").upsert({ section_key: "site.restore_points", content: { items: next }, is_published: true }, { onConflict: "section_key" });
+    setStatus(result.error?.message ?? "Restore point created. The oldest point is removed when a third is created.");
+    if (!result.error) setPoints(next);
+    setBusy(false);
+  };
+  const restore = async (point: RestorePoint) => {
+    if (!window.confirm(`Restore “${point.label}”? Current text content will be replaced.`)) return;
+    setBusy(true); setStatus("");
+    const { data, error } = await supabase.from("cms_content").select("section_key,content");
+    if (error) { setStatus(error.message); setBusy(false); return; }
+    const current = Object.fromEntries((data ?? []).map((row) => [row.section_key, row.content]));
+    const writes = Object.entries(point.content).map(([section_key, content]) => supabase.from("cms_content").upsert({ section_key, content: restoreWithCurrentImages(content, current[section_key]), is_published: true }, { onConflict: "section_key" }));
+    const results = await Promise.all(writes);
+    const failed = results.find((result) => result.error);
+    setStatus(failed?.error?.message ?? "Saved text content restored. Reload the site to see all changes.");
+    setBusy(false);
+  };
+  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Restore points</h2><p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Save and restore CMS section content. Image fields are left out of the saved copy. Keep up to two points.</p><button type="button" disabled={busy} onClick={() => void create()} className="mt-4 rounded-full bg-[color:var(--panel-text)] px-4 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50">{busy ? "Working…" : "Create restore point"}</button><div className="mt-4 grid gap-3">{points.map((point) => <div key={point.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"><span className="text-body-sm">{point.label}</span><button type="button" disabled={busy} onClick={() => void restore(point)} className="rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-xs">Restore this point</button></div>)}</div>{status && <p className={`mt-3 ${panelSubtextClass}`}>{status}</p>}</section>;
+};
+
 
 
 const Dashboard: React.FC = () => {
@@ -187,12 +259,13 @@ const Dashboard: React.FC = () => {
           </aside>
 
           <main className="flex flex-col gap-6">
+            {(isAdmin || cmsUser?.role === "editor") && <><SiteAppearanceEditor /><RestorePointsEditor /></>}
             {isAdmin && (
               <TeamEditor
-                key="team"
-                visible={showAdminControls}
-                allowedSections={cmsSectionOrder}
-              />
+                  key="team"
+                  visible={showAdminControls}
+                  allowedSections={allowedSections}
+                />
             )}
             {activeArea === "home" && (
               <>
@@ -497,7 +570,7 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           <p className="text-overline font-semibold text-accent">Final intro image</p>
           <p className="mt-1 text-body-sm text-[color:var(--panel-text-muted)]">This selected slide stays as the Home hero background when the intro finishes.</p>
           <div className="mt-3 flex items-center gap-4">
-            <img src={resolveCmsMedia(draft.slides.find((slide) => slide.id === draft.finalSlideId)?.image)} alt="" className="h-20 w-28 rounded-xl object-cover" />
+            <img src={resolveCmsMedia(draft.slides.find((slide) => slide.id === draft.finalSlideId)?.image) ?? undefined} alt="" className="h-20 w-28 rounded-xl object-cover" />
             <p className="font-semibold">{draft.slides.find((slide) => slide.id === draft.finalSlideId)?.label}</p>
             <span className="ml-auto rounded-full bg-accent px-3 py-1 text-body-xs font-semibold text-[color:var(--panel-ink)]">Shown after intro</span>
           </div>
@@ -512,7 +585,7 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
           >
             <div className="flex items-center justify-between gap-2"><p className="font-semibold">{slide.label}</p><div className="flex gap-2"><button type="button" disabled={!canEdit} onClick={() => { setNewSlideLabel(slide.label); setNewSlideImage(slide.image); setEditingSlideId(slide.id); }} className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs disabled:opacity-50">Edit</button><button type="button" disabled={!canEdit} onClick={() => { setDraft((prev) => { const slides = prev.slides.filter((entry) => entry.id !== slide.id); return { ...prev, slides, finalSlideId: prev.finalSlideId === slide.id ? slides[slides.length - 1]?.id ?? "" : prev.finalSlideId }; }); if (editingSlideId === slide.id) { setEditingSlideId(null); setNewSlideLabel(""); setNewSlideImage(null); } }} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger disabled:opacity-50">Delete</button></div></div>
-            <img src={resolveCmsMedia(slide.image)} alt={slide.label} className="mt-3 h-36 w-full rounded-xl object-cover" />
+            <img src={resolveCmsMedia(slide.image) ?? undefined} alt={slide.label} className="mt-3 h-36 w-full rounded-xl object-cover" />
             <label className="mt-3 flex items-center gap-2 text-body-xs text-[color:var(--panel-text-muted)]"><input type="radio" name="hero-final-slide" checked={draft.finalSlideId === slide.id} onChange={() => setDraft((previous) => ({ ...previous, finalSlideId: slide.id }))} disabled={!canEdit} />Use as final background</label>
           </div>
         ))}

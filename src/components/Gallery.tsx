@@ -373,7 +373,6 @@ const Gallery: React.FC = () => {
   const galleryContent = useCmsSection("home.gallery");
   const seedTiles = React.useMemo(() => buildGalleryTiles(), []);
   const tiles = React.useMemo(() => [
-    ...seedTiles,
     ...galleryContent.items.map((item) => ({
       id: item.id,
       src: resolveCmsMedia(item.image) ?? "",
@@ -384,6 +383,7 @@ const Gallery: React.FC = () => {
       ratio: item.ratio,
       termId: item.termId,
     })),
+    ...seedTiles,
   ], [seedTiles, galleryContent.items]);
   const rowTiles = React.useMemo(() => {
     if (!tiles.length) {

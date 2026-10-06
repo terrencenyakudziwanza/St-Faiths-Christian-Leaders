@@ -17,6 +17,7 @@ import ThemeToggle from "./components/ThemeToggle";
 import Gallery from "./components/Gallery";
 import RequireAuth from "./components/RequireAuth";
 import ThemeRibbon from "./components/ThemeRibbon";
+import { supabase } from "./lib/supabase";
 // import ImmersiveWeek from "./components/ImmersiveWeek";
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
@@ -41,6 +42,21 @@ function App() {
   const hideRibbon =
     location.pathname.startsWith("/login") ||
     location.pathname.startsWith("/dashboard");
+
+  useEffect(() => {
+    let active = true;
+    void supabase.from("cms_content").select("content").eq("section_key", "site.theme").maybeSingle().then(({ data }) => {
+      if (!active || !data) return;
+      const accent = (data.content as { accent?: unknown })?.accent;
+      if (typeof accent === "string" && /^#[0-9a-f]{6}$/i.test(accent)) {
+        document.documentElement.style.setProperty("--accent", accent);
+        document.documentElement.style.setProperty("--accent-strong", accent);
+        document.documentElement.style.setProperty("--accent-purple", accent);
+        document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${accent} 22%, transparent)`);
+      }
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (location.pathname !== "/") {

@@ -94,6 +94,7 @@ const HighlightCard: React.FC<{ event: EventItem }> = ({ event }) => {
             ))}
           </span>
           <span className="highlight-flip-card__title">{event.themeTopic}</span>
+          <span className="mt-2 block text-body-xs text-inverse">{new Date(event.eventDate).toLocaleDateString()}</span>
         </span>
         <span className="highlight-flip-card__face highlight-flip-card__back">
           <span className="text-overline font-semibold text-accent">
@@ -105,6 +106,7 @@ const HighlightCard: React.FC<{ event: EventItem }> = ({ event }) => {
           <span className="mt-3 block text-body-sm text-muted leading-6">
             {story}
           </span>
+          {event.praiseHighlights.length > 0 && <span className="mt-3 block text-body-xs font-semibold text-accent">{event.praiseHighlights.length} praise moments · Tap to flip back</span>}
         </span>
       </span>
     </button>
@@ -383,6 +385,7 @@ const Events: React.FC = () => {
             {highlightEvents.map((event) => (
               <HighlightCard key={event.id} event={event} />
             ))}
+            {highlightEvents.length === 0 && <div className="max-w-xl rounded-2xl border border-strong bg-surface-muted p-6 text-center"><p className="font-semibold">Event highlights are coming soon</p><p className="mt-2 text-body-sm text-muted">Publish a Special event with a summary, praise moments, and photos to feature it here.</p></div>}
           </div>
         </section>
       </div>

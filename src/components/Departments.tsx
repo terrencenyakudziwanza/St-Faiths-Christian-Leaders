@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronDown } from "lucide-react";
-import { departments, type Department, type DepartmentMember } from "../data/departments";
+import { departments, type DepartmentMember } from "../data/departments";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 
 type OrbitLayout = {
@@ -11,19 +11,6 @@ type OrbitLayout = {
   cardWidthClassName: string;
   portraitWidth: string;
   portraitHeight: string;
-};
-
-type OrbitalMember = {
-  member: DepartmentMember;
-  index: number;
-  isActive: boolean;
-  isLeader: boolean;
-  left: number;
-  top: number;
-  scale: number;
-  opacity: number;
-  visibilityFactor: number;
-  zIndex: number;
 };
 
 function getWrappedOffset(index: number, activeIndex: number, length: number): number {
@@ -38,28 +25,6 @@ function getWrappedOffset(index: number, activeIndex: number, length: number): n
   }
 
   return offset;
-}
-
-function wrapIndex(index: number, length: number): number {
-  return ((index % length) + length) % length;
-}
-
-function wrapAngle(angle: number): number {
-  let normalized = angle;
-
-  while (normalized <= -Math.PI) {
-    normalized += Math.PI * 2;
-  }
-
-  while (normalized > Math.PI) {
-    normalized -= Math.PI * 2;
-  }
-
-  return normalized;
-}
-
-function smoothstep(value: number): number {
-  return value * value * (3 - 2 * value);
 }
 
 function getOrbitLayout(viewportWidth: number): OrbitLayout {
@@ -107,8 +72,6 @@ const Departments: React.FC = () => {
   );
 
   const activeDept = departments[activeDeptIndex] ?? departments[0];
-  const activeMember = activeDept.members[activeMemberIndex] ?? activeDept.members[0];
-  const isMobile = viewportWidth < 768;
   const orbitLayout = React.useMemo(
     () => getOrbitLayout(viewportWidth),
     [viewportWidth],
@@ -314,7 +277,6 @@ const Departments: React.FC = () => {
               style={{
                 color: "transparent",
                 WebkitTextStroke: `2px ${activeDept.colorHex}`,
-                textStroke: `2px ${activeDept.colorHex}`,
               }}
             >
               {activeDept.name}
@@ -335,7 +297,6 @@ const Departments: React.FC = () => {
               member,
               index,
               isActive,
-              isLeader,
               left,
               top,
               scale,

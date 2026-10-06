@@ -22,8 +22,7 @@ export async function fetchCmsContent(
 
   (data ?? []).forEach((row) => {
     const typedRow = row as CmsContentRow;
-    contentMap[typedRow.section_key] =
-      typedRow.content as CmsContentMap[CmsContentKey];
+    (contentMap as Record<string, unknown>)[typedRow.section_key] = typedRow.content;
   });
 
   return contentMap;
