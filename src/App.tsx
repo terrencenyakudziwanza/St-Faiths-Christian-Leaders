@@ -47,12 +47,20 @@ function App() {
     let active = true;
     void supabase.from("cms_content").select("content").eq("section_key", "site.theme").maybeSingle().then(({ data }) => {
       if (!active || !data) return;
-      const accent = (data.content as { accent?: unknown })?.accent;
+      const theme = data.content as { accent?: unknown; secondaryAccent?: unknown };
+      const accent = theme?.accent;
+      const secondaryAccent = theme?.secondaryAccent;
       if (typeof accent === "string" && /^#[0-9a-f]{6}$/i.test(accent)) {
         document.documentElement.style.setProperty("--accent", accent);
         document.documentElement.style.setProperty("--accent-strong", accent);
-        document.documentElement.style.setProperty("--accent-purple", accent);
-        document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${accent} 22%, transparent)`);
+        document.documentElement.style.setProperty("--accent-soft", `color-mix(in srgb, ${accent} 18%, transparent)`);
+        document.documentElement.style.setProperty("--accent-soft-faint", `color-mix(in srgb, ${accent} 10%, transparent)`);
+        document.documentElement.style.setProperty("--accent-soft-subtle", `color-mix(in srgb, ${accent} 6%, transparent)`);
+      }
+      if (typeof secondaryAccent === "string" && /^#[0-9a-f]{6}$/i.test(secondaryAccent)) {
+        document.documentElement.style.setProperty("--accent-purple", secondaryAccent);
+        document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${secondaryAccent} 22%, transparent)`);
+        document.documentElement.style.setProperty("--accent-purple-glow", `color-mix(in srgb, ${secondaryAccent} 58%, transparent)`);
       }
     });
     return () => { active = false; };

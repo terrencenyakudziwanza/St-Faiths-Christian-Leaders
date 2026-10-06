@@ -31,6 +31,7 @@ interface EventsModalProps {
   media: EventMedia[];
   loading: boolean;
   mediaError: string | null;
+  initialMediaId?: string | null;
   onClose: () => void;
 }
 
@@ -76,6 +77,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
   media,
   loading,
   mediaError,
+  initialMediaId = null,
   onClose,
 }) => {
   const desktopClipsRef = React.useRef<HTMLDivElement | null>(null);
@@ -104,6 +106,8 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const [shareCounts, setShareCounts] = React.useState<Record<string, number>>(
     {},
   );
+  const [shareNotice, setShareNotice] = React.useState("");
+  const [shareFallbackLink, setShareFallbackLink] = React.useState("");
 
   React.useEffect(() => {
     autoPlayRequestedRef.current = autoPlayRequested;
@@ -336,20 +340,42 @@ const EventsModal: React.FC<EventsModalProps> = ({
     likeBurstTimeoutsRef.current.push(timeoutId);
   }, []);
 
-  const handleShareClick = React.useCallback((clipId: string) => {
-    setShareCounts((prev) => ({
-      ...prev,
-      [clipId]: (prev[clipId] ?? 0) + 1,
-    }));
-  }, []);
+  const handleShareClick = React.useCallback(async (clipId: string) => {
+    if (!event) return;
+    const link = new URL(`/events?event=${encodeURIComponent(event.slug)}&media=${encodeURIComponent(clipId)}#events-section`, window.location.origin).toString();
+    setShareFallbackLink("");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: event.themeTopic || event.title, text: `A moment from ${event.title}`, url: link });
+        setShareNotice("Share link opened.");
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+        setShareNotice("Event moment link copied.");
+      } else {
+        setShareFallbackLink(link);
+        setShareNotice("Copy this event moment link.");
+      }
+      setShareCounts((prev) => ({ ...prev, [clipId]: (prev[clipId] ?? 0) + 1 }));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setShareFallbackLink(link);
+      setShareNotice("Copy this event moment link.");
+    }
+  }, [event]);
 
   React.useEffect(() => {
     if (!show) {
       return;
     }
 
-    setActiveClipId(activeItems[0]?.id ?? null);
-  }, [show, activeMedia, activeItems]);
+    setActiveClipId(activeItems.find((item) => item.id === initialMediaId)?.id ?? activeItems[0]?.id ?? null);
+  }, [show, activeMedia, activeItems, initialMediaId]);
+
+  React.useEffect(() => {
+    if (!show || !initialMediaId) return;
+    const target = media.find((item) => item.id === initialMediaId);
+    if (target) setActiveMedia(target.mediaType);
+  }, [show, initialMediaId, media]);
 
   React.useEffect(() => {
     if (show && activeMedia === "video") {
@@ -907,6 +933,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
       }`}
       onClick={onClose}
     >
+      {shareNotice && show && <div role="status" className="absolute right-4 top-4 z-[160] max-w-[min(92vw,460px)] rounded-2xl border border-subtle bg-surface-elevated p-4 text-body-sm text-ink shadow-xl" onClick={(clickEvent) => clickEvent.stopPropagation()}><div className="flex items-start justify-between gap-4"><span>{shareNotice}</span><button type="button" aria-label="Dismiss share message" onClick={() => setShareNotice("")}><X className="h-4 w-4" /></button></div>{shareFallbackLink && <div className="mt-3 flex gap-2"><input readOnly value={shareFallbackLink} onFocus={(focusEvent) => focusEvent.currentTarget.select()} className="min-w-0 flex-1 rounded-lg border border-subtle bg-surface px-2 py-1 text-body-xs" aria-label="Share link"/><button type="button" className="rounded-lg bg-contrast px-3 py-1 text-body-xs text-inverse" onClick={async () => { try { await navigator.clipboard.writeText(shareFallbackLink); setShareNotice("Event moment link copied."); setShareFallbackLink(""); } catch { setShareNotice("Select the link and copy it."); } }}>Copy</button></div>}</div>}
       <div className="absolute right-8 top-1/2 -translate-y-1/2 flex-col gap-3 z-10 hidden lg:flex">
         {/* ScrollUp Button */}
         <button

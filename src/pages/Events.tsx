@@ -2,7 +2,7 @@ import React from "react";
 import EventCard from "../components/EventCard";
 import EventsModal from "../components/EventsModal";
 import LeaderDropdown from "../components/LeaderDropdown";
-import { Calendar, Flame, Search } from "lucide-react";
+import { Calendar, Search } from "lucide-react";
 import fallbackHighlight from "../assets/images/hand-writing.jpg";
 
 import { fetchEventMedia, fetchEvents } from "../services/events";
@@ -15,6 +15,7 @@ import type {
 import Navbar from "../components/Navbar";
 import type { NavPage } from "../types/nav";
 import useStore from "../store";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const feedTypes: FeedType[] = ["Services", "Revivals", "Specials"];
 const EVENTS_REVEAL_STEP = 5;
@@ -57,63 +58,29 @@ function getErrorMessage(error: unknown): string {
   return "Something went wrong. Please try again.";
 }
 
-const HighlightCard: React.FC<{ event: EventItem }> = ({ event }) => {
-  const [flipped, setFlipped] = React.useState(false);
-  const pictures = event.media
-    .filter((item) => item.mediaType === "picture")
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .slice(0, 4);
-  const stackImages = pictures.length
-    ? pictures.map((picture) => picture.publicUrl)
-    : [event.presenterAvatarUrl ?? fallbackHighlight];
-  const story = [
-    event.summary,
-    event.praiseHighlights[0],
-    event.intercessionPrayerPoints[0],
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <button
-      type="button"
-      className={`highlight-flip-card ${flipped ? "is-flipped" : ""}`}
-      onClick={() => setFlipped((prev) => !prev)}
-      aria-pressed={flipped}
-    >
-      <span className="highlight-flip-card__inner">
-        <span className="highlight-flip-card__face highlight-flip-card__front">
-          <span className="highlight-stack">
-            {stackImages.map((src, index) => (
-              <img
-                key={`${event.id}-highlight-${index}`}
-                src={src}
-                alt={event.title}
-                className={`highlight-stack__image highlight-stack__image--${index + 1}`}
-              />
-            ))}
-          </span>
-          <span className="highlight-flip-card__title">{event.themeTopic}</span>
-          <span className="mt-2 block text-body-xs text-inverse">{new Date(event.eventDate).toLocaleDateString()}</span>
-        </span>
-        <span className="highlight-flip-card__face highlight-flip-card__back">
-          <span className="text-overline font-semibold text-accent">
-            Highlight Story
-          </span>
-          <span className="mt-3 block text-heading-xs font-semibold text-ink">
-            {event.themeTopic}
-          </span>
-          <span className="mt-3 block text-body-sm text-muted leading-6">
-            {story}
-          </span>
-          {event.praiseHighlights.length > 0 && <span className="mt-3 block text-body-xs font-semibold text-accent">{event.praiseHighlights.length} praise moments · Tap to flip back</span>}
-        </span>
-      </span>
-    </button>
-  );
+type HighlightMoment = { event: EventItem; media: EventMedia; activity: string };
+const highlightActivities = ["Praise and Worship", "Intercession", "Bible Study", "Preaching"];
+const activityForMedia = (media: EventMedia): string => {
+  const text = `${media.component} ${media.caption} ${media.tags.join(" ")}`.toLowerCase();
+  if (/praise|worship|choir/.test(text)) return "Praise and Worship";
+  if (/intercession|prayer/.test(text)) return "Intercession";
+  if (/preach|sermon|message/.test(text)) return "Preaching";
+  return "Bible Study";
 };
 
+const HighlightCard: React.FC<{ moment: HighlightMoment; featured?: boolean; onOpen: () => void }> = ({ moment, featured = false, onOpen }) => (
+  <button type="button" onClick={onOpen} className={`highlight-moment group relative block w-full overflow-hidden rounded-[28px] border border-subtle bg-surface-elevated text-left shadow-[0_16px_44px_rgba(0,0,0,0.1)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_54px_rgba(0,0,0,0.16)] ${featured ? "min-h-[420px] md:row-span-2 md:min-h-[496px]" : "min-h-[240px]"}`}>
+    {moment.media.mediaType === "video" ? <video src={moment.media.publicUrl} poster={moment.event.presenterAvatarUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" muted playsInline preload="metadata" /> : <img src={moment.media.publicUrl || fallbackHighlight} alt={moment.media.caption || moment.event.themeTopic} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />}
+    <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+    <span className="absolute left-4 top-4 rounded-full border border-white/35 bg-black/30 px-3 py-1.5 text-body-xs text-white backdrop-blur-sm">{moment.activity}</span>
+    <span className="absolute inset-x-5 bottom-5 text-white"><span className="block text-heading-sm font-semibold">{moment.media.caption || moment.event.themeTopic}</span><span className="mt-1 block text-body-xs text-white/80">{moment.event.title} · {moment.event.presenterName}</span><span className="mt-1 block text-body-xs text-white/70">{new Date(moment.event.eventDate).toLocaleDateString()}</span></span>
+    {moment.media.mediaType === "video" && <span aria-hidden="true" className="absolute right-5 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/60 bg-black/35 text-white">▶</span>}
+  </button>
+);
+
 const Events: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [modalShown, setModalShown] = React.useState(false);
   const [feedTypeIndex, setFeedTypeIndex] = React.useState(0);
   const [visibleEventCount, setVisibleEventCount] =
@@ -127,10 +94,13 @@ const Events: React.FC = () => {
     null,
   );
   const [selectedMedia, setSelectedMedia] = React.useState<EventMedia[]>([]);
+  const [initialMediaId, setInitialMediaId] = React.useState<string | null>(null);
   const [mediaLoading, setMediaLoading] = React.useState(false);
   const [mediaError, setMediaError] = React.useState<string | null>(null);
 
   const [highlightEvents, setHighlightEvents] = React.useState<EventItem[]>([]);
+  const highlightsRef = React.useRef<HTMLElement | null>(null);
+  const [activityFilter, setActivityFilter] = React.useState(() => new URLSearchParams(window.location.search).get("activity") ?? "All");
 
   const setCurrSection = useStore((state) => state.setCurrSection);
 
@@ -176,6 +146,24 @@ const Events: React.FC = () => {
   }, [loadHighlightEvents]);
 
   React.useEffect(() => {
+    const requested = new URLSearchParams(location.search).get("activity") ?? "All";
+    setActivityFilter(highlightActivities.includes(requested) ? requested : "All");
+  }, [location.search]);
+
+  React.useEffect(() => {
+    const section = highlightsRef.current;
+    if (!section) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        section.classList.add("highlights-visible");
+        observer.disconnect();
+      }
+    }, { threshold: 0.08 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  React.useEffect(() => {
     setCurrSection("Events");
   }, [setCurrSection]);
 
@@ -213,9 +201,8 @@ const Events: React.FC = () => {
       const typeMatch =
         eventTypeFilter === "All" || activeFeedType === eventTypeFilter;
 
-      const textMatch =
-        event.themeTopic.toLowerCase().includes(query) ||
-        leaders.join(" ").toLowerCase().includes(query);
+      const searchableText = [event.title, event.themeTopic, event.summary, leaders.join(" "), event.serviceLeaders.map((leader) => leader.component).join(" "), event.praiseHighlights.join(" "), event.intercessionPrayerPoints.join(" ")].join(" ").toLowerCase();
+      const textMatch = searchableText.includes(query);
 
       const dateMatch =
         !dateFilter || new Date(event.eventDate) >= new Date(dateFilter);
@@ -233,14 +220,33 @@ const Events: React.FC = () => {
 
   const visibleEvents = filteredEvents.slice(0, visibleEventCount);
 
+  const highlightMoments = React.useMemo(() => {
+    const ordered = highlightEvents.map((event) => [...event.media].sort((a, b) => a.sortOrder - b.sortOrder));
+    const moments: HighlightMoment[] = [];
+    for (let index = 0; moments.length < 6 && ordered.some((media) => media[index]); index += 1) {
+      ordered.forEach((media, eventIndex) => {
+        const item = media[index];
+        const event = highlightEvents[eventIndex];
+        if (item && event) moments.push({ event, media: item, activity: activityForMedia(item) });
+      });
+    }
+    return moments.slice(0, 6);
+  }, [highlightEvents]);
+  const filteredHighlights = activityFilter === "All" ? highlightMoments : highlightMoments.filter((moment) => moment.activity === activityFilter);
+  const selectActivity = (activity: string) => {
+    setActivityFilter(activity);
+    navigate({ pathname: "/events", search: activity === "All" ? "" : `?activity=${encodeURIComponent(activity)}`, hash: "#highlights-section" }, { replace: true });
+  };
+
   const canToggleVisibleEvents = filteredEvents.length > EVENTS_REVEAL_STEP;
   const showingAllVisibleEvents = visibleEventCount >= filteredEvents.length;
 
   /* ---------------- MODAL ---------------- */
 
-  const openEventModal = React.useCallback(async (event: EventItem) => {
+  const openEventModal = React.useCallback(async (event: EventItem, preferredMediaId: string | null = null) => {
     setSelectedEvent(event);
     setSelectedMedia(event.media);
+    setInitialMediaId(preferredMediaId);
     setMediaError(null);
     setModalShown(true);
 
@@ -254,6 +260,28 @@ const Events: React.FC = () => {
       setMediaLoading(false);
     }
   }, []);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const slug = params.get("event");
+    if (!slug) return;
+    let cancelled = false;
+    void Promise.all(feedTypes.map((feedType) => fetchEvents(feedType))).then((groups) => {
+      if (cancelled) return;
+      const sharedEvent = groups.flat().find((item) => item.slug === slug);
+      if (sharedEvent) void openEventModal(sharedEvent, params.get("media"));
+    }).catch((error) => console.error(getErrorMessage(error)));
+    return () => { cancelled = true; };
+  }, [location.search, openEventModal]);
+
+  const closeEventModal = React.useCallback(() => {
+    setModalShown(false);
+    setInitialMediaId(null);
+    const params = new URLSearchParams(location.search);
+    params.delete("event");
+    params.delete("media");
+    navigate({ pathname: location.pathname, search: params.size ? `?${params.toString()}` : "", hash: location.hash }, { replace: true });
+  }, [location.hash, location.pathname, location.search, navigate]);
 
   /* ---------------- PAGE ---------------- */
 
@@ -369,24 +397,19 @@ const Events: React.FC = () => {
             media={selectedMedia}
             loading={mediaLoading}
             mediaError={mediaError}
-            onClose={() => setModalShown(false)}
+            initialMediaId={initialMediaId}
+            onClose={closeEventModal}
           />
         </section>
 
         {/* HIGHLIGHTS GRID */}
-        <section id="highlights-section" className="p-4 pt-8 w-full max-w-325">
-          <div className="w-full h-px bg-[color:var(--border)]" />
-          <div className="flex justify-center items-center gap-4 py-8">
-            <Flame className="h-6 w-6 text-ink" />
-            <h2 className="text-heading-xl font-bold">Highlights</h2>
+        <section ref={highlightsRef} id="highlights-section" className="w-full max-w-325 scroll-mt-24 px-4 pb-16 pt-12">
+          <div className="h-px w-full bg-[color:var(--border)]" />
+          <div className="flex flex-col gap-5 py-8 sm:flex-row sm:items-end sm:justify-between">
+            <div><p className="text-overline font-semibold text-accent">Moments from our gatherings</p><h2 className="mt-2 text-heading-xl font-bold">Highlights</h2><p className="mt-2 text-body-sm text-muted">A few moments worth remembering.</p></div>
+            <div className="flex flex-wrap gap-2" aria-label="Filter highlights by activity">{["All", ...highlightActivities].map((activity) => <button key={activity} type="button" aria-pressed={activityFilter === activity} onClick={() => selectActivity(activity)} className={`rounded-full border px-4 py-2 text-body-xs transition ${activityFilter === activity ? "border-accent bg-accent-soft text-accent" : "border-subtle bg-surface-elevated text-muted hover:text-ink"}`}>{activity}</button>)}</div>
           </div>
-
-          <div className="flex justify-center flex-wrap sm:gap-10 gap-16 py-8 pb-12">
-            {highlightEvents.map((event) => (
-              <HighlightCard key={event.id} event={event} />
-            ))}
-            {highlightEvents.length === 0 && <div className="max-w-xl rounded-2xl border border-strong bg-surface-muted p-6 text-center"><p className="font-semibold">Event highlights are coming soon</p><p className="mt-2 text-body-sm text-muted">Publish a Special event with a summary, praise moments, and photos to feature it here.</p></div>}
-          </div>
+          {filteredHighlights.length > 0 ? <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{filteredHighlights.slice(0, 6).map((moment, index) => <HighlightCard key={moment.media.id} moment={moment} featured={index === 0} onOpen={() => { setSelectedEvent(moment.event); setSelectedMedia(moment.event.media); setInitialMediaId(moment.media.id); setMediaError(null); setMediaLoading(false); setModalShown(true); }} />)}</div> : <div className="rounded-2xl border border-subtle bg-surface-muted p-6 text-center"><p className="font-semibold">{activityFilter === "All" ? "Event highlights are coming soon" : `No ${activityFilter} highlights yet`}</p><p className="mt-2 text-body-sm text-muted">Add event photos or videos to create a collection of memorable moments.</p></div>}
         </section>
       </div>
     </div>

@@ -70,24 +70,59 @@ const restoreWithCurrentImages = (saved: unknown, current: unknown): unknown => 
 };
 
 const SiteAppearanceEditor: React.FC = () => {
+  type ThemePreset = { id: string; name: string; accent: string; secondaryAccent: string; createdAt: string };
   const [accent, setAccent] = React.useState("#ffd500");
+  const [secondaryAccent, setSecondaryAccent] = React.useState("#4700b8");
+  const [presets, setPresets] = React.useState<ThemePreset[]>([]);
+  const [presetName, setPresetName] = React.useState("");
   const [status, setStatus] = React.useState("");
   React.useEffect(() => {
     void supabase.from("cms_content").select("content").eq("section_key", "site.theme").maybeSingle().then(({ data }) => {
-      const value = (data?.content as { accent?: string } | undefined)?.accent;
-      if (value && /^#[0-9a-f]{6}$/i.test(value)) setAccent(value);
+      const theme = data?.content as { accent?: string; secondaryAccent?: string } | undefined;
+      if (theme?.accent && /^#[0-9a-f]{6}$/i.test(theme.accent)) setAccent(theme.accent);
+      if (theme?.secondaryAccent && /^#[0-9a-f]{6}$/i.test(theme.secondaryAccent)) setSecondaryAccent(theme.secondaryAccent);
+    });
+    void supabase.from("cms_content").select("content").eq("section_key", "site.theme_presets").maybeSingle().then(({ data }) => {
+      const items = (data?.content as { items?: ThemePreset[] } | undefined)?.items;
+      if (Array.isArray(items)) setPresets(items.slice(-4));
     });
   }, []);
-  const save = async () => {
-    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme", content: { accent }, is_published: true }, { onConflict: "section_key" });
-    if (error) { setStatus(error.message); return; }
-    document.documentElement.style.setProperty("--accent", accent);
-    document.documentElement.style.setProperty("--accent-strong", accent);
-    document.documentElement.style.setProperty("--accent-purple", accent);
-    document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${accent} 22%, transparent)`);
-    setStatus("Accent color saved.");
+  const applyColors = (primary: string, secondary: string) => {
+    document.documentElement.style.setProperty("--accent", primary);
+    document.documentElement.style.setProperty("--accent-strong", primary);
+    document.documentElement.style.setProperty("--accent-soft", `color-mix(in srgb, ${primary} 18%, transparent)`);
+    document.documentElement.style.setProperty("--accent-soft-faint", `color-mix(in srgb, ${primary} 10%, transparent)`);
+    document.documentElement.style.setProperty("--accent-soft-subtle", `color-mix(in srgb, ${primary} 6%, transparent)`);
+    document.documentElement.style.setProperty("--accent-purple", secondary);
+    document.documentElement.style.setProperty("--accent-purple-soft", `color-mix(in srgb, ${secondary} 22%, transparent)`);
+    document.documentElement.style.setProperty("--accent-purple-glow", `color-mix(in srgb, ${secondary} 58%, transparent)`);
   };
-  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Site appearance</h2><p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Choose the accent color used across the site.</p><div className="mt-4 flex flex-wrap items-center gap-3"><input aria-label="Accent color" type="color" value={accent} onChange={(event) => setAccent(event.target.value)} disabled={false} className="h-11 w-16 cursor-pointer rounded-lg border border-[color:var(--panel-border)] bg-transparent"/><span className="text-body-sm">{accent}</span><button type="button" onClick={() => void save()} className="rounded-full bg-[color:var(--panel-text)] px-4 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)]">Save accent</button></div>{status && <p className={`mt-3 ${panelSubtextClass}`}>{status}</p>}</section>;
+  const save = async () => {
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme", content: { accent, secondaryAccent }, is_published: true }, { onConflict: "section_key" });
+    if (error) { setStatus(error.message); return; }
+    applyColors(accent, secondaryAccent);
+    setStatus("Accent colors saved.");
+  };
+  const savePreset = async () => {
+    if (presets.length >= 4) { setStatus("You can save up to four presets. Remove one to make room."); return; }
+    const name = presetName.trim() || `Color preset ${presets.length + 1}`;
+    const next = [...presets, { id: crypto.randomUUID(), name, accent, secondaryAccent, createdAt: new Date().toISOString() }];
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme_presets", content: { items: next }, is_published: true }, { onConflict: "section_key" });
+    if (error) { setStatus(error.message); return; }
+    setPresets(next); setPresetName(""); setStatus("Color preset saved.");
+  };
+  const removePreset = async (id: string) => {
+    const next = presets.filter((preset) => preset.id !== id);
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme_presets", content: { items: next }, is_published: true }, { onConflict: "section_key" });
+    if (error) { setStatus(error.message); return; }
+    setPresets(next); setStatus("Color preset removed.");
+  };
+  const choosePreset = async (preset: ThemePreset) => {
+    const { error } = await supabase.from("cms_content").upsert({ section_key: "site.theme", content: { accent: preset.accent, secondaryAccent: preset.secondaryAccent }, is_published: true }, { onConflict: "section_key" });
+    if (error) { setStatus(error.message); return; }
+    setAccent(preset.accent); setSecondaryAccent(preset.secondaryAccent); applyColors(preset.accent, preset.secondaryAccent); setStatus(`${preset.name} applied.`);
+  };
+  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Site appearance</h2><p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Choose both accent colors used across the site.</p><div className="mt-4 flex flex-wrap items-end gap-5"><label className="grid gap-2 text-body-xs"><span>Primary accent</span><span className="flex items-center gap-2"><input aria-label="Primary accent color" type="color" value={accent} onChange={(event) => setAccent(event.target.value)} className="h-11 w-16 cursor-pointer rounded-lg border border-[color:var(--panel-border)] bg-transparent"/><span>{accent}</span></span></label><label className="grid gap-2 text-body-xs"><span>Secondary accent</span><span className="flex items-center gap-2"><input aria-label="Secondary accent color" type="color" value={secondaryAccent} onChange={(event) => setSecondaryAccent(event.target.value)} className="h-11 w-16 cursor-pointer rounded-lg border border-[color:var(--panel-border)] bg-transparent"/><span>{secondaryAccent}</span></span></label><button type="button" onClick={() => void save()} className="rounded-full bg-[color:var(--panel-text)] px-4 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)]">Save colors</button></div><div className="mt-5 border-t border-[color:var(--panel-border)] pt-4"><p className="text-body-sm font-semibold">Color presets <span className="font-normal text-[color:var(--panel-text-muted)]">({presets.length}/4)</span></p><div className="mt-3 flex flex-wrap gap-2"><input aria-label="Preset name" placeholder="Name this preset" value={presetName} onChange={(event) => setPresetName(event.target.value)} className={`${panelInputClass} min-w-[170px]`} /><button type="button" disabled={presets.length >= 4} onClick={() => void savePreset()} className="rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-xs disabled:opacity-50">Save current preset</button></div>{presets.map((preset) => <div key={preset.id} className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-3"><span className="mr-auto text-body-xs">{preset.name}</span><span aria-label={`Primary ${preset.accent}`} className="h-5 w-5 rounded-full border border-white/30" style={{ backgroundColor: preset.accent }} /><span aria-label={`Secondary ${preset.secondaryAccent}`} className="h-5 w-5 rounded-full border border-white/30" style={{ backgroundColor: preset.secondaryAccent }} /><button type="button" onClick={() => void choosePreset(preset)} className="rounded-full border border-[color:var(--panel-border)] px-3 py-1.5 text-body-xs">Apply</button><button type="button" onClick={() => void removePreset(preset.id)} className="rounded-full px-3 py-1.5 text-body-xs text-[color:var(--panel-text-muted)] hover:text-[color:var(--panel-text)]">Remove</button></div>)}</div>{status && <p className={`mt-3 ${panelSubtextClass}`}>{status}</p>}</section>;
 };
 
 const RestorePointsEditor: React.FC = () => {
@@ -132,6 +167,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { cmsUser, permissions, roleLoading, signOut } = useAuth();
   const [activeArea, setActiveArea] = React.useState<DashboardArea>("home");
+  const [expandedArea, setExpandedArea] = React.useState<DashboardArea | null>(null);
   const [showAdminControls, setShowAdminControls] = React.useState(false);
   const headerRef = React.useRef<HTMLDivElement | null>(null);
   const [showGoBackUp, setShowGoBackUp] = React.useState(false);
@@ -172,6 +208,16 @@ const Dashboard: React.FC = () => {
     ...(isAdmin || permissions.includes("content.events") ? [{ key: "events" as const, label: "Events" }] : []),
     ...(isAdmin || permissions.includes("content.board") || permissions.includes("family.content") ? [{ key: "family" as const, label: "Family" }] : []),
   ];
+  const areaSections: Record<DashboardArea, { label: string; id: string }[]> = {
+    home: [{ label: "Hero", id: "dashboard-hero" }, { label: "Focus", id: "dashboard-focus" }, { label: "Week", id: "dashboard-week" }, { label: "Gallery", id: "dashboard-gallery" }, { label: "Testimonials", id: "dashboard-testimonials" }],
+    events: [{ label: "Events", id: "dashboard-events" }],
+    family: [{ label: "Family details", id: "dashboard-family" }, { label: "Board", id: "dashboard-board" }],
+  };
+  const goToDashboardSection = (area: DashboardArea, id: string) => {
+    setActiveArea(area);
+    setExpandedArea(area);
+    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
 
   React.useEffect(() => {
     if (!allowedAreas.some((area) => area.key === activeArea) && allowedAreas[0]) {
@@ -235,31 +281,24 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 pb-24 lg:pb-0 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="mt-10 grid gap-6 pb-28 lg:pb-0 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside
-            className={`fixed inset-x-0 bottom-0 z-40 flex max-w-full gap-2 overflow-x-auto rounded-t-[24px] rounded-b-none p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] lg:static lg:flex-col lg:gap-3 lg:rounded-[24px] lg:p-4 lg:shadow-[0_20px_50px_rgba(0,0,0,0.24)] ${panelMutedClass}`}
+            className={`fixed inset-x-0 bottom-0 z-40 flex max-w-full justify-center gap-2 overflow-x-auto rounded-t-[24px] rounded-b-none p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] lg:sticky lg:top-6 lg:h-fit lg:flex-col lg:justify-start lg:gap-3 lg:rounded-[24px] lg:p-4 lg:shadow-[0_20px_50px_rgba(0,0,0,0.24)] ${panelMutedClass}`}
           >
             <p className="hidden text-caption uppercase tracking-[0.3em] text-[color:var(--panel-text-muted)] lg:block">
               Sections
             </p>
-            {allowedAreas.map((area) => (
-              <button
-                key={area.key}
-                type="button"
-                onClick={() => setActiveArea(area.key)}
-                className={`shrink-0 rounded-full px-4 py-3 text-center text-body-sm transition-colors lg:rounded-2xl lg:text-left ${
-                  activeArea === area.key
-                    ? "bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]"
-                    : "text-[color:var(--panel-text-muted)] hover:bg-[color:var(--panel-input)] hover:text-[color:var(--panel-text)]"
-                }`}
-              >
-                {area.label}
-              </button>
-            ))}
+            {allowedAreas.map((area) => <div key={area.key} className="relative shrink-0 lg:w-full">
+              <div className="flex items-center gap-1 rounded-full lg:rounded-2xl">
+                <button type="button" onClick={() => { setActiveArea(area.key); setExpandedArea((prev) => prev === area.key ? null : area.key); }} className={`rounded-full px-4 py-3 text-center text-body-sm transition-colors lg:flex-1 lg:rounded-2xl lg:text-left ${activeArea === area.key ? "bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]" : "text-[color:var(--panel-text-muted)] hover:bg-[color:var(--panel-input)] hover:text-[color:var(--panel-text)]"}`}>{area.label}</button>
+                <button type="button" aria-label={`Toggle ${area.label} sections`} aria-expanded={expandedArea === area.key} onClick={() => { setActiveArea(area.key); setExpandedArea((prev) => prev === area.key ? null : area.key); }} className="hidden h-9 w-9 items-center justify-center rounded-xl text-[color:var(--panel-text-muted)] hover:bg-[color:var(--panel-input)] lg:flex"><span className={`transition-transform ${expandedArea === area.key ? "rotate-180" : ""}`}>⌄</span></button>
+              </div>
+              {expandedArea === area.key && <div className="absolute bottom-full left-1/2 mb-2 flex max-h-[45vh] -translate-x-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-2 shadow-xl lg:static lg:mt-1 lg:max-h-none lg:translate-x-0 lg:border-0 lg:bg-transparent lg:p-0 lg:pl-3 lg:shadow-none">{areaSections[area.key].map((section) => <button key={section.id} type="button" onClick={() => goToDashboardSection(area.key, section.id)} className="whitespace-nowrap rounded-xl px-3 py-2 text-left text-body-xs text-[color:var(--panel-text-muted)] hover:bg-[color:var(--panel-input)] hover:text-[color:var(--panel-text)]">{section.label}</button>)}</div>}
+            </div>)}
           </aside>
 
           <main className="flex flex-col gap-6">
-            {(isAdmin || cmsUser?.role === "editor") && <><SiteAppearanceEditor /><RestorePointsEditor /></>}
+            {(isAdmin || cmsUser?.role === "editor") && <div className="grid gap-6 md:grid-cols-2"><SiteAppearanceEditor /><RestorePointsEditor /></div>}
             {isAdmin && (
               <TeamEditor
                   key="team"
@@ -269,22 +308,22 @@ const Dashboard: React.FC = () => {
             )}
             {activeArea === "home" && (
               <>
-                {(isAdmin || permissions.includes("home.hero")) && <HeroEditor canEdit={isAdmin || permissions.includes("home.hero")} />}
-                {(isAdmin || permissions.includes("home.focus")) && <FocusEditor canEdit={isAdmin || permissions.includes("home.focus")} />}
-                {(isAdmin || permissions.includes("home.week")) && <WeekEditor canEdit={isAdmin || permissions.includes("home.week")} />}
-                {(isAdmin || permissions.includes("home.gallery")) && <GalleryEditor canEdit={isAdmin || permissions.includes("home.gallery")} />}
-                {(isAdmin || permissions.includes("content.testimonials")) && <TestimonialsEditor canEdit={isAdmin || permissions.includes("content.testimonials")} />}
+                {(isAdmin || permissions.includes("home.hero")) && <div id="dashboard-hero"><HeroEditor canEdit={isAdmin || permissions.includes("home.hero")} /></div>}
+                {(isAdmin || permissions.includes("home.focus")) && <div id="dashboard-focus"><FocusEditor canEdit={isAdmin || permissions.includes("home.focus")} /></div>}
+                {(isAdmin || permissions.includes("home.week")) && <div id="dashboard-week"><WeekEditor canEdit={isAdmin || permissions.includes("home.week")} /></div>}
+                {(isAdmin || permissions.includes("home.gallery")) && <div id="dashboard-gallery"><GalleryEditor canEdit={isAdmin || permissions.includes("home.gallery")} /></div>}
+                {(isAdmin || permissions.includes("content.testimonials")) && <div id="dashboard-testimonials"><TestimonialsEditor canEdit={isAdmin || permissions.includes("content.testimonials")} /></div>}
               </>
             )}
             {activeArea === "events" && (
-              <EventsEditor
+              <div id="dashboard-events"><EventsEditor
                 canEdit={isAdmin || permissions.includes("content.events")}
-              />
+              /></div>
             )}
             {activeArea === "family" && (
               <>
-                {(isAdmin || permissions.includes("family.content") || permissions.includes("content.board")) && <FamilyContentEditor canEdit={isAdmin || permissions.includes("family.content") || permissions.includes("content.board")} />}
-                <BoardMembersEditor canEdit={isAdmin || permissions.includes("content.board")} />
+                {(isAdmin || permissions.includes("family.content") || permissions.includes("content.board")) && <div id="dashboard-family"><FamilyContentEditor canEdit={isAdmin || permissions.includes("family.content") || permissions.includes("content.board")} /></div>}
+                <div id="dashboard-board"><BoardMembersEditor canEdit={isAdmin || permissions.includes("content.board")} /></div>
               </>
             )}
           </main>

@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useCmsSection } from "../hooks/useCmsSection";
 import { resolveCmsMedia } from "../lib/cms";
 
@@ -11,6 +12,7 @@ type WeekSlide = {
 };
 
 const WeekInLeaders: React.FC = () => {
+  const navigate = useNavigate();
   const weekContent = useCmsSection("home.week");
   const weekSlides: WeekSlide[] = weekContent.slides.map((slide) => ({
     day: slide.day,
@@ -115,12 +117,14 @@ const WeekInLeaders: React.FC = () => {
                   </p>
                   <div className="week-slide__tags">
                     {slide.activities.map((item) => (
-                      <span
+                      /intercession|prayer|praise|worship|bible|scripture|study/i.test(item) ? <button
                         key={`${slide.day}-${item}`}
-                        className="week-slide__tag"
+                        type="button"
+                        className="week-slide__tag cursor-pointer"
+                        onClick={(event) => { event.stopPropagation(); const activity = /intercession|prayer/i.test(item) ? "Intercession" : /praise|worship/i.test(item) ? "Praise and Worship" : "Bible Study"; navigate(`/events?activity=${encodeURIComponent(activity)}#highlights-section`); }}
                       >
-                        {item}
-                      </span>
+                        {item === "Bible Discussion" ? "Bible Study" : item} ↗
+                      </button> : <span key={`${slide.day}-${item}`} className="week-slide__tag">{item}</span>
                     ))}
                   </div>
                 </div>

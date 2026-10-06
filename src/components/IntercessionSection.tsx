@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCmsSection } from "../hooks/useCmsSection";
 import { resolveCmsMedia } from "../lib/cms";
@@ -69,6 +70,7 @@ function wrapIndex(index: number, length: number): number {
 }
 
 const IntercessionSection: React.FC = () => {
+  const navigate = useNavigate();
   const focusContent = useCmsSection("home.focus");
   const focusItems: FocusItem[] = focusContent.items.map((item) => ({
     id: item.id,
@@ -260,19 +262,22 @@ const IntercessionSection: React.FC = () => {
 
           <div className="flex flex-col gap-4">
             {items.map((item) => (
-              <div
+              <button
                 key={item.id}
-                className={`intercession-card ${
+                type="button"
+                onClick={() => { const activity = item.title.toLowerCase().includes("intercession") ? "Intercession" : item.title.toLowerCase().includes("bible") || item.title.toLowerCase().includes("study") ? "Bible Study" : item.title.toLowerCase().includes("praise") || item.title.toLowerCase().includes("worship") ? "Praise and Worship" : null; if (activity) navigate(`/events?activity=${encodeURIComponent(activity)}#highlights-section`); }}
+                className={`intercession-card text-left ${
                   item.id === activeItem.id ? "intercession-card--active" : ""
                 }`}
               >
                 <h3 className="text-heading-sm font-semibold text-ink">
                   {item.title}
                 </h3>
+                {(/intercession|bible|study|praise|worship/i.test(item.title)) && <span className="mt-2 inline-flex rounded-full border border-subtle bg-surface px-3 py-1 text-body-xs text-accent">{item.title.toLowerCase().includes("intercession") ? "Intercession" : item.title.toLowerCase().includes("bible") || item.title.toLowerCase().includes("study") ? "Bible Study" : "Praise and Worship"} · View highlights</span>}
                 <p className="mt-2 text-body-sm text-muted leading-relaxed">
                   {item.copy}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </div>

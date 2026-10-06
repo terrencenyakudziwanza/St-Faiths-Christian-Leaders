@@ -107,6 +107,12 @@
   );
 }
 
+@media screen and (max-width: 765px) {
+  .patron-matron-stage::after{
+    opacity: 0;
+  }
+}
+
 .patron-matron-divider {
   position: absolute;
   left: 50%;
