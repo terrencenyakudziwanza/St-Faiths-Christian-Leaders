@@ -419,3 +419,15 @@
     grid-row: 1;
   }
 }
+@keyframes save-button-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+.animate-save-pulse {
+  animation: save-button-pulse 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-save-pulse { animation: none; }
+}

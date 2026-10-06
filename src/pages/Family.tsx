@@ -2,12 +2,16 @@ import React from "react";
 
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
-import Departments from "../components/Departments";
+import { departments } from "../data/departments";
 import { ChevronDown, Mail, Phone } from "lucide-react";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
-import { boardMembers, type BoardMember } from "../data/boardMembers";
+import { boardMembers as defaultBoardMembers, type BoardMember } from "../data/boardMembers";
+import { fetchBoardMembers } from "../services/boardMembers";
+import { isOffline } from "../lib/media";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { resolveCmsMedia } from "../lib/cms";
 
 type OrbitLayout = {
   centerX: number;
@@ -213,35 +217,10 @@ function getOrbitLayout(viewportWidth: number): OrbitLayout {
 
 const PORTRAIT_TRANSITION_MS = 900;
 
-const patronMatronProfiles = [
-  {
-    id: "patron",
-    role: "Patron",
-    name: "Pastor Joel Mensah",
-    about:
-      "A steady covering for the Christian Leaders family, offering counsel, prayer, and pastoral direction through every season.",
-    contact: "patron@christianleaders.org",
-    phone: "+27 71 234 5678",
-    email: "patron@christianleaders.org",
-    imageSrc: "/offline-media/presenters/pastor-joel.jpg",
-    imageAlt: "Pastor Joel Mensah portrait",
-  },
-  {
-    id: "matron",
-    role: "Matron",
-    name: "Sister Ama Boateng",
-    about:
-      "A gracious presence nurturing care, hospitality, and continuity across the family with warmth and practical wisdom.",
-    contact: "matron@christianleaders.org",
-    phone: "+27 72 345 6789",
-    email: "matron@christianleaders.org",
-    imageSrc: "/offline-media/presenters/sister-ama.jpg",
-    imageAlt: "Sister Ama Boateng portrait",
-  },
-];
-
 const Family: React.FC = () => {
+  const familyContent = useCmsSection("family.content");
   const setCurrSection = useStore((state) => state.setCurrSection);
+  const [boardMembers, setBoardMembers] = React.useState<BoardMember[]>(defaultBoardMembers);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
   const [previousPortraitMember, setPreviousPortraitMember] =
@@ -250,7 +229,7 @@ const Family: React.FC = () => {
     typeof window === "undefined" ? 1440 : window.innerWidth,
   );
 
-  const activeMember = boardMembers[activeIndex] ?? boardMembers[0];
+  const activeMember = boardMembers[activeIndex] ?? boardMembers[0] ?? defaultBoardMembers[0];
   const activeMemberRef = React.useRef<BoardMember>(activeMember);
   const isMobile = viewportWidth < 768;
   const orbitLayout = React.useMemo(
@@ -261,6 +240,18 @@ const Family: React.FC = () => {
   React.useEffect(() => {
     setCurrSection("Board");
   }, [setCurrSection]);
+
+  React.useEffect(() => {
+    if (isOffline) return;
+    let active = true;
+    fetchBoardMembers().then((members) => {
+      if (active) {
+        setBoardMembers(members.map((member) => ({ ...member, imageSrc: member.imageSrc ?? fallbackProfile })));
+        setActiveIndex(0);
+      }
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   React.useEffect(() => {
     const updateViewportWidth = () => {
@@ -276,7 +267,7 @@ const Family: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    if (!isAuto) {
+    if (!isAuto || boardMembers.length === 0) {
       return;
     }
 
@@ -287,7 +278,7 @@ const Family: React.FC = () => {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isAuto]);
+  }, [isAuto, boardMembers.length]);
 
   React.useEffect(() => {
     if (activeMemberRef.current.id === activeMember.id) {
@@ -379,7 +370,7 @@ const Family: React.FC = () => {
         zIndex: Math.round(20 + depth * 50),
       };
     });
-  }, [activeIndex, orbitLayout, viewportWidth]);
+  }, [activeIndex, boardMembers, orbitLayout, viewportWidth]);
 
   const mobileCards = React.useMemo(
     () =>
@@ -393,8 +384,19 @@ const Family: React.FC = () => {
           isActive: slot.offset === 0,
         };
       }),
-    [activeIndex],
+    [activeIndex, boardMembers],
   );
+  const patronMatronProfiles = React.useMemo(() => [familyContent.patron, familyContent.matron].map((profile) => ({ ...profile, id: profile.role.toLowerCase().replace(/\s+/g, "-"), imageSrc: resolveCmsMedia(profile.image) ?? fallbackProfile, imageAlt: `${profile.role} ${profile.name} portrait` })), [familyContent.patron, familyContent.matron]);
+
+  if (boardMembers.length === 0) {
+    return (
+      <main className="min-h-screen bg-page px-6 py-32 text-center text-ink">
+        <Navbar navPages={familyNavPages} />
+        <h1 className="text-heading-xl font-semibold">Our Family</h1>
+        <p className="mt-4 text-body text-muted">Board members will appear here once they are added in the dashboard.</p>
+      </main>
+    );
+  }
 
   const rotateBoard = (direction: "up" | "down") => {
     setActiveIndex((prev) => {
@@ -555,19 +557,18 @@ const Family: React.FC = () => {
       <div className="relative mx-auto flex min-h-screen w-full max-w-[1480px] flex-col px-4 pb-16 pt-28 sm:px-6 lg:px-10">
         {/* PAGE INTRO COPY */}
         <div className="mx-auto max-w-[620px] text-center">
-          <p className="text-overline font-semibold text-accent">
-            Christian Leaders Board
-          </p>
+          <p className="text-overline font-semibold text-accent">{familyContent.pageEyebrow}</p>
           <h1 className="mt-4 text-display font-semibold leading-[0.95] text-ink">
-            Lorem Ipsum Dolor Sit Amet
+            {familyContent.pageTitle}
           </h1>
           <p className="mx-auto mt-5 max-w-[520px] text-body text-muted leading-7">
-            Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui doloremque dolorum quaerat magni earum neque quam blanditiis vel quos nisi repellat reiciendis aliquam aliquid, aspernatur iure cumque animi in possimus!
+            {familyContent.pageDescription}
           </p>
         </div>
 
         {/* PATRON + MATRON */}
         <div id="family-patron-matron-section" className="patron-matron-stage mt-10">
+          <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><h2 className="text-heading-lg font-semibold text-ink">{familyContent.patronMatronTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.patronMatronDescription}</p></div>
           <div className="patron-matron-divider" aria-hidden="true"></div>
           {patronMatronProfiles.map((profile, index) => {
             const isPatron = index === 0;
@@ -626,7 +627,19 @@ const Family: React.FC = () => {
         </div>
 
         {/* DEPARTMENTS SECTION */}
-        <Departments />
+        <section id="departments-section" className="mt-12 rounded-[32px] border border-subtle bg-surface-elevated px-5 py-8 sm:px-8">
+          <div className="mx-auto max-w-[620px] text-center">
+            <p className="text-overline font-semibold text-accent">Our Departments</p>
+            <h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.departmentsTitle}</h2>
+            <p className="mt-3 text-body-sm text-muted">{familyContent.departmentsDescription}</p>
+          </div>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            {departments.map((department) => {
+              const Icon = department.icon;
+              return <button key={department.id} type="button" onClick={() => window.alert("Department section is coming soon!")} className="flex items-center gap-2 rounded-xl border border-subtle bg-surface px-4 py-2.5 text-body-sm font-semibold text-ink hover:bg-surface-muted"><Icon size={16} /><span>{department.name}</span></button>;
+            })}
+          </div>
+        </section>
 
         {/* BOARD ORBIT STAGE */}
         <div
@@ -634,6 +647,7 @@ const Family: React.FC = () => {
           className="relative mt-10 min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"
           style={{ background: "var(--family-panel-gradient)" }}
         >
+          <div className="absolute left-4 right-4 top-4 z-40 text-center"><h2 className="text-heading-md font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-1 text-caption text-muted">{familyContent.boardDescription}</p></div>
           {isMobile ? (
             <>
               {/* MOBILE PORTRAIT + RAIL */}

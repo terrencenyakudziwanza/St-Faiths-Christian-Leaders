@@ -4,9 +4,11 @@ import { cmsSectionLabels, cmsSectionOrder } from "../data/cmsDefaults";
 import { useAuth } from "../contexts/AuthContext";
 import type {
   CmsFocusContent,
+  CmsGalleryContent,
   CmsHeroContent,
   CmsSectionKey,
   CmsWeekContent,
+  CmsFamilyContent,
 } from "../types/cms";
 import { resolveCmsMedia, normalizeText, slugify } from "../lib/cms";
 import { CMS_MEDIA_FOLDERS } from "../lib/cmsMedia";
@@ -39,6 +41,7 @@ import {
   fetchTestimonials,
   updateTestimonial,
 } from "../services/testimonials";
+import { fetchBoardMembers, removeBoardMember, saveBoardMember } from "../services/boardMembers";
 
 const panelShellClass =
   "rounded-[28px] border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] text-[color:var(--panel-text)] shadow-[0_24px_60px_rgba(0,0,0,0.22)]";
@@ -49,14 +52,30 @@ const panelInputClass =
 const panelTextareaClass =
   "rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-input)] px-4 py-3 text-body-sm text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--panel-text-muted)] focus:border-accent";
 const panelSubtextClass = "text-body-xs text-[color:var(--panel-text-muted)]";
+type DashboardArea = "home" | "events" | "family";
+
+
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { cmsUser, permissions, roleLoading, signOut } = useAuth();
-  const [activeSection, setActiveSection] = React.useState<CmsSectionKey>(
-    cmsSectionOrder[0],
-  );
+  const [activeArea, setActiveArea] = React.useState<DashboardArea>("home");
   const [showAdminControls, setShowAdminControls] = React.useState(false);
+  const headerRef = React.useRef<HTMLDivElement | null>(null);
+  const [showGoBackUp, setShowGoBackUp] = React.useState(false);
+
+  React.useEffect(() => {
+  const checkSession = async () => {
+    const { data, error } = await supabase.auth.getUser();
+
+    console.log("SUPABASE USER:", data.user);
+    console.log("SUPABASE USER ID:", data.user?.id);
+    console.log("SUPABASE USER EMAIL:", data.user?.email);
+    console.log("SUPABASE USER ERROR:", error);
+  };
+
+  void checkSession();
+}, []);
 
   React.useEffect(() => {
     if (!roleLoading && !cmsUser?.is_active) {
@@ -64,26 +83,39 @@ const Dashboard: React.FC = () => {
     }
   }, [cmsUser, roleLoading, navigate]);
 
+  React.useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const observer = new IntersectionObserver(([entry]) => setShowGoBackUp(!entry.isIntersecting), { threshold: 0 });
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
   const isAdmin = cmsUser?.role === "admin";
   const allowedSections = isAdmin
     ? cmsSectionOrder
     : cmsSectionOrder.filter((key) => permissions.includes(key));
+  const allowedAreas: { key: DashboardArea; label: string }[] = [
+    ...(isAdmin || permissions.some((key) => ["home.hero", "home.focus", "home.week", "home.gallery", "content.testimonials"].includes(key)) ? [{ key: "home" as const, label: "Home" }] : []),
+    ...(isAdmin || permissions.includes("content.events") ? [{ key: "events" as const, label: "Events" }] : []),
+    ...(isAdmin || permissions.includes("content.board") || permissions.includes("family.content") ? [{ key: "family" as const, label: "Family" }] : []),
+  ];
 
   React.useEffect(() => {
-    if (!allowedSections.includes(activeSection)) {
-      setActiveSection(allowedSections[0] ?? cmsSectionOrder[0]);
+    if (!allowedAreas.some((area) => area.key === activeArea) && allowedAreas[0]) {
+      setActiveArea(allowedAreas[0].key);
     }
-  }, [allowedSections, activeSection]);
+  }, [allowedAreas, activeArea]);
 
   const handleSignOut = () => {
     void signOut();
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-page text-ink">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-page text-ink">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,var(--accent-soft),transparent_52%),radial-gradient(circle_at_88%_12%,rgba(0,0,0,0.2),transparent_55%),linear-gradient(180deg,var(--page-bg),var(--surface-soft))]"></div>
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col px-6 pb-16 pt-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div ref={headerRef} className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-overline text-accent">Dashboard</p>
             <h1 className="mt-2 text-heading-xl font-semibold">
@@ -131,25 +163,25 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="mt-10 grid gap-6 pb-24 lg:pb-0 lg:grid-cols-[240px_minmax(0,1fr)]">
           <aside
-            className={`flex flex-col gap-3 rounded-[24px] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.24)] ${panelMutedClass}`}
+            className={`fixed inset-x-0 bottom-0 z-40 flex max-w-full gap-2 overflow-x-auto rounded-t-[24px] rounded-b-none p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] lg:static lg:flex-col lg:gap-3 lg:rounded-[24px] lg:p-4 lg:shadow-[0_20px_50px_rgba(0,0,0,0.24)] ${panelMutedClass}`}
           >
-            <p className="text-caption uppercase tracking-[0.3em] text-[color:var(--panel-text-muted)]">
+            <p className="hidden text-caption uppercase tracking-[0.3em] text-[color:var(--panel-text-muted)] lg:block">
               Sections
             </p>
-            {allowedSections.map((sectionKey) => (
+            {allowedAreas.map((area) => (
               <button
-                key={sectionKey}
+                key={area.key}
                 type="button"
-                onClick={() => setActiveSection(sectionKey)}
-                className={`rounded-2xl px-4 py-3 text-left text-body-sm transition-colors ${
-                  activeSection === sectionKey
+                onClick={() => setActiveArea(area.key)}
+                className={`shrink-0 rounded-full px-4 py-3 text-center text-body-sm transition-colors lg:rounded-2xl lg:text-left ${
+                  activeArea === area.key
                     ? "bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]"
                     : "text-[color:var(--panel-text-muted)] hover:bg-[color:var(--panel-input)] hover:text-[color:var(--panel-text)]"
                 }`}
               >
-                {cmsSectionLabels[sectionKey]}
+                {area.label}
               </button>
             ))}
           </aside>
@@ -162,30 +194,30 @@ const Dashboard: React.FC = () => {
                 allowedSections={cmsSectionOrder}
               />
             )}
-            {activeSection === "home.hero" && (
-              <HeroEditor canEdit={isAdmin || permissions.includes("home.hero")} />
+            {activeArea === "home" && (
+              <>
+                {(isAdmin || permissions.includes("home.hero")) && <HeroEditor canEdit={isAdmin || permissions.includes("home.hero")} />}
+                {(isAdmin || permissions.includes("home.focus")) && <FocusEditor canEdit={isAdmin || permissions.includes("home.focus")} />}
+                {(isAdmin || permissions.includes("home.week")) && <WeekEditor canEdit={isAdmin || permissions.includes("home.week")} />}
+                {(isAdmin || permissions.includes("home.gallery")) && <GalleryEditor canEdit={isAdmin || permissions.includes("home.gallery")} />}
+                {(isAdmin || permissions.includes("content.testimonials")) && <TestimonialsEditor canEdit={isAdmin || permissions.includes("content.testimonials")} />}
+              </>
             )}
-            {activeSection === "home.focus" && (
-              <FocusEditor
-                canEdit={isAdmin || permissions.includes("home.focus")}
-              />
-            )}
-            {activeSection === "home.week" && (
-              <WeekEditor canEdit={isAdmin || permissions.includes("home.week")} />
-            )}
-            {activeSection === "content.events" && (
+            {activeArea === "events" && (
               <EventsEditor
                 canEdit={isAdmin || permissions.includes("content.events")}
               />
             )}
-            {activeSection === "content.testimonials" && (
-              <TestimonialsEditor
-                canEdit={isAdmin || permissions.includes("content.testimonials")}
-              />
+            {activeArea === "family" && (
+              <>
+                {(isAdmin || permissions.includes("family.content") || permissions.includes("content.board")) && <FamilyContentEditor canEdit={isAdmin || permissions.includes("family.content") || permissions.includes("content.board")} />}
+                <BoardMembersEditor canEdit={isAdmin || permissions.includes("content.board")} />
+              </>
             )}
           </main>
         </div>
       </div>
+      {showGoBackUp && <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="fixed right-5 top-5 z-[120] rounded-full border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] px-4 py-2.5 text-body-sm font-semibold text-[color:var(--panel-text)] shadow-xl">Go Back Up</button>}
     </div>
   );
 };
@@ -195,6 +227,7 @@ const SectionShell: React.FC<{
   description: string;
   canEdit: boolean;
   saving: boolean;
+  dirty?: boolean;
   onSave: () => void;
   status: string | null;
   errors: string[];
@@ -204,6 +237,7 @@ const SectionShell: React.FC<{
   description,
   canEdit,
   saving,
+  dirty = true,
   onSave,
   status,
   errors,
@@ -211,21 +245,13 @@ const SectionShell: React.FC<{
 }) => {
   return (
     <section className={`${panelShellClass} p-6`}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col items-start gap-4">
         <div>
           <h2 className="text-heading-md font-semibold">{title}</h2>
           <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">
             {description}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!canEdit || saving}
-          className="rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save changes"}
-        </button>
       </div>
 
       {!canEdit && (
@@ -252,6 +278,14 @@ const SectionShell: React.FC<{
       )}
 
       <div className="mt-6 flex flex-col gap-6">{children}</div>
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={!canEdit || saving || !dirty}
+        className={`mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}
+      >
+        {saving ? "Saving..." : "Save changes"}
+      </button>
     </section>
   );
 };
@@ -310,32 +344,47 @@ const MediaUploadField: React.FC<{
 const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initialContent = useCmsSection("home.hero");
   const [draft, setDraft] = React.useState<CmsHeroContent>(initialContent);
+  const [savedSnapshot, setSavedSnapshot] = React.useState(JSON.stringify(initialContent));
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<string[]>([]);
+  const [newSlideLabel, setNewSlideLabel] = React.useState("");
+  const [newSlideImage, setNewSlideImage] = React.useState<CmsHeroContent["slides"][number]["image"] | null>(null);
+  const [editingSlideId, setEditingSlideId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setDraft(initialContent);
+    setSavedSnapshot(JSON.stringify(initialContent));
   }, [initialContent]);
 
-  const handleSlideUpload = async (index: number, file: File) => {
+  const handleSlideUpload = async (file: File) => {
     const result = await uploadMediaFile(file, {
       folder: CMS_MEDIA_FOLDERS.homeHero,
-      prefix: `slide-${index + 1}`,
+      prefix: slugify(newSlideLabel || "hero-slide"),
     });
+    setNewSlideImage({ storagePath: result.storagePath });
+  };
 
-    setDraft((prev) => {
-      const nextSlides = [...prev.slides];
-      nextSlides[index] = {
-        ...nextSlides[index],
-        image: { storagePath: result.storagePath },
-      };
-      return { ...prev, slides: nextSlides };
-    });
+  const addSlide = () => {
+    const label = normalizeText(newSlideLabel);
+    if (!label || !newSlideImage) {
+      setErrors(["Enter a slide label and upload its image before adding it."]);
+      return;
+    }
+    setDraft((prev) => ({
+      ...prev,
+      slides: editingSlideId
+        ? prev.slides.map((slide) => slide.id === editingSlideId ? { ...slide, label, image: newSlideImage } : slide)
+        : [...prev.slides, { id: crypto.randomUUID(), label, image: newSlideImage }],
+    }));
+    setEditingSlideId(null);
+    setNewSlideLabel("");
+    setNewSlideImage(null);
+    setErrors([]);
   };
 
   const handleSave = async () => {
-    if (!canEdit) return;
+    if (!canEdit) return false;
 
     const sanitized: CmsHeroContent = {
       ...draft,
@@ -345,13 +394,16 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         ...slide,
         label: normalizeText(slide.label),
       })),
+      finalSlideId: draft.slides.some((slide) => slide.id === draft.finalSlideId)
+        ? draft.finalSlideId
+        : draft.slides[draft.slides.length - 1]?.id ?? "",
     };
 
     const validation = validateHero(sanitized);
     setErrors(validation.errors);
 
     if (!validation.valid) {
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -359,10 +411,14 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
     try {
       await upsertCmsContent("home.hero", sanitized);
+      setDraft(sanitized);
+      setSavedSnapshot(JSON.stringify(sanitized));
       setStatus("Hero content saved.");
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed.";
       setStatus(message);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -374,6 +430,7 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       description="Control the opening headline and the rotating hero slides. The last slide becomes the anchored background image."
       canEdit={canEdit}
       saving={saving}
+      dirty={JSON.stringify(draft) !== savedSnapshot}
       onSave={handleSave}
       status={status}
       errors={errors}
@@ -426,39 +483,40 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {draft.slides.map((slide, index) => (
+      <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+        <h3 className="text-heading-sm font-semibold">{editingSlideId ? "Edit slide" : "Add a slide"}</h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Slide label</span><input value={newSlideLabel} onChange={(event) => setNewSlideLabel(event.target.value)} className={panelInputClass} disabled={!canEdit} placeholder="e.g. Community Worship" /></label>
+          <MediaUploadField label="Slide image" helper="Upload the image for this slide." value={resolveCmsMedia(newSlideImage)} onUpload={handleSlideUpload} />
+        </div>
+        <button type="button" onClick={addSlide} disabled={!canEdit || !newSlideLabel.trim() || !newSlideImage} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50">{editingSlideId ? "Update slide" : "Add slide"}</button>
+        {editingSlideId && <button type="button" onClick={() => { setEditingSlideId(null); setNewSlideLabel(""); setNewSlideImage(null); }} className="ml-2 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm">Cancel edit</button>}
+      </div>
+      {draft.slides.find((slide) => slide.id === draft.finalSlideId) && (
+        <div className="rounded-2xl border border-accent bg-accent-soft/20 p-4">
+          <p className="text-overline font-semibold text-accent">Final intro image</p>
+          <p className="mt-1 text-body-sm text-[color:var(--panel-text-muted)]">This selected slide stays as the Home hero background when the intro finishes.</p>
+          <div className="mt-3 flex items-center gap-4">
+            <img src={resolveCmsMedia(draft.slides.find((slide) => slide.id === draft.finalSlideId)?.image)} alt="" className="h-20 w-28 rounded-xl object-cover" />
+            <p className="font-semibold">{draft.slides.find((slide) => slide.id === draft.finalSlideId)?.label}</p>
+            <span className="ml-auto rounded-full bg-accent px-3 py-1 text-body-xs font-semibold text-[color:var(--panel-ink)]">Shown after intro</span>
+          </div>
+        </div>
+      )}
+      <div>
+        <h3 className="text-heading-sm font-semibold">Existing slides</h3>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {draft.slides.map((slide) => (
           <div
             key={slide.id}
             className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
           >
-            <label className="flex flex-col gap-2">
-              <span className="text-body-sm font-medium">Slide label</span>
-              <input
-                type="text"
-                value={slide.label}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setDraft((prev) => {
-                    const nextSlides = [...prev.slides];
-                    nextSlides[index] = { ...nextSlides[index], label: value };
-                    return { ...prev, slides: nextSlides };
-                  });
-                }}
-                className={panelInputClass}
-                disabled={!canEdit}
-              />
-            </label>
-            <div className="mt-4">
-              <MediaUploadField
-                label="Slide image"
-                helper="16:9 or portrait is fine."
-                value={resolveCmsMedia(slide.image)}
-                onUpload={(file) => handleSlideUpload(index, file)}
-              />
-            </div>
+            <div className="flex items-center justify-between gap-2"><p className="font-semibold">{slide.label}</p><div className="flex gap-2"><button type="button" disabled={!canEdit} onClick={() => { setNewSlideLabel(slide.label); setNewSlideImage(slide.image); setEditingSlideId(slide.id); }} className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs disabled:opacity-50">Edit</button><button type="button" disabled={!canEdit} onClick={() => { setDraft((prev) => { const slides = prev.slides.filter((entry) => entry.id !== slide.id); return { ...prev, slides, finalSlideId: prev.finalSlideId === slide.id ? slides[slides.length - 1]?.id ?? "" : prev.finalSlideId }; }); if (editingSlideId === slide.id) { setEditingSlideId(null); setNewSlideLabel(""); setNewSlideImage(null); } }} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger disabled:opacity-50">Delete</button></div></div>
+            <img src={resolveCmsMedia(slide.image)} alt={slide.label} className="mt-3 h-36 w-full rounded-xl object-cover" />
+            <label className="mt-3 flex items-center gap-2 text-body-xs text-[color:var(--panel-text-muted)]"><input type="radio" name="hero-final-slide" checked={draft.finalSlideId === slide.id} onChange={() => setDraft((previous) => ({ ...previous, finalSlideId: slide.id }))} disabled={!canEdit} />Use as final background</label>
           </div>
         ))}
+        </div>
       </div>
     </SectionShell>
   );
@@ -467,12 +525,16 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initialContent = useCmsSection("home.focus");
   const [draft, setDraft] = React.useState<CmsFocusContent>(initialContent);
+  const [savedSnapshot, setSavedSnapshot] = React.useState(JSON.stringify(initialContent));
+  const [selectedItemId, setSelectedItemId] = React.useState(initialContent.items[0]?.id ?? "");
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     setDraft(initialContent);
+    setSavedSnapshot(JSON.stringify(initialContent));
+    setSelectedItemId(initialContent.items[0]?.id ?? "");
   }, [initialContent]);
 
   const handleItemUpload = async (index: number, file: File) => {
@@ -492,7 +554,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   };
 
   const handleSave = async () => {
-    if (!canEdit) return;
+    if (!canEdit) return false;
 
     const sanitized: CmsFocusContent = {
       ...draft,
@@ -510,7 +572,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
     setErrors(validation.errors);
 
     if (!validation.valid) {
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -518,10 +580,14 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
     try {
       await upsertCmsContent("home.focus", sanitized);
+      setDraft(sanitized);
+      setSavedSnapshot(JSON.stringify(sanitized));
       setStatus("Focus section saved.");
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed.";
       setStatus(message);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -533,6 +599,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       description="Update the guiding copy and the rotating focus cards in the intercession section."
       canEdit={canEdit}
       saving={saving}
+      dirty={JSON.stringify(draft) !== savedSnapshot}
       onSave={handleSave}
       status={status}
       errors={errors}
@@ -576,12 +643,15 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         />
       </label>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {draft.items.map((item, index) => (
-          <div
-            key={item.id}
-            className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
-          >
+      <div className="flex flex-wrap gap-2">
+        {draft.items.map((item) => (
+          <button key={item.id} type="button" onClick={() => setSelectedItemId(item.id)} className={`rounded-full px-4 py-2 text-body-sm ${selectedItemId === item.id ? "bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]" : "border border-[color:var(--panel-border)] text-[color:var(--panel-text-muted)]"}`}>
+            {item.title || "Untitled item"}
+          </button>
+        ))}
+      </div>
+      {draft.items.map((item, index) => item.id === selectedItemId && (
+          <div key={item.id} className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
             <label className="flex flex-col gap-2">
               <span className="text-body-sm font-medium">Item title</span>
               <input
@@ -625,7 +695,6 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             </div>
           </div>
         ))}
-      </div>
     </SectionShell>
   );
 };
@@ -633,12 +702,18 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initialContent = useCmsSection("home.week");
   const [draft, setDraft] = React.useState<CmsWeekContent>(initialContent);
+  const [savedSnapshot, setSavedSnapshot] = React.useState(JSON.stringify(initialContent));
+  const [selectedDay, setSelectedDay] = React.useState(initialContent.slides[0]?.id ?? "");
+  const [pendingDay, setPendingDay] = React.useState<string | null>(null);
+  const [skipDayWarning, setSkipDayWarning] = React.useState(() => localStorage.getItem("skip-week-day-warning") === "true");
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [errors, setErrors] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     setDraft(initialContent);
+    setSavedSnapshot(JSON.stringify(initialContent));
+    setSelectedDay(initialContent.slides[0]?.id ?? "");
   }, [initialContent]);
 
   const handleSlideUpload = async (index: number, file: File) => {
@@ -658,7 +733,7 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   };
 
   const handleSave = async () => {
-    if (!canEdit) return;
+    if (!canEdit) return false;
 
     setSaving(true);
     setStatus(null);
@@ -712,15 +787,18 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
       if (!validation.valid) {
         setSaving(false);
-        return;
+        return false;
       }
 
       await upsertCmsContent("home.week", sanitized);
       setDraft(sanitized);
+      setSavedSnapshot(JSON.stringify(sanitized));
       setStatus("Week content saved.");
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed.";
       setStatus(message);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -728,10 +806,11 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   return (
     <SectionShell
-      title="Week In Leaders"
+      title="A Week In Christian Leaders"
       description="Edit the weekly rhythm carousel and the day-by-day highlights."
       canEdit={canEdit}
       saving={saving}
+      dirty={JSON.stringify(draft) !== savedSnapshot}
       onSave={handleSave}
       status={status}
       errors={errors}
@@ -857,8 +936,19 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {draft.slides.map((slide) => (
+          <button key={slide.id} type="button" onClick={() => {
+            if (slide.id === selectedDay) return;
+            if (JSON.stringify(draft) !== savedSnapshot && !skipDayWarning) setPendingDay(slide.id);
+            else setSelectedDay(slide.id);
+          }} className={`rounded-full px-4 py-2 text-body-sm ${selectedDay === slide.id ? "bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]" : "border border-[color:var(--panel-border)] text-[color:var(--panel-text-muted)]"}`}>
+            {slide.day}
+          </button>
+        ))}
+      </div>
       <div className="grid gap-6">
-        {draft.slides.map((slide, index) => (
+        {draft.slides.map((slide, index) => slide.id === selectedDay && (
           <div
             key={slide.id}
             className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4"
@@ -960,6 +1050,116 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             </div>
           </div>
         ))}
+      </div>
+      {pendingDay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="unsaved-week-title">
+          <div className={`${panelShellClass} w-full max-w-md p-6`}>
+            <h3 id="unsaved-week-title" className="text-heading-sm font-semibold">Unsaved changes</h3>
+            <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Save your edits before switching days?</p>
+            <label className="mt-4 flex items-center gap-3 text-body-sm"><input type="radio" checked={skipDayWarning} onChange={() => { setSkipDayWarning(true); localStorage.setItem("skip-week-day-warning", "true"); }} />Never remind me again</label>
+            <div className="mt-6 flex flex-wrap justify-end gap-2">
+              <button type="button" className="rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm" onClick={() => setPendingDay(null)}>Stay here</button>
+              <button type="button" className="rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm" onClick={() => { const target = pendingDay; setDraft(JSON.parse(savedSnapshot) as CmsWeekContent); if (target) setSelectedDay(target); setPendingDay(null); }}>Discard &amp; switch</button>
+              <button type="button" className="rounded-full bg-[color:var(--panel-text)] px-4 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)]" onClick={async () => { const target = pendingDay; const saved = await handleSave(); if (saved && target) setSelectedDay(target); if (saved) setPendingDay(null); }}>Save &amp; switch</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </SectionShell>
+  );
+};
+
+const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const initialContent = useCmsSection("home.gallery");
+  const [draft, setDraft] = React.useState<CmsGalleryContent>(initialContent);
+  const [savedSnapshot, setSavedSnapshot] = React.useState(JSON.stringify(initialContent));
+  const [title, setTitle] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [tags, setTags] = React.useState("");
+  const [image, setImage] = React.useState<{ storagePath: string } | null>(null);
+  const [ratio, setRatio] = React.useState("4 / 5");
+  const [saving, setSaving] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
+  const dirty = JSON.stringify(draft) !== savedSnapshot;
+
+  React.useEffect(() => {
+    setDraft(initialContent);
+    setSavedSnapshot(JSON.stringify(initialContent));
+  }, [initialContent]);
+
+  const handleUpload = async (file: File) => {
+    const result = await uploadMediaFile(file, {
+      folder: CMS_MEDIA_FOLDERS.homeGallery,
+      prefix: title || "gallery",
+    });
+    setImage({ storagePath: result.storagePath });
+  };
+
+  const addItem = () => {
+    if (!title.trim() || !image) return;
+    const item = {
+      id: crypto.randomUUID(),
+      title: normalizeText(title),
+      description: normalizeText(description) || normalizeText(title),
+      tags: tags.split(",").map((tag) => tag.trim().replace(/^#/, "")).filter(Boolean).map((tag) => `#${tag}`),
+      image,
+      ratio,
+      termId: "term-2-2026",
+      likes: 0,
+    };
+    setDraft((previous) => ({ ...previous, items: [...previous.items, item] }));
+    setTitle("");
+    setDescription("");
+    setTags("");
+    setImage(null);
+  };
+
+  const handleSave = async () => {
+    if (!canEdit || !dirty) return;
+    setSaving(true);
+    setStatus(null);
+    try {
+      await upsertCmsContent("home.gallery", draft);
+      setSavedSnapshot(JSON.stringify(draft));
+      setStatus("Gallery content saved. Seed images are unchanged.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not save gallery content.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SectionShell
+      title="Gallery"
+      description="Add images and captions to the Home gallery. Existing seed images remain in place."
+      canEdit={canEdit}
+      saving={saving}
+      dirty={dirty}
+      onSave={handleSave}
+      status={status}
+      errors={[]}
+    >
+      <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+        <h3 className="text-heading-sm font-semibold">Add a gallery image</h3>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Image title</span><input className={panelInputClass} value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEdit} /></label>
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Image shape</span><select className={panelInputClass} value={ratio} onChange={(event) => setRatio(event.target.value)} disabled={!canEdit}><option>4 / 5</option><option>3 / 4</option><option>1 / 1</option><option>2 / 3</option><option>3 / 5</option></select></label>
+          <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Caption</span><textarea className={`${panelTextareaClass} min-h-[90px]`} value={description} onChange={(event) => setDescription(event.target.value)} disabled={!canEdit} /></label>
+          <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Hashtags</span><input className={panelInputClass} value={tags} onChange={(event) => setTags(event.target.value)} disabled={!canEdit} placeholder="#worship, #community" /><span className={panelSubtextClass}>Separate hashtags with commas.</span></label>
+          <div className="md:col-span-2"><MediaUploadField label="Gallery image" value={resolveCmsMedia(image)} onUpload={handleUpload} /></div>
+        </div>
+        <button type="button" onClick={addItem} disabled={!canEdit || !title.trim() || !image} className="mt-5 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50">Add to gallery</button>
+      </div>
+      <div>
+        <h3 className="text-heading-sm font-semibold">Added gallery images</h3>
+        {draft.items.length === 0 ? <p className={`${panelSubtextClass} mt-3`}>No dashboard images added yet. Seed images will continue to appear.</p> : (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">{draft.items.map((item) => <article key={item.id} className="flex items-center gap-3 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-3">
+            <img src={resolveCmsMedia(item.image) ?? ""} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <div className="min-w-0 flex-1"><p className="truncate font-semibold">{item.title}</p><p className={panelSubtextClass}>{item.tags.join(" ")}</p></div>
+            <button type="button" disabled={!canEdit} onClick={() => setDraft((previous) => ({ ...previous, items: previous.items.filter((entry) => entry.id !== item.id) }))} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger disabled:opacity-50">Remove</button>
+          </article>)}</div>
+        )}
       </div>
     </SectionShell>
   );
@@ -1082,14 +1282,6 @@ const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             Register new testimonials and manage what appears on the site.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={!canEdit || saving}
-          className="rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Add testimonial"}
-        </button>
       </div>
 
       {!canEdit && (
@@ -1181,6 +1373,15 @@ const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         />
         Publish immediately
       </label>
+
+      <button
+        type="button"
+        onClick={handleCreate}
+        disabled={!canEdit || saving}
+        className="mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
+      >
+        {saving ? "Saving..." : "Add testimonial"}
+      </button>
 
       <div className="mt-8">
         <h3 className="text-heading-sm font-semibold">Existing testimonials</h3>
@@ -1406,14 +1607,6 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             bible-api.com.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={!canEdit || saving}
-          className="rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Add event"}
-        </button>
       </div>
 
       {!canEdit && (
@@ -1662,6 +1855,15 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         </label>
       </div>
 
+      <button
+        type="button"
+        onClick={handleCreate}
+        disabled={!canEdit || saving}
+        className="mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
+      >
+        {saving ? "Saving..." : "Add event"}
+      </button>
+
       <div className="mt-8">
         <h3 className="text-heading-sm font-semibold">Existing events</h3>
         {loading && <p className={panelSubtextClass}>Loading...</p>}
@@ -1710,6 +1912,123 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           ))}
         </div>
       </div>
+    </section>
+  );
+};
+
+const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const initial = useCmsSection("family.content");
+  const [draft, setDraft] = React.useState<CmsFamilyContent>(initial);
+  const [snapshot, setSnapshot] = React.useState(JSON.stringify(initial));
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState<string | null>(null);
+  React.useEffect(() => { setDraft(initial); setSnapshot(JSON.stringify(initial)); }, [initial]);
+  const dirty = JSON.stringify(draft) !== snapshot;
+  const update = (key: Exclude<keyof CmsFamilyContent, "patron" | "matron">, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const updateProfile = (profile: "patron" | "matron", key: Exclude<keyof CmsFamilyContent["patron"], "image">, value: string) => setDraft((prev) => ({ ...prev, [profile]: { ...prev[profile], [key]: value } }));
+  const uploadPortrait = async (profile: "patron" | "matron", file: File) => {
+    const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.boardMembers, prefix: `${profile}-portrait` });
+    setDraft((prev) => ({ ...prev, [profile]: { ...prev[profile], image: { storagePath: result.storagePath } } }));
+  };
+  const save = async () => {
+    if (!canEdit || !dirty) return;
+    setSaving(true); setMessage(null);
+    try { await upsertCmsContent("family.content", draft); setSnapshot(JSON.stringify(draft)); setMessage("Family page content saved."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Could not save Family content."); }
+    finally { setSaving(false); }
+  };
+  const field = (label: string, key: Exclude<keyof CmsFamilyContent, "patron" | "matron">, multiline = false) => <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">{label}</span>{multiline ? <textarea className={`${panelTextareaClass} min-h-[90px]`} value={draft[key]} onChange={(event) => update(key, event.target.value)} disabled={!canEdit} /> : <input className={panelInputClass} value={draft[key]} onChange={(event) => update(key, event.target.value)} disabled={!canEdit} />}</label>;
+  return <section className={`${panelShellClass} p-6`}>
+    <h2 className="text-heading-md font-semibold">Family page and Patrons</h2>
+    <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Edit the Family page headings, descriptions, and Patron and Matron profiles.</p>
+    <div className="mt-5 grid gap-4 md:grid-cols-2">{field("Page eyebrow", "pageEyebrow")}{field("Page title", "pageTitle")}{field("Page description", "pageDescription", true)}{field("Patron and Matron section title", "patronMatronTitle")}{field("Patron and Matron section description", "patronMatronDescription", true)}{field("Departments section title", "departmentsTitle")}{field("Departments section description", "departmentsDescription", true)}{field("Board section title", "boardTitle")}{field("Board section description", "boardDescription", true)}</div>
+    {(["patron", "matron"] as const).map((profile) => <div key={profile} className="mt-6 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+      <h3 className="text-heading-sm font-semibold capitalize">{profile}</h3>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {(["role", "name", "phone", "email", "about"] as const).map((key) => <label key={key} className={`flex flex-col gap-2 ${key === "about" ? "md:col-span-2" : ""}`}><span className="text-body-sm font-medium">{key === "about" ? "Description" : key[0].toUpperCase() + key.slice(1)}</span>{key === "about" ? <textarea className={`${panelTextareaClass} min-h-[90px]`} value={draft[profile][key]} onChange={(event) => updateProfile(profile, key, event.target.value)} disabled={!canEdit} /> : <input className={panelInputClass} value={draft[profile][key]} onChange={(event) => updateProfile(profile, key, event.target.value)} disabled={!canEdit} />}</label>)}
+        <div className="md:col-span-2"><MediaUploadField label={`${profile} portrait`} value={resolveCmsMedia(draft[profile].image)} onUpload={(file) => uploadPortrait(profile, file)} /></div>
+      </div>
+    </div>)}
+    <button type="button" onClick={() => void save()} disabled={!canEdit || !dirty || saving} className={`mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : "Save Family content"}</button>
+    {message && <p className="mt-3 text-body-sm text-[color:var(--panel-text-muted)]">{message}</p>}
+  </section>;
+};
+
+const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  type Member = Awaited<ReturnType<typeof fetchBoardMembers>>[number];
+  const empty = { name: "", position: "", boardTier: "Board Member", quote: "", imagePath: null as string | null, executive: false };
+  const [members, setMembers] = React.useState<Member[]>([]);
+  const [draft, setDraft] = React.useState(empty);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = React.useState(JSON.stringify(empty));
+  const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const [message, setMessage] = React.useState<string | null>(null);
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    try { setMembers(await fetchBoardMembers()); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Could not load board members."); }
+    finally { setLoading(false); }
+  }, []);
+  React.useEffect(() => { void load(); }, [load]);
+
+  const startEdit = (member: Member) => {
+    const next = { name: member.name, position: member.position, boardTier: member.boardTier, quote: member.quote, imagePath: member.imagePath, executive: member.executive };
+    setDraft(next);
+    setSavedSnapshot(JSON.stringify(next));
+    setEditingId(member.id);
+    setMessage(null);
+  };
+  const reset = () => { setDraft(empty); setSavedSnapshot(JSON.stringify(empty)); setEditingId(null); };
+  const uploadPortrait = async (file: File) => {
+    const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.boardMembers, prefix: draft.name || "board-member" });
+    setDraft((previous) => ({ ...previous, imagePath: result.storagePath }));
+  };
+  const submit = async () => {
+    if (!canEdit || !draft.name.trim()) return;
+    setSaving(true); setMessage(null);
+    try {
+      await saveBoardMember({ id: editingId ?? "", ...draft }, editingId ?? undefined);
+      await load(); reset(); setMessage(editingId ? "Board member updated." : "Board member added.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not save board member."); }
+    finally { setSaving(false); }
+  };
+  const remove = async (member: Member) => {
+    if (!window.confirm(`Delete ${member.name} from the board?`)) return;
+    try { await removeBoardMember(member.id); await load(); if (editingId === member.id) reset(); setMessage("Board member deleted."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Could not delete board member."); }
+  };
+  const dirty = JSON.stringify(draft) !== savedSnapshot;
+
+  return (
+    <section className={`${panelShellClass} p-6`}>
+      <h2 className="text-heading-md font-semibold">Board Members</h2>
+      <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Register and maintain the people featured on the Family page.</p>
+      <div className="mt-6 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+        <h3 className="text-heading-sm font-semibold">{editingId ? "Edit board member" : "Add a board member"}</h3>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Name</span><input className={panelInputClass} value={draft.name} onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))} disabled={!canEdit} /></label>
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Position</span><input className={panelInputClass} value={draft.position} onChange={(event) => setDraft((prev) => ({ ...prev, position: event.target.value }))} disabled={!canEdit} /></label>
+          <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Board tier</span><select className={panelInputClass} value={draft.boardTier} onChange={(event) => setDraft((prev) => ({ ...prev, boardTier: event.target.value }))} disabled={!canEdit}><option>Board Member</option><option>Executive Member</option></select></label>
+          <label className="flex items-center gap-3 text-body-sm"><input type="checkbox" checked={draft.executive} onChange={(event) => setDraft((prev) => ({ ...prev, executive: event.target.checked }))} disabled={!canEdit} />Executive member</label>
+          <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Quote</span><textarea className={`${panelTextareaClass} min-h-[90px]`} value={draft.quote} onChange={(event) => setDraft((prev) => ({ ...prev, quote: event.target.value }))} disabled={!canEdit} /></label>
+          <div className="md:col-span-2"><MediaUploadField label="Portrait" value={resolveCmsMedia(draft.imagePath ? { storagePath: draft.imagePath } : null)} onUpload={uploadPortrait} /></div>
+        </div>
+        <button type="button" onClick={submit} disabled={!canEdit || !dirty || saving || !draft.name.trim()} className={`mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : editingId ? "Save member" : "Add member"}</button>
+        {editingId && <button type="button" onClick={reset} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm">Cancel edit</button>}
+      </div>
+      <div className="mt-8">
+        <h3 className="text-heading-sm font-semibold">Existing members</h3>
+        {loading && <p className={`${panelSubtextClass} mt-3`}>Loading...</p>}
+        {!loading && members.length === 0 && <p className={`${panelSubtextClass} mt-3`}>No board members registered.</p>}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">{members.map((member) => <article key={member.id} className="flex items-center gap-3 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-3">
+          <img src={member.imageSrc} alt="" className="h-14 w-14 rounded-xl object-cover" />
+          <div className="min-w-0 flex-1"><p className="truncate font-semibold">{member.name}</p><p className={panelSubtextClass}>{member.position}</p></div>
+          <div className="flex gap-2"><button type="button" disabled={!canEdit} onClick={() => startEdit(member)} className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs">Edit</button><button type="button" disabled={!canEdit} onClick={() => void remove(member)} className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-body-xs text-danger">Delete</button></div>
+        </article>)}</div>
+      </div>
+      {message && <p className="mt-4 text-body-sm text-[color:var(--panel-text-muted)]">{message}</p>}
     </section>
   );
 };

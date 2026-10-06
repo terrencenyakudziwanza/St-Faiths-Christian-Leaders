@@ -7,6 +7,8 @@ import type {
   CmsHeroContent,
   CmsContentKey,
   CmsWeekContent,
+  CmsGalleryContent,
+  CmsFamilyContent,
 } from "../types/cms";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -38,7 +40,28 @@ function mergeHero(
     heroHeader,
     heroSecondary,
     slides,
+    finalSlideId:
+      typeof incoming.finalSlideId === "string" &&
+      slides.some((slide) => slide.id === incoming.finalSlideId)
+        ? incoming.finalSlideId
+        : fallback.finalSlideId && slides.some((slide) => slide.id === fallback.finalSlideId)
+          ? fallback.finalSlideId
+          : slides[slides.length - 1]?.id ?? "",
   };
+}
+
+function mergeGallery(
+  incoming: unknown,
+  fallback: CmsGalleryContent,
+): CmsGalleryContent {
+  if (!isRecord(incoming) || !Array.isArray(incoming.items)) return fallback;
+  return { items: incoming.items as CmsGalleryContent["items"] };
+}
+
+function mergeFamily(incoming: unknown, fallback: CmsFamilyContent): CmsFamilyContent {
+  if (!isRecord(incoming)) return fallback;
+  const profile = (value: unknown, base: CmsFamilyContent["patron"]) => isRecord(value) ? { ...base, ...value, image: isRecord(value.image) ? value.image : base.image } as CmsFamilyContent["patron"] : base;
+  return { ...fallback, ...incoming, patron: profile(incoming.patron, fallback.patron), matron: profile(incoming.matron, fallback.matron) } as CmsFamilyContent;
 }
 
 function mergeFocus(
@@ -139,6 +162,10 @@ function mergeContent<T extends CmsContentKey>(
       ) as CmsContentMap[T];
     case "home.week":
       return mergeWeek(incoming, fallback as CmsWeekContent) as CmsContentMap[T];
+    case "home.gallery":
+      return mergeGallery(incoming, fallback as CmsGalleryContent) as CmsContentMap[T];
+    case "family.content":
+      return mergeFamily(incoming, fallback as CmsFamilyContent) as CmsContentMap[T];
     default:
       return fallback;
   }

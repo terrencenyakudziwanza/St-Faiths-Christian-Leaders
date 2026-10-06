@@ -5,6 +5,7 @@ import type {
   CmsContentMap,
   CmsFocusContent,
   CmsHeroContent,
+  CmsFamilyContent,
   CmsSectionKey,
   CmsWeekContent,
 } from "../types/cms";
@@ -34,6 +35,7 @@ const heroContent: CmsHeroContent = {
       image: { url: introImg3 },
     },
   ],
+  finalSlideId: "hero-slide-4",
 };
 
 const focusContent: CmsFocusContent = {
@@ -148,18 +150,37 @@ const weekContent: CmsWeekContent = {
   ],
 };
 
+const familyContent: CmsFamilyContent = {
+  pageEyebrow: "Christian Leaders Board",
+  pageTitle: "Lorem Ipsum Dolor Sit Amet",
+  pageDescription: "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui doloremque dolorum quaerat magni earum neque quam blanditiis vel quos nisi repellat reiciendis aliquam aliquid, aspernatur iure cumque animi in possimus!",
+  patronMatronTitle: "Patron & Matron",
+  patronMatronDescription: "Meet the pastoral leaders who care for our Christian Leaders family.",
+  departmentsTitle: "Ministry Teams",
+  departmentsDescription: "Choose a department to learn more.",
+  boardTitle: "Our Board",
+  boardDescription: "Meet the leaders serving the Christian Leaders community.",
+  patron: { role: "Patron", name: "Pastor Joel Mensah", about: "A steady covering for the Christian Leaders family, offering counsel, prayer, and pastoral direction through every season.", phone: "+27 71 234 5678", email: "patron@christianleaders.org", image: { url: "/offline-media/presenters/pastor-joel.jpg" } },
+  matron: { role: "Matron", name: "Sister Ama Boateng", about: "A gracious presence nurturing care, hospitality, and continuity across the family with warmth and practical wisdom.", phone: "+27 72 345 6789", email: "matron@christianleaders.org", image: { url: "/offline-media/presenters/sister-ama.jpg" } },
+};
+
 export const cmsDefaults: CmsContentMap = {
   "home.hero": heroContent,
   "home.focus": focusContent,
   "home.week": weekContent,
+  "home.gallery": { items: [] },
+  "family.content": familyContent,
 };
 
 export const cmsSectionLabels: Record<CmsSectionKey, string> = {
   "home.hero": "Home Hero",
   "home.focus": "Focus Section",
-  "home.week": "Week In Leaders",
+  "home.week": "A Week In Christian Leaders",
   "content.events": "Events",
   "content.testimonials": "Testimonials",
+  "content.board": "Board Members",
+  "home.gallery": "Gallery",
+  "family.content": "Family Page & Patrons",
 };
 
 export const cmsSectionOrder: CmsSectionKey[] = [
@@ -168,4 +189,7 @@ export const cmsSectionOrder: CmsSectionKey[] = [
   "home.week",
   "content.events",
   "content.testimonials",
+  "content.board",
+  "home.gallery",
+  "family.content",
 ];

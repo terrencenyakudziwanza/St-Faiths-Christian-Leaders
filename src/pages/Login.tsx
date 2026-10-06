@@ -1,6 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, KeyRound, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  KeyRound,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -73,9 +79,8 @@ const Login: React.FC = () => {
     setMessage(null);
     setLoading(true);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email,
-    );
+    const { error: resetError } =
+      await supabase.auth.resetPasswordForEmail(email);
 
     setLoading(false);
 
@@ -109,16 +114,19 @@ const Login: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {["Editorial content", "Event media", "Testimonials", "Access control"].map(
-              (item) => (
-                <div
-                  key={item}
-                  className="rounded-[20px] border border-[color:var(--panel-border)] bg-[rgba(255,255,255,0.06)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]"
-                >
-                  {item}
-                </div>
-              ),
-            )}
+            {[
+              "Editorial content",
+              "Event media",
+              "Testimonials",
+              "Access control",
+            ].map((item) => (
+              <div
+                key={item}
+                className="rounded-[20px] border border-[color:var(--panel-border)] bg-[rgba(255,255,255,0.06)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]"
+              >
+                {item}
+              </div>
+            ))}
           </div>
         </div>
 

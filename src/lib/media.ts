@@ -70,7 +70,11 @@ export function resolveMediaUrl(storagePath: string | null): string | null {
 
   const normalized = normalizeStoragePath(storagePath);
 
-  if (isOffline) {
+  const isCmsAsset = CMS_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+
+  // CMS assets are uploaded to Supabase at runtime, so they have no local
+  // offline-media counterpart. Continue resolving those paths from Storage.
+  if (isOffline && !isCmsAsset) {
     return toOfflineUrl(normalized);
   }
 

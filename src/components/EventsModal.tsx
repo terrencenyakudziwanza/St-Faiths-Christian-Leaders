@@ -254,36 +254,6 @@ const EventsModal: React.FC<EventsModalProps> = ({
     [],
   );
 
-  const toggleVideoPlayback = React.useCallback(
-    async (clipId: string) => {
-      const video = videoRefs.current.get(clipId);
-
-      if (!video) {
-        return;
-      }
-
-      if (video.paused || video.ended) {
-        pauseAllVideos(clipId);
-
-        try {
-          if (video.readyState < 2) {
-            video.load();
-          }
-          await video.play();
-          showClipIndicator(clipId, "play");
-        } catch {
-          return;
-        }
-
-        return;
-      }
-
-      video.pause();
-      showClipIndicator(clipId, "pause");
-    },
-    [pauseAllVideos, showClipIndicator],
-  );
-
   React.useEffect(() => {
     if (!show || activeMedia !== "video" || !autoPlayRequested) {
       return;
@@ -796,7 +766,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             <div
               className={`relative ${
                 compact
-                  ? "h-[58dvh] w-full sm:h-[64dvh]"
+                  ? "h-[58dvh] w-full max-w-[min(100%,calc(58dvh*0.72))] min-h-[min(72vw,460px)] sm:h-[64dvh] sm:max-w-[min(100%,calc(64dvh*0.8))] md:h-[72dvh] md:max-w-[min(100%,calc(72dvh*0.8))] md:min-h-[420px] lg:min-h-0 lg:max-w-none"
                   : "h-full w-full lg:w-[80%]"
               }`}
             >
@@ -860,18 +830,15 @@ const EventsModal: React.FC<EventsModalProps> = ({
                 className="h-full w-full object-cover video-progress-only"
                 playsInline
                 muted={isMuted}
-                autoPlay={activeMedia === "video" && clip.id === activeClipId}
+                autoPlay={false}
                 controls
                 controlsList="nofullscreen nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
                 preload="auto"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void toggleVideoPlayback(clip.id);
-                }}
                 onPlay={() => {
                   pauseAllVideos(clip.id);
                   setActiveClipId(clip.id);
+                  setClipIndicator(null);
                 }}
                 onLoadedData={(event) => {
                   if (!autoPlayRequestedRef.current) {
@@ -891,16 +858,18 @@ const EventsModal: React.FC<EventsModalProps> = ({
                   setActiveClipId(clip.id);
                   setAutoPlayRequested(false);
                 }}
-                onStalled={(event) => {
-                  const video = event.currentTarget;
-                  if (!video.paused) {
-                    void video.play().catch(() => null);
-                  }
+                onPause={() => {
+                  if (clipIndicatorTimeoutRef.current !== null) window.clearTimeout(clipIndicatorTimeoutRef.current);
+                  clipIndicatorTimeoutRef.current = null;
+                  setAutoPlayRequested(false);
+                  autoPlayRequestedRef.current = false;
+                  setClipIndicator({ clipId: clip.id, action: "pause" });
                 }}
+                onPlaying={() => setClipIndicator(null)}
               />
               <div
                 className={`clip-pause-indicator ${
-                  clipIndicator?.clipId === clip.id ? "visible" : ""
+                  clipIndicator?.clipId === clip.id && clipIndicator.action === "pause" ? "visible" : ""
                 }`}
               >
                 <div className="clip-pause-indicator__wrapper">
@@ -946,7 +915,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             e.stopPropagation();
             scrollToClip("up");
           }}
-          className="h-11 w-11 rounded-full bg-white shadow-md flex items-center justify-center"
+        className="h-11 w-11 rounded-full border border-subtle bg-surface-elevated text-ink shadow-md flex items-center justify-center"
         >
           <ChevronDown className="h-5 w-5 text-ink rotate-180" />
         </button>
@@ -958,7 +927,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
             e.stopPropagation();
             scrollToClip("down");
           }}
-          className="h-11 w-11 rounded-full bg-white shadow-md flex items-center justify-center"
+        className="h-11 w-11 rounded-full border border-subtle bg-surface-elevated text-ink shadow-md flex items-center justify-center"
         >
           <ChevronDown className="h-5 w-5 text-ink" />
         </button>

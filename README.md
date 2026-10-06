@@ -38,6 +38,10 @@ If either value is missing, the app fails fast with a clear Supabase env error.
 1. Create a Supabase project.
 2. In SQL Editor, run:
    - `supabase/migrations/0001_initial_content.sql`
+   - `supabase/migrations/0002_cms.sql`
+   - `supabase/migrations/0003_content_extensions.sql`
+   - `supabase/migrations/0004_board_members.sql`
+   - `supabase/migrations/0005_storage_upload_readback.sql`
 3. Then run seed data:
    - `supabase/seeds/0001_seed_content.sql`
 

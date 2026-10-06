@@ -199,6 +199,15 @@ using (public.can_edit_section(section_key))
 with check (public.can_edit_section(section_key));
 
 -- storage policies for media uploads
+create policy "cms_media_uploads_readback" on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'media'
+  and name like 'cms/%'
+  and (public.is_admin() or public.is_editor())
+);
+
 create policy "cms_media_uploads" on storage.objects
 for insert
 to authenticated

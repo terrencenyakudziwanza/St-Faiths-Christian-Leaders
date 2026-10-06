@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="mx-4 mb-4 rounded-2xl border border-subtle bg-surface shadow-sm">
       {/* FOOTER LINK COLUMNS */}
-      <div className="mx-auto grid max-w-7xl gap-12 px-8 py-12 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-5 py-8 sm:px-8 sm:py-12 md:grid-cols-2 md:gap-12 lg:grid-cols-4">
         {links.map((link, index) => (
           <div key={index} className="space-y-4">
             <h3 className="text-caption font-semibold uppercase tracking-wider text-ink">

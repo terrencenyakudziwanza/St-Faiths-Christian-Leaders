@@ -1,6 +1,8 @@
 import React from "react";
 import { Heart, X } from "lucide-react";
 import { boardMembers } from "../data/boardMembers";
+import { useCmsSection } from "../hooks/useCmsSection";
+import { resolveCmsMedia } from "../lib/cms";
 
 type GalleryTile = {
   id: string;
@@ -116,6 +118,8 @@ interface GalleryModalProps {
 }
 
 const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => {
+  const scrollRootRef = React.useRef<HTMLDivElement>(null);
+  const [mobileActiveTiles, setMobileActiveTiles] = React.useState<Set<string>>(() => new Set());
   const [likeCounts, setLikeCounts] = React.useState<Record<string, number>>(
     () =>
       Object.fromEntries(tiles.map((tile) => [tile.id, tile.likes])),
@@ -195,6 +199,47 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
 
   const columnOffsets = [0, 28, 12, 42];
 
+  React.useEffect(() => {
+    const root = scrollRootRef.current;
+    if (!show || !root || window.innerWidth >= 768) {
+      setMobileActiveTiles(new Set());
+      return;
+    }
+
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>("[data-gallery-tile]"));
+    const centerObserver = new IntersectionObserver((entries) => {
+      setMobileActiveTiles((previous) => {
+        const next = new Set(previous);
+        entries.forEach((entry) => {
+          const id = (entry.target as HTMLElement).dataset.galleryTile;
+          if (id && entry.isIntersecting) next.add(id);
+        });
+        return next;
+      });
+    }, { root, rootMargin: "-45% 0px -45% 0px", threshold: 0 });
+
+    const viewportObserver = new IntersectionObserver((entries) => {
+      setMobileActiveTiles((previous) => {
+        const next = new Set(previous);
+        entries.forEach((entry) => {
+          const id = (entry.target as HTMLElement).dataset.galleryTile;
+          if (id && !entry.isIntersecting) next.delete(id);
+        });
+        return next;
+      });
+    }, { root, threshold: 0 });
+
+    nodes.forEach((node) => {
+      centerObserver.observe(node);
+      viewportObserver.observe(node);
+    });
+
+    return () => {
+      centerObserver.disconnect();
+      viewportObserver.disconnect();
+    };
+  }, [show, tiles]);
+
   return (
     <div
       className={`fixed inset-0 z-[150] flex items-center justify-center bg-[rgba(0,0,0,0.7)] transition-opacity duration-300 ${
@@ -227,7 +272,7 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 w-full overflow-y-auto px-5 pb-10 pt-6 lg:px-8">
+        <div ref={scrollRootRef} className="flex-1 min-h-0 w-full overflow-y-auto px-5 pb-10 pt-6 lg:px-8">
           <div className="flex flex-col gap-10">
             {groupedTerms.map((term) => {
               const columns = buildColumns(term.tiles);
@@ -268,6 +313,7 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
                             return (
                               <div
                                 key={tile.id}
+                                data-gallery-tile={tile.id}
                                 className="group relative overflow-hidden rounded-[22px] border border-subtle bg-surface-muted shadow-[0_16px_32px_rgba(0,0,0,0.16)]"
                                 style={{ aspectRatio: tile.ratio }}
                               >
@@ -275,9 +321,9 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
                                   src={tile.src}
                                   alt={tile.alt}
                                   loading="lazy"
-                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 ${mobileActiveTiles.has(tile.id) ? "scale-105" : ""}`}
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <div className={`absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent transition-opacity duration-300 ${mobileActiveTiles.has(tile.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                                   <div className="absolute left-4 right-4 bottom-4 text-inverse">
                                     <p className="text-body-sm font-semibold">
                                       {tile.description}
@@ -324,8 +370,21 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
 
 const Gallery: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
-
-  const tiles = React.useMemo(() => buildGalleryTiles(), []);
+  const galleryContent = useCmsSection("home.gallery");
+  const seedTiles = React.useMemo(() => buildGalleryTiles(), []);
+  const tiles = React.useMemo(() => [
+    ...seedTiles,
+    ...galleryContent.items.map((item) => ({
+      id: item.id,
+      src: resolveCmsMedia(item.image) ?? "",
+      alt: item.title,
+      description: item.description,
+      tags: item.tags,
+      likes: item.likes,
+      ratio: item.ratio,
+      termId: item.termId,
+    })),
+  ], [seedTiles, galleryContent.items]);
   const rowTiles = React.useMemo(() => {
     if (!tiles.length) {
       return [];

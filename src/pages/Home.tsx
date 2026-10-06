@@ -53,7 +53,7 @@ const Home: React.FC = () => {
   const homeRef = useRef<HTMLDivElement>(null);
   const introTlRef = useRef<gsap.core.Timeline | null>(null);
 
-  const { introAnimDone, setIntroAnimDone } = useStore();
+  const { introAnimDone, introAnimStarted, setIntroAnimDone, setIntroAnimStarted } = useStore();
 
   const heroContent = useCmsSection("home.hero");
   const heroSlides = useMemo(
@@ -64,16 +64,9 @@ const Home: React.FC = () => {
       })),
     [heroContent.slides],
   );
-  const introSlides = heroSlides.slice(0, -1);
-  const fixedBgImage = heroSlides[heroSlides.length - 1]?.imageUrl;
-  const heroKey = useMemo(
-    () =>
-      `${heroContent.heroHeader.join("|")}::${heroContent.heroSecondary.join("|")}::${heroSlides
-        .map((slide) => slide.label)
-        .join("|")}`,
-    [heroContent.heroHeader, heroContent.heroSecondary, heroSlides],
-  );
-
+  const finalSlide = heroSlides.find((slide) => slide.id === heroContent.finalSlideId) ?? heroSlides[heroSlides.length - 1];
+  const introSlides = heroSlides.filter((slide) => slide.id !== finalSlide?.id);
+  const fixedBgImage = finalSlide?.imageUrl;
   const heroGradientStyle = introAnimDone
     ? {
         backgroundImage:
@@ -93,6 +86,14 @@ const Home: React.FC = () => {
     if (!heroContent) {
       return;
     }
+
+    if (introAnimStarted) {
+      gsap.set(slides, { opacity: 0, pointerEvents: "none" });
+      gsap.set(heroContent, { opacity: 1 });
+      setIntroAnimDone(true);
+      return;
+    }
+    setIntroAnimStarted(true);
 
     const rollSplits: SplitText[] = [];
 
@@ -280,7 +281,7 @@ const Home: React.FC = () => {
       secondarySplits.forEach((split) => split.revert());
       introTlRef.current = null;
     };
-  }, [heroKey]);
+  }, []);
 
   const handleSkipIntro = () => {
     if (!introAnimDone) {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { ChevronDown, LogIn, LogOut } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogIn, LogOut } from "lucide-react";
 import useStore from "../store";
 import type { NavPage, NavSection } from "../types/nav";
 import { useAuth } from "../contexts/AuthContext";
@@ -175,6 +175,7 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
   };
 
   const handleDashboard = () => {
+    setMobileMenuOpen(false);
     navigate("/dashboard");
   };
 
@@ -282,16 +283,26 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
 
           <div className="md:hidden flex items-center gap-2">
             {isAuthenticated ? (
+              <>
               <button
                 type="button"
                 onClick={handleDashboard}
                 className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
                 aria-label="Open dashboard"
               >
-                <LogIn
+                <LayoutDashboard
                   className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`}
                 />
               </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className={`h-10 w-10 rounded-full ${borderClass} flex items-center justify-center cursor-pointer hover:bg-surface-muted duration-300`}
+                aria-label="Logout"
+              >
+                <LogOut className={`h-4 w-4 ${darkTheme ? "text-inverse" : "text-ink"}`} />
+              </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -367,6 +378,16 @@ const Navbar: React.FC<NavbarProps> = ({ navPages }) => {
           </div>
 
           <div className="h-[calc(100%-72px)] overflow-y-auto px-4 py-4 flex flex-col gap-3">
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleDashboard}
+                className={`${pageBtnDefaultClass} flex items-center gap-3 rounded-2xl border ${mobileCardClass} px-4 py-3 text-left text-body-sm`}
+              >
+                <LayoutDashboard className="h-4 w-4 shrink-0" />
+                <span>Dashboard</span>
+              </button>
+            )}
             {navPages.map((page) => {
               const hasSections = Boolean(page.sections?.length);
               const isPageActive = location.pathname === page.path;

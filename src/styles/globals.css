@@ -273,6 +273,7 @@ html::-webkit-scrollbar-thumb {
 .clip-pause-indicator.visible {
   opacity: 1;
   transform: scale(1);
+  background-color: rgba(0, 0, 0, 0.28);
 }
 
 .clip-pause-indicator__wrapper {
@@ -446,6 +447,13 @@ html::-webkit-scrollbar-thumb {
 .stacked-imgs img:first-child:not(:only-child){
   transform: translateY(-10px) scaleX(0.8);
   border-radius: 30px;
+}
+
+@media (max-width: 1023px) {
+  .stacked-imgs img {
+    transform: none !important;
+    max-width: 100%;
+  }
 }
 
 /* GALLERY MOVING GRID */
@@ -1150,6 +1158,10 @@ html::-webkit-scrollbar-thumb {
   transform: translateY(-4px);
 }
 
+.testimonial-marquee__track--static {
+  animation: none !important;
+}
+
 .intercession-card--active h3 {
   color: var(--accent-purple);
 }
@@ -1365,12 +1377,20 @@ html::-webkit-scrollbar-thumb {
   .week-slide__panel {
     left: 50%;
     right: auto;
+    bottom: 4.4rem;
+    width: min(420px, calc(100% - 2rem));
     transform: translateX(-50%);
   }
 
   .week-slide__counter {
     left: 50%;
+    right: auto;
+    bottom: 1rem;
     transform: translateX(-50%);
+  }
+
+  .week-rail {
+    top: calc(45% - 12vh);
   }
 
   .week-slide__counter-current {
