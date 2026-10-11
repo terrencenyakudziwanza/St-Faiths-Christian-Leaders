@@ -156,8 +156,10 @@ const familyContent: CmsFamilyContent = {
   pageDescription: "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Qui doloremque dolorum quaerat magni earum neque quam blanditiis vel quos nisi repellat reiciendis aliquam aliquid, aspernatur iure cumque animi in possimus!",
   patronMatronTitle: "Patron & Matron",
   patronMatronDescription: "Meet the pastoral leaders who care for our Christian Leaders family.",
+  departmentsOverline: "Our Departments",
   departmentsTitle: "Ministry Teams",
   departmentsDescription: "Choose a department to learn more.",
+  boardOverline: "Leadership",
   boardTitle: "Our Board",
   boardDescription: "Meet the leaders serving the Christian Leaders community.",
   patron: { role: "Patron", name: "Pastor Joel Mensah", about: "A steady covering for the Christian Leaders family, offering counsel, prayer, and pastoral direction through every season.", phone: "+27 71 234 5678", email: "patron@christianleaders.org", image: { url: "/offline-media/presenters/pastor-joel.jpg" } },
@@ -168,13 +170,13 @@ export const cmsDefaults: CmsContentMap = {
   "home.hero": heroContent,
   "home.focus": focusContent,
   "home.week": weekContent,
-  "home.gallery": { items: [] },
+  "home.gallery": { overline: "Christian Leaders Gallery", title: "Captured Moments", description: "Explore the stories, services, and faces that shape the Christian Leaders family.", testimonialOverline: "Stories of Faith", testimonialTitle: "What Our Family Says", testimonialDescription: "Hear from the people whose lives have been touched by Christian Leaders.", items: [] },
   "family.content": familyContent,
 };
 
 export const cmsSectionLabels: Record<CmsSectionKey, string> = {
   "home.hero": "Home Hero",
-  "home.focus": "Focus Section",
+  "home.focus": "What We Do",
   "home.week": "A Week In Christian Leaders",
   "content.events": "Events",
   "content.testimonials": "Testimonials",

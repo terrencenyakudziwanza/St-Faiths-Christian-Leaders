@@ -673,9 +673,9 @@ const EventsModal: React.FC<EventsModalProps> = ({
   const renderDetailsPanel = (withMediaSwitch: boolean) => (
     <div className="flex flex-col justify-between h-full min-w-0">
       <div className="flex flex-col gap-3 min-w-0">
-        <h1 className="text-title-fluid leading-tight font-bold bg-surface-muted text-ink p-2 rounded-xl wrap-break-word">
+        <h2 className="text-title-fluid leading-tight font-bold bg-surface-muted text-ink p-2 rounded-xl wrap-break-word">
           {event?.themeTopic ?? event?.title ?? "Select an event"}
-        </h1>
+        </h2>
         <div className="flex gap-3 lg:gap-4 flex-wrap">
           <p className="px-2.5 py-0.5 text-body-sm bg-surface-muted text-ink rounded-[7px]">
             {event?.feedType ?? "Event"}

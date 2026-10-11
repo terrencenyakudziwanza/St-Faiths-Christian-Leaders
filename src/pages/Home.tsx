@@ -333,12 +333,13 @@ const Home: React.FC = () => {
             <img
               src={img.imageUrl}
               className="absolute inset-0 h-full w-full object-cover z-0 scale-150"
-              alt="reveal-image"
+              alt=""
+              aria-hidden="true"
             />
             <div className="h-full w-full flex items-center justify-center relative z-0 bg-[rgba(0,0,0,.3)]">
-              <h1 className="reveal-text relative z-0 p-2 text-display text-inverse overflow-hidden">
+              <p className="reveal-text relative z-0 p-2 text-display text-inverse overflow-hidden">
                 {img.label}
-              </h1>
+              </p>
             </div>
           </div>
         ))}
@@ -346,8 +347,9 @@ const Home: React.FC = () => {
         {/* HERO COPY + OVERLAY */}
         <div className="hero-content absolute inset-0 z-10 relative flex h-full w-full flex-col items-center justify-center gap-2">
           <div className="hero-content__overlay pointer-events-none absolute inset-0"></div>
+          <h1 className="relative z-10 flex flex-col items-center text-center">
           {heroContent.heroHeader.map((h, i) => (
-            <div
+            <span
               key={i}
               className={`hero-copy text-split text-split-heading font-bold text-[clamp(2.1rem,5.4vw,4.1rem)] leading-[0.95] relative ${
                 introAnimDone
@@ -357,8 +359,9 @@ const Home: React.FC = () => {
               style={heroGradientStyle}
             >
               {h}
-            </div>
+            </span>
           ))}
+          </h1>
           {heroContent.heroSecondary.map((s, i) => (
             <div
               key={i}

@@ -3,7 +3,8 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
 import { departments } from "../data/departments";
-import { ChevronDown, Mail, Phone } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
+import DesignCredit from "../components/DesignCredit";
 import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
@@ -226,7 +227,8 @@ const Family: React.FC = () => {
   const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === selectedBoardYear), [allBoardMembers, selectedBoardYear]);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
-  const [toastMessage, setToastMessage] = React.useState("");
+  const [activeDepartmentIndex, setActiveDepartmentIndex] = React.useState(0);
+  const [departmentFlipped, setDepartmentFlipped] = React.useState(false);
   const [previousPortraitMember, setPreviousPortraitMember] =
     React.useState<BoardMember | null>(null);
   const [viewportWidth, setViewportWidth] = React.useState(() =>
@@ -635,23 +637,30 @@ const Family: React.FC = () => {
 
         {/* DEPARTMENTS SECTION */}
         <section id="departments-section" className="mt-12 scroll-mt-24 rounded-[32px] border border-subtle bg-surface-elevated px-5 py-8 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:px-8">
-          {toastMessage && <div role="status" className="fixed right-5 top-5 z-[150] rounded-2xl border border-subtle bg-surface-elevated px-5 py-4 text-body-sm text-ink shadow-[0_16px_48px_rgba(0,0,0,0.2)]">{toastMessage}</div>}
           <div className="mx-auto max-w-[620px] text-center">
-            <p className="text-overline font-semibold text-accent">Our Departments</p>
+            <p className="text-overline font-semibold text-accent">{familyContent.departmentsOverline}</p>
             <h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.departmentsTitle}</h2>
             <p className="mt-3 text-body-sm text-muted">{familyContent.departmentsDescription}</p>
           </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {departments.map((department) => {
-              const Icon = department.icon;
-              return <button key={department.id} type="button" onClick={() => { setToastMessage(`${department.name} details are coming soon.`); window.setTimeout(() => setToastMessage(""), 3200); }} className="flex items-center gap-2 rounded-xl border border-subtle bg-surface px-4 py-2.5 text-body-sm font-semibold text-ink hover:bg-surface-muted"><Icon size={16} /><span>{department.name}</span></button>;
-            })}
+          <div className="mt-8 flex flex-col items-center">
+            <div className="relative h-[390px] w-full max-w-[680px] [perspective:1200px]">
+              {[2, 1, 0].map((depth) => {
+                const item = departments[(activeDepartmentIndex + depth) % departments.length];
+                const Icon = item.icon;
+                return <article key={item.id} onClick={() => depth === 0 && setDepartmentFlipped((v) => !v)} className={`absolute inset-x-0 top-0 mx-auto h-[340px] w-[min(88%,520px)] cursor-pointer transition-all duration-500 [transform-style:preserve-3d] ${depth === 0 ? "z-30" : depth === 1 ? "z-20 translate-y-5 scale-[.94]" : "z-10 translate-y-10 scale-[.88]"} ${depth === 0 && departmentFlipped ? "[transform:rotateY(180deg)]" : ""}`}>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[32px] border border-subtle bg-surface-elevated p-7 text-center shadow-[0_24px_60px_rgba(35,24,12,.18)] [backface-visibility:hidden]"><div className="mb-4 grid h-24 w-24 place-items-center overflow-hidden rounded-full border-4 border-accent-soft"><img src={item.members.find((member) => member.isLeader)?.imageSrc} alt="" className="h-full w-full object-cover" /></div><p className="text-overline font-semibold text-accent"><Icon className="mr-2 inline h-4 w-4" />Department</p><h3 className="mt-2 text-heading-lg font-semibold text-ink">{item.name}</h3><p className="mt-3 max-w-md text-body-sm text-muted">The {item.name} team serves the church and supports its gatherings.</p><p className="mt-5 text-body-xs text-muted">Select to meet the team</p></div>
+                  <div className="absolute inset-0 overflow-y-auto rounded-[32px] border border-subtle bg-surface-elevated p-6 shadow-[0_24px_60px_rgba(35,24,12,.18)] [backface-visibility:hidden] [transform:rotateY(180deg)]"><h3 className="text-heading-md font-semibold text-ink">{item.name} team</h3><div className="mt-4 grid gap-3">{item.members.map((member) => <div key={member.id} className="flex items-center gap-3 rounded-2xl border border-subtle bg-surface p-3"><img src={member.imageSrc} alt="" className="h-12 w-12 rounded-full object-cover" /><span><span className="block text-body-sm font-semibold text-ink">{member.name}</span><span className="text-body-xs text-muted">{member.role ?? (member.isLeader ? "Department Leader" : "Member")}</span></span></div>)}</div></div>
+                </article>;
+              })}
+            </div>
+            <div className="mt-4 flex items-center gap-5"><button type="button" aria-label="Previous department" onClick={() => { setDepartmentFlipped(false); setActiveDepartmentIndex((i) => (i - 1 + departments.length) % departments.length); }} className="grid h-11 w-11 place-items-center rounded-full border border-subtle bg-surface-elevated text-ink"><ChevronLeft /></button><span className="text-body-xs text-muted">{departments[activeDepartmentIndex]?.name}</span><button type="button" aria-label="Next department" onClick={() => { setDepartmentFlipped(false); setActiveDepartmentIndex((i) => (i + 1) % departments.length); }} className="grid h-11 w-11 place-items-center rounded-full border border-subtle bg-surface-elevated text-ink"><ChevronRight /></button></div>
+            <DesignCredit />
           </div>
         </section>
 
         {/* BOARD ORBIT STAGE */}
         <section id="family-board-section" className="mt-12 scroll-mt-24 rounded-[38px] border border-subtle bg-surface-elevated p-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
-          <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><h2 className="text-heading-md font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.boardDescription}</p></div>
+          <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><p className="text-overline font-semibold text-accent">{familyContent.boardOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.boardDescription}</p><DesignCredit /></div>
           {boardYears.length > 1 && <div className="mb-5 flex items-center justify-center gap-3"><label htmlFor="board-history-year" className="text-body-sm font-semibold text-ink">Board year</label><select id="board-history-year" value={selectedBoardYear} onChange={(event) => { setSelectedBoardYear(Number(event.target.value)); setActiveIndex(0); }} className="rounded-full border border-subtle bg-surface px-4 py-2 text-body-sm text-ink">{boardYears.map((year) => <option key={year} value={year}>{year} Board</option>)}</select></div>}
         <div
           className="relative min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"

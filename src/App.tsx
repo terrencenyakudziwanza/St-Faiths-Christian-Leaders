@@ -1,16 +1,12 @@
 import "./styles/globals.css";
 import "./styles/animations.css";
 import "./styles/tailwind.css";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import gsap from "gsap";
 import { CustomEase, Flip, SplitText } from "gsap/all";
 import useStore from "./store";
 import { Route, Routes, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
-import Events from "./pages/Events";
-import Family from "./pages/Family";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import Testimonials from "./components/Testimonials";
 import Footer from "./components/Footer";
 import ThemeToggle from "./components/ThemeToggle";
@@ -18,7 +14,13 @@ import Gallery from "./components/Gallery";
 import RequireAuth from "./components/RequireAuth";
 import ThemeRibbon from "./components/ThemeRibbon";
 import { supabase } from "./lib/supabase";
+import SeoManager from "./components/SeoManager";
 // import ImmersiveWeek from "./components/ImmersiveWeek";
+
+const Events = lazy(() => import("./pages/Events"));
+const Family = lazy(() => import("./pages/Family"));
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 gsap.registerPlugin(CustomEase, Flip, SplitText);
 
@@ -113,8 +115,10 @@ function App() {
 
   return (
     <>
+      <SeoManager />
       <ThemeToggle />
       {!hideRibbon && <ThemeRibbon />}
+      <Suspense fallback={<div className="min-h-screen bg-page" aria-busy="true" aria-label="Loading page" />}>
       <Routes>
         <Route
           path="/"
@@ -164,6 +168,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </>
   );
 }

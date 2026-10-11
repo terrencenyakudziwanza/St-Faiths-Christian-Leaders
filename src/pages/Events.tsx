@@ -309,6 +309,7 @@ const Events: React.FC = () => {
       <Navbar navPages={eventPageNavPages} />
 
       <div className="w-full flex flex-col items-center pt-[10%] text-ink">
+        <header className="mx-auto w-full max-w-[680px] px-4 pb-8 text-center"><p className="text-overline font-semibold text-accent">Christian Leaders</p><h1 className="mt-3 text-display font-semibold leading-[0.95] text-ink">Events</h1><p className="mt-4 text-body text-muted">Gather with us for worship, prayer, study, and fellowship.</p></header>
         {/* SEARCH + FILTER BAR */}
         <div className="events-search-wrapper">
           {/* SEARCH INPUT */}

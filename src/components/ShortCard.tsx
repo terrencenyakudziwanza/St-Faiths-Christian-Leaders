@@ -12,6 +12,7 @@ const ShortCard: React.FC<ShortCardProps> = ({ short }) => {
   return (
     <a
       href={short.publicUrl}
+      aria-label={`Watch ${short.title}`}
       target="_blank"
       rel="noreferrer"
       className="flex flex-col w-60"
@@ -21,8 +22,9 @@ const ShortCard: React.FC<ShortCardProps> = ({ short }) => {
         <img
           src={short.thumbnailUrl ?? fallbackThumb}
           alt={short.title}
+          loading="lazy"
+          decoding="async"
           className="rounded-4xl w-60 h-90 object-cover"
-          loading="eager"
         />
         <div className="absolute h-full w-full top-0 left-0"></div>
       </div>

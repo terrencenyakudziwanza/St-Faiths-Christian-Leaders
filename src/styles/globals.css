@@ -276,6 +276,16 @@ html::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.28);
 }
 
+@keyframes save-heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.08); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.05); }
+  56% { transform: scale(1); }
+}
+.animate-save-pulse { animation: save-heartbeat 1.25s ease-in-out infinite; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .animate-save-pulse { animation: none; } }
+
 #highlights-section .highlight-moment {
   opacity: 0;
   transform: translateY(12px);

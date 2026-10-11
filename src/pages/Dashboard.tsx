@@ -1,4 +1,5 @@
 import React from "react";
+import { Info, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cmsSectionLabels, cmsSectionOrder } from "../data/cmsDefaults";
 import { useAuth } from "../contexts/AuthContext";
@@ -54,6 +55,10 @@ const panelInputClass =
 const panelTextareaClass =
   "rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-input)] px-4 py-3 text-body-sm text-[color:var(--panel-text)] outline-none placeholder:text-[color:var(--panel-text-muted)] focus:border-accent";
 const panelSubtextClass = "text-body-xs text-[color:var(--panel-text-muted)]";
+const EditorInfo: React.FC<{ text: string }> = ({ text }) => {
+  const [open, setOpen] = React.useState(false);
+  return <span className="group relative inline-flex"><button type="button" aria-label="Section information" aria-expanded={open} onClick={() => setOpen((value) => !value)} className="grid h-7 w-7 place-items-center rounded-full border border-[color:var(--panel-border)] text-[color:var(--panel-text-muted)]"><Info size={15} /></button><span className={`${open ? "block" : "hidden"} absolute right-0 top-9 z-50 w-72 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-4 text-body-xs text-[color:var(--panel-text)] shadow-[0_16px_48px_rgba(0,0,0,0.2)] group-hover:md:block`}><span className="mb-2 flex justify-end md:hidden"><button type="button" aria-label="Close information" onClick={() => setOpen(false)}><X size={15} /></button></span>{text}</span></span>;
+};
 type DashboardArea = "home" | "events" | "family";
 
 type RestorePoint = { id: string; label: string; createdAt: string; content: Record<string, unknown> };
@@ -211,7 +216,7 @@ const Dashboard: React.FC = () => {
     ...(isAdmin || permissions.includes("content.board") || permissions.includes("family.content") ? [{ key: "family" as const, label: "Family" }] : []),
   ];
   const areaSections: Record<DashboardArea, { label: string; id: string }[]> = {
-    home: [{ label: "Hero", id: "dashboard-hero" }, { label: "Focus", id: "dashboard-focus" }, { label: "Week", id: "dashboard-week" }, { label: "Gallery", id: "dashboard-gallery" }, { label: "Testimonials", id: "dashboard-testimonials" }],
+    home: [{ label: "Hero", id: "dashboard-hero" }, { label: "What We Do", id: "dashboard-focus" }, { label: "Week", id: "dashboard-week" }, { label: "Gallery", id: "dashboard-gallery" }, { label: "Testimonials", id: "dashboard-testimonials" }],
     events: [{ label: "Events", id: "dashboard-events" }, { label: "Highlights", id: "dashboard-highlights" }],
     family: [{ label: "Family details", id: "dashboard-family" }, { label: "Board", id: "dashboard-board" }],
   };
@@ -362,13 +367,14 @@ const SectionShell: React.FC<{
 }) => {
   return (
     <section className={`${panelShellClass} p-6`}>
-      <div className="flex flex-col items-start gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-heading-md font-semibold">{title}</h2>
           <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">
             {description}
           </p>
         </div>
+        <EditorInfo text={description} />
       </div>
 
       {!canEdit && (
@@ -399,7 +405,7 @@ const SectionShell: React.FC<{
         type="button"
         onClick={onSave}
         disabled={!canEdit || saving || !dirty}
-        className={`mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}
+        className={`mt-6 rounded-full border border-[color:var(--panel-text)] bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-all disabled:border-[color:var(--panel-border)] disabled:bg-transparent disabled:text-[color:var(--panel-text-muted)] disabled:opacity-100 ${dirty ? "animate-save-pulse" : ""}`}
       >
         {saving ? "Saving..." : "Save changes"}
       </button>
@@ -699,7 +705,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       await upsertCmsContent("home.focus", sanitized);
       setDraft(sanitized);
       setSavedSnapshot(JSON.stringify(sanitized));
-      setStatus("Focus section saved.");
+      setStatus("What We Do section saved.");
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed.";
@@ -712,7 +718,7 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 
   return (
     <SectionShell
-      title="Focus Section"
+      title="What We Do"
       description="Update the guiding copy and the rotating focus cards in the intercession section."
       canEdit={canEdit}
       saving={saving}
@@ -972,11 +978,6 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       </label>
 
       <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
-        <h3 className="text-heading-sm font-semibold">Theme of the Week</h3>
-        <p className={`${panelSubtextClass} mt-1`}>
-          Enter a verse reference and optional translation. We&apos;ll fetch the
-          verse text from bible-api.com on save.
-        </p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2">
             <span className="text-body-sm font-medium">Theme title</span>
@@ -1258,6 +1259,10 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       errors={[]}
     >
       <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+        <h3 className="text-heading-sm font-semibold">Gallery section heading</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-2"><label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Overline</span><input className={panelInputClass} value={draft.overline} onChange={(event) => setDraft((prev) => ({ ...prev, overline: event.target.value }))} disabled={!canEdit} /></label><label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Title</span><input className={panelInputClass} value={draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))} disabled={!canEdit} /></label><label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Description</span><textarea className={panelTextareaClass} value={draft.description} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} disabled={!canEdit} /></label></div>
+        <h3 className="mt-5 text-heading-sm font-semibold">Testimonials section heading</h3>
+        <div className="mt-3 grid gap-3 md:grid-cols-2"><label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Overline</span><input className={panelInputClass} value={draft.testimonialOverline} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialOverline: event.target.value }))} disabled={!canEdit} /></label><label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Title</span><input className={panelInputClass} value={draft.testimonialTitle} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialTitle: event.target.value }))} disabled={!canEdit} /></label><label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Description</span><textarea className={panelTextareaClass} value={draft.testimonialDescription} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialDescription: event.target.value }))} disabled={!canEdit} /></label></div>
         <h3 className="text-heading-sm font-semibold">Add a gallery image</h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Image title</span><input className={panelInputClass} value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEdit} /></label>
@@ -2116,7 +2121,7 @@ const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   return <section className={`${panelShellClass} p-6`}>
     <h2 className="text-heading-md font-semibold">Family page and Patrons</h2>
     <p className="mt-2 text-body-sm text-[color:var(--panel-text-muted)]">Edit the Family page headings, descriptions, and Patron and Matron profiles.</p>
-    <div className="mt-5 grid gap-4 md:grid-cols-2">{field("Page eyebrow", "pageEyebrow")}{field("Page title", "pageTitle")}{field("Page description", "pageDescription", true)}{field("Patron and Matron section title", "patronMatronTitle")}{field("Patron and Matron section description", "patronMatronDescription", true)}{field("Departments section title", "departmentsTitle")}{field("Departments section description", "departmentsDescription", true)}{field("Board section title", "boardTitle")}{field("Board section description", "boardDescription", true)}</div>
+    <div className="mt-5 grid gap-4 md:grid-cols-2">{field("Overline", "pageEyebrow")}{field("Page title", "pageTitle")}{field("Page description", "pageDescription", true)}{field("Patron and Matron section title", "patronMatronTitle")}{field("Patron and Matron section description", "patronMatronDescription", true)}{field("Departments section overline", "departmentsOverline")}{field("Departments section title", "departmentsTitle")}{field("Departments section description", "departmentsDescription", true)}{field("Board section overline", "boardOverline")}{field("Board section title", "boardTitle")}{field("Board section description", "boardDescription", true)}</div>
     {(["patron", "matron"] as const).map((profile) => <div key={profile} className="mt-6 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
       <h3 className="text-heading-sm font-semibold capitalize">{profile}</h3>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -2124,7 +2129,7 @@ const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         <div className="md:col-span-2"><MediaUploadField label={`${profile} portrait`} value={resolveCmsMedia(draft[profile].image)} onUpload={(file) => uploadPortrait(profile, file)} /></div>
       </div>
     </div>)}
-    <button type="button" onClick={() => void save()} disabled={!canEdit || !dirty || saving} className={`mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : "Save Family content"}</button>
+    <button type="button" onClick={() => void save()} disabled={!canEdit || !dirty || saving} className={`mt-5 rounded-full border border-[color:var(--panel-text)] bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:border-[color:var(--panel-border)] disabled:bg-transparent disabled:text-[color:var(--panel-text-muted)] disabled:opacity-100 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : "Save Family content"}</button>
     {message && <p className="mt-3 text-body-sm text-[color:var(--panel-text-muted)]">{message}</p>}
   </section>;
 };
@@ -2191,7 +2196,7 @@ const BoardMembersEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Quote</span><textarea className={`${panelTextareaClass} min-h-[90px]`} value={draft.quote} onChange={(event) => setDraft((prev) => ({ ...prev, quote: event.target.value }))} disabled={!canEdit} /></label>
           <div className="md:col-span-2"><MediaUploadField label="Portrait" value={resolveCmsMedia(draft.imagePath ? { storagePath: draft.imagePath } : null)} onUpload={uploadPortrait} /></div>
         </div>
-        <button type="button" onClick={submit} disabled={!canEdit || !dirty || saving || !draft.name.trim()} className={`mt-5 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : editingId ? "Save member" : "Add member"}</button>
+        <button type="button" onClick={submit} disabled={!canEdit || !dirty || saving || !draft.name.trim()} className={`mt-5 rounded-full border border-[color:var(--panel-text)] bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:border-[color:var(--panel-border)] disabled:bg-transparent disabled:text-[color:var(--panel-text-muted)] disabled:opacity-100 ${dirty ? "animate-save-pulse" : ""}`}>{saving ? "Saving..." : editingId ? "Save member" : "Add member"}</button>
         {editingId && <button type="button" onClick={reset} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm">Cancel edit</button>}
       </div>
       <div className="mt-8">

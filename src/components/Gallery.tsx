@@ -1,4 +1,5 @@
 import React from "react";
+import DesignCredit from "./DesignCredit";
 import { Heart, X } from "lucide-react";
 import { boardMembers } from "../data/boardMembers";
 import { useCmsSection } from "../hooks/useCmsSection";
@@ -439,7 +440,7 @@ const Gallery: React.FC = () => {
                   key={`${tile.key}-${loopIndex}-${index}`}
                   className="gallery-tile"
                 >
-                  <img src={tile.src} alt={tile.alt} />
+                  <img src={tile.src} alt={tile.alt} loading="lazy" decoding="async" />
                 </div>
               )),
             )}
@@ -453,16 +454,10 @@ const Gallery: React.FC = () => {
       {/* CENTER COPY */}
       <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
         <div className="max-w-[620px]">
-          <p className="text-overline font-semibold text-accent-strong">
-            Christian Leaders Gallery
-          </p>
-          <h2 className="gallery-section-copy mt-4 text-display font-semibold">
-            Captured Moments
-          </h2>
-          <p className="gallery-section-copy mx-auto mt-4 text-body opacity-90">
-            Explore the stories, services, and faces that shape the Christian
-            Leaders family.
-          </p>
+          <p className="text-overline font-semibold text-accent-strong">{galleryContent.overline}</p>
+          <h2 className="gallery-section-copy mt-4 text-display-sm font-semibold">{galleryContent.title}</h2>
+          <p className="gallery-section-copy mx-auto mt-4 text-body opacity-90">{galleryContent.description}</p>
+          <DesignCredit />
           <button
             type="button"
             onClick={() => setModalOpen(true)}

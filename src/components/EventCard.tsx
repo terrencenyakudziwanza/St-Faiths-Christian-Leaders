@@ -54,7 +54,9 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
             <img
               key={`${event.id}-cover-${i}`}
               src={img}
-              alt={event.title}
+            alt={event.title}
+            loading="lazy"
+            decoding="async"
               className="absolute left-0 top-0 h-full w-full max-w-full rounded-t-[32px] object-cover transition-transform duration-700 group-hover:scale-[1.025] lg:rounded-[40px]"
             />
           ))}

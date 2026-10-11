@@ -54,8 +54,8 @@ function mergeGallery(
   incoming: unknown,
   fallback: CmsGalleryContent,
 ): CmsGalleryContent {
-  if (!isRecord(incoming) || !Array.isArray(incoming.items)) return fallback;
-  return { items: incoming.items as CmsGalleryContent["items"] };
+  if (!isRecord(incoming)) return fallback;
+  return { ...fallback, ...incoming, items: Array.isArray(incoming.items) ? incoming.items as CmsGalleryContent["items"] : fallback.items } as CmsGalleryContent;
 }
 
 function mergeFamily(incoming: unknown, fallback: CmsFamilyContent): CmsFamilyContent {

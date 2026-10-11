@@ -1,6 +1,8 @@
 import React from "react";
 import ProfileCard from "./ProfileCard";
 import { fetchTestimonials } from "../services/testimonials";
+import { useCmsSection } from "../hooks/useCmsSection";
+import DesignCredit from "./DesignCredit";
 
 type TestimonialItem = {
   id: string;
@@ -9,6 +11,7 @@ type TestimonialItem = {
 };
 
 const Testimonials: React.FC = () => {
+  const copy = useCmsSection("home.gallery");
   const [items, setItems] = React.useState<TestimonialItem[]>([]);
 
   React.useEffect(() => {
@@ -38,7 +41,7 @@ const Testimonials: React.FC = () => {
     <section id="testimonials-section" data-nav-theme="light" className="relative min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15">
       <div className="section-fade-top" />
       <div className="section-fade-bottom" />
-      <h2 className="relative z-10 text-heading-xl font-bold text-center text-ink">Testimonials</h2>
+      <header className="relative z-10 mx-auto max-w-[680px] text-center"><p className="text-overline font-semibold text-accent">{copy.testimonialOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{copy.testimonialTitle}</h2><p className="mt-3 text-body text-muted">{copy.testimonialDescription}</p><DesignCredit name="Christian Leaders" role="Communications Team" /></header>
       {items.length === 0 ? (
         <p className="relative z-10 text-center text-body-sm text-muted">No testimonials have been published yet.</p>
       ) : (
