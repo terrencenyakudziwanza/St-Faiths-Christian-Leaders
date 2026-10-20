@@ -27,9 +27,9 @@
     --accent-soft: rgba(255, 213, 0, 0.18);
     --accent-soft-faint: rgba(255, 213, 0, 0.1);
     --accent-soft-subtle: rgba(255, 213, 0, 0.06);
-    --accent-purple: #4700b8;
+    --accent-purple: #551e8c;
     --accent-purple-soft: rgba(71, 0, 184, 0.18);
-    --accent-purple-glow: rgba(71, 0, 184, 0.58);
+    --accent-purple-glow: rgba(43, 0, 113, 0.58);
     --danger: #b91c1c;
     --scrollbar-thumb: rgba(0, 0, 0, 0.25);
     --icon-adapt-filter: invert(0);
@@ -78,7 +78,7 @@
     --accent-soft: rgba(255, 213, 0, 0.18);
     --accent-soft-faint: rgba(255, 213, 0, 0.1);
     --accent-soft-subtle: rgba(255, 213, 0, 0.06);
-    --accent-purple: #6d28d9;
+    --accent-purple: #551e8c;
     --accent-purple-soft: rgba(109, 40, 217, 0.24);
     --accent-purple-glow: rgba(109, 40, 217, 0.36);
     --danger: #f87171;

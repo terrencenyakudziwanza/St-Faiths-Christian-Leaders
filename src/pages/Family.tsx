@@ -223,7 +223,7 @@ const Family: React.FC = () => {
   const setCurrSection = useStore((state) => state.setCurrSection);
   const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>(defaultBoardMembers);
   const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
-  const [selectedBoardYear, setSelectedBoardYear] = React.useState(2026);
+  const [selectedBoardYear, setSelectedBoardYear] = React.useState(new Date().getFullYear());
   const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === selectedBoardYear), [allBoardMembers, selectedBoardYear]);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
@@ -253,7 +253,10 @@ const Family: React.FC = () => {
     fetchBoardMembers().then((members) => {
       if (active) {
         setAllBoardMembers(members.map((member) => ({ ...member, imageSrc: member.imageSrc ?? fallbackProfile })));
-        if (members.length) setSelectedBoardYear(Math.max(...members.map((member) => member.boardYear)));
+        if (members.length) {
+          const years = members.map((member) => member.boardYear);
+          setSelectedBoardYear(years.includes(new Date().getFullYear()) ? new Date().getFullYear() : Math.max(...years));
+        }
         setActiveIndex(0);
       }
     }).catch(() => undefined);

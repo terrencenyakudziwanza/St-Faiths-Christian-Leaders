@@ -1,8 +1,20 @@
 import React from "react";
 
-import { Facebook, Instagram, Mail, MessageCircle, Phone } from "lucide-react";
+import { Facebook, Instagram, Mail, MessageCircle, Phone, X } from "lucide-react";
+import { supabase } from "../lib/supabase";
+
+type FooterSettings = { phone?: string; email?: string; socials?: { instagram?: string; facebook?: string; whatsapp?: string } };
 
 const Footer: React.FC = () => {
+  const [settings, setSettings] = React.useState<FooterSettings>({});
+  const [developersOpen, setDevelopersOpen] = React.useState(false);
+  React.useEffect(() => {
+    let active = true;
+    void supabase.from("cms_content").select("content").eq("section_key", "site.footer_contacts").eq("is_published", true).maybeSingle().then(({ data }) => {
+      if (active && data?.content) setSettings(data.content as FooterSettings);
+    });
+    return () => { active = false; };
+  }, []);
   const year = new Date().getFullYear();
   const developerAvatar = "/offline-media/presenters/sister-ama.jpg";
   const links: {
@@ -67,12 +79,12 @@ const Footer: React.FC = () => {
           <div className="space-y-3 text-body-sm text-muted">
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-ink opacity-70" />
-              <p>+263 000 000</p>
+              <a href={`tel:${(settings.phone || "+263 000 000").replace(/[^+\d]/g, "")}`}>{settings.phone || "+263 000 000"}</a>
             </div>
 
             <div className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-ink opacity-70" />
-              <p>someemail@gmail.com</p>
+              <a href={`mailto:${settings.email || "someemail@gmail.com"}`}>{settings.email || "someemail@gmail.com"}</a>
             </div>
           </div>
 
@@ -81,15 +93,19 @@ const Footer: React.FC = () => {
               { Icon: Instagram, label: "Instagram" },
               { Icon: Facebook, label: "Facebook" },
               { Icon: MessageCircle, label: "WhatsApp" },
-            ].map(({ Icon, label }, index) => (
-              <div
+            ].map(({ Icon, label }, index) => {
+              const href = index === 0 ? settings.socials?.instagram : index === 1 ? settings.socials?.facebook : settings.socials?.whatsapp;
+              return href ? <a
                 key={index}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
                 className="group flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-subtle transition duration-300 hover:bg-surface-muted"
                 aria-label={label}
               >
                 <Icon className="h-4 w-4 text-ink opacity-70 transition" />
-              </div>
-            ))}
+              </a> : <span key={index} className="flex h-9 w-9 items-center justify-center rounded-full border border-subtle opacity-40" aria-label={`${label} link not set`}><Icon className="h-4 w-4 text-ink" /></span>;
+            })}
           </div>
         </div>
 
@@ -99,33 +115,9 @@ const Footer: React.FC = () => {
             Website Developed By
           </h3>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <img
-                  key={index}
-                  src={developerAvatar}
-                  className={`${
-                    index === 0 ? "" : "-ml-4"
-                  } h-10 w-10 rounded-full border-2 border-white object-cover shadow-sm`}
-                  alt=""
-                />
-              ))}
-
-              <div className="-ml-4 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-contrast text-caption font-semibold text-inverse">
-                +12
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-body-sm font-semibold text-ink">Hola!</h4>
-              <p className="text-caption text-muted">
-                Creative Web Development
-              </p>
-            </div>
-          </div>
         </div>
       </div>
+      {developersOpen && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDevelopersOpen(false); }} className="fixed inset-0 z-[200] grid place-items-center bg-black/55 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="developer-dialog-title" className="w-full max-w-lg rounded-3xl border border-subtle bg-surface-elevated p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 id="developer-dialog-title" className="text-heading-md font-semibold text-ink">Website developers</h2><button type="button" onClick={() => setDevelopersOpen(false)} aria-label="Close developers" className="grid h-9 w-9 place-items-center rounded-full border border-subtle"><X size={18} /></button></div><div className="mt-5 divide-y divide-subtle">{[{ name: "Hola!", role: "Creative Web Development" }, { name: "Website Design Team", role: "Design and Content" }, { name: "Technical Team", role: "Development and Support" }].map((person) => <div key={person.name} className="flex items-center gap-3 py-4"><span className="h-2 w-2 rounded-full bg-accent"/><span className="font-semibold text-ink">{person.name}</span><span className="ml-auto text-right text-body-sm text-muted">{person.role}</span></div>)}</div></section></div>}
 
       {/* FOOTER BASELINE */}
       <div className="flex flex-col items-center justify-between gap-4 border-t border-subtle px-8 py-4 text-body-sm text-muted md:flex-row">
