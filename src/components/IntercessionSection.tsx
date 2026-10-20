@@ -83,11 +83,11 @@ const IntercessionSection: React.FC = () => {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
   const activeItem = items[activeIndex] ?? items[0];
-  const activeItemRef = React.useRef(activeItem);
+  const activeItemRef = React.useRef<FocusItem | undefined>(activeItem);
   const [previousItem, setPreviousItem] = React.useState<FocusItem | null>(null);
 
   React.useEffect(() => {
-    if (!isAuto) {
+    if (!isAuto || items.length < 2) {
       return;
     }
 
@@ -108,11 +108,16 @@ const IntercessionSection: React.FC = () => {
   }, [items.length]);
 
   React.useEffect(() => {
-    if (activeItemRef.current.id === activeItem.id) {
+    if (!activeItem) {
+      activeItemRef.current = undefined;
+      setPreviousItem(null);
+      return;
+    }
+    if (activeItemRef.current?.id === activeItem.id) {
       return;
     }
 
-    setPreviousItem(activeItemRef.current);
+    setPreviousItem(activeItemRef.current ?? null);
     activeItemRef.current = activeItem;
 
     const timeoutId = window.setTimeout(() => {
@@ -123,6 +128,18 @@ const IntercessionSection: React.FC = () => {
       window.clearTimeout(timeoutId);
     };
   }, [activeItem]);
+
+  if (!activeItem) {
+    return (
+      <section id="focus-section" data-nav-theme="light" className="relative w-full bg-page text-ink">
+        <div className="mx-auto max-w-180 px-6 py-24 text-center">
+          {focusContent.overline && <p className="text-overline font-semibold text-accent">{focusContent.overline}</p>}
+          {focusContent.title && <h2 className="mt-4 text-display-sm font-semibold">{focusContent.title}</h2>}
+          {focusContent.description && <p className="mt-4 text-body text-muted leading-relaxed">{focusContent.description}</p>}
+        </div>
+      </section>
+    );
+  }
 
   const handleRotate = (direction: "prev" | "next") => {
     setActiveIndex((prev) =>
