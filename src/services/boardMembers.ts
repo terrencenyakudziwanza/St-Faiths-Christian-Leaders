@@ -16,7 +16,7 @@ export type BoardMemberRecord = {
 type Row = { id: string; name: string; position: string; board_tier: string; quote: string; image_path: string | null; executive: boolean; board_year: number };
 
 function mapRow(row: Row): BoardMemberRecord {
-  return { id: row.id, name: row.name, position: row.position, boardTier: row.board_tier, quote: row.quote, imagePath: row.image_path, imageSrc: resolveMediaUrl(row.image_path) ?? "/offline-media/presenters/elder-kojo.jpg", executive: row.executive, boardYear: row.board_year };
+  return { id: row.id, name: row.name, position: row.position, boardTier: row.board_tier, quote: row.quote, imagePath: row.image_path, imageSrc: resolveMediaUrl(row.image_path) ?? "", executive: row.executive, boardYear: row.board_year };
 }
 
 export async function fetchBoardMembers(): Promise<BoardMemberRecord[]> {

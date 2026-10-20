@@ -2,7 +2,6 @@ import React from "react";
 
 interface ProfileCardProps {
   imageSrc: string;
-  fallbackImageSrc?: string;
   imageAlt?: string;
   name: string;
   details?: React.ReactNode;
@@ -18,7 +17,6 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
   imageSrc,
-  fallbackImageSrc,
   imageAlt,
   name,
   details,
@@ -62,18 +60,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   return (
     <div className={rootClassName}>
       <div className={avatarWrapperClassName}>
-        <img
-          src={imageSrc}
-          onError={(event) => {
-            const image = event.currentTarget;
-            if (fallbackImageSrc && image.dataset.fallback !== "used") {
-              image.dataset.fallback = "used";
-              image.src = fallbackImageSrc;
-            }
-          }}
-          alt={imageAlt ?? name}
-          className="h-full w-full object-cover"
-        />
+        {imageSrc && <img src={imageSrc} alt={imageAlt ?? name} className="h-full w-full object-cover" />}
       </div>
 
       <div className={bodyClassName}>

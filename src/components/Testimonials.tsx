@@ -22,7 +22,7 @@ const Testimonials: React.FC = () => {
         setItems(rows.map((row) => ({
           id: row.id,
           avatar: {
-            img: row.avatarUrl ?? "/offline-media/presenters/elder-kojo.jpg",
+            img: row.avatarUrl ?? "",
             name: row.name,
             personalDetails: row.profileDetails ?? "",
           },

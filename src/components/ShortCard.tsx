@@ -2,7 +2,6 @@ import React from "react";
 import type { ShortItem } from "../types/domain";
 import { formatRelativeDate } from "../utils/date";
 
-import fallbackThumb from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 
 interface ShortCardProps {
   short: ShortItem;
@@ -19,13 +18,13 @@ const ShortCard: React.FC<ShortCardProps> = ({ short }) => {
     >
       {/* THUMBNAIL */}
       <div className="relative">
-        <img
-          src={short.thumbnailUrl ?? fallbackThumb}
+        {short.thumbnailUrl && <img
+          src={short.thumbnailUrl}
           alt={short.title}
           loading="lazy"
           decoding="async"
           className="rounded-4xl w-60 h-90 object-cover"
-        />
+        />}
         <div className="absolute h-full w-full top-0 left-0"></div>
       </div>
       {/* SHORT DETAILS */}

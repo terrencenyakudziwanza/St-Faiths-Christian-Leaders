@@ -1,5 +1,4 @@
 import React from "react";
-import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 
 interface LeaderDropdownProps {
   leaders: string[];
@@ -34,12 +33,6 @@ const LeaderDropdown: React.FC<LeaderDropdownProps> = ({
                 setOpen(false);
               }}
             >
-              <img
-                src={fallbackProfile}
-                alt={leader}
-                className="leader-avatar"
-              />
-
               <div className="leader-meta">
                 <p className="leader-name text-body-sm text-ink font-semibold">
                   {leader}

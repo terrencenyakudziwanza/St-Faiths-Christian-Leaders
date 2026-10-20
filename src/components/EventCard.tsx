@@ -3,8 +3,6 @@ import type { EventItem } from "../types/domain";
 import { formatLongDate } from "../utils/date";
 import { Play } from "lucide-react";
 
-import fallbackImg from "../assets/images/hand-writing.jpg";
-import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 
 interface EventsCardProps {
   event: EventItem;
@@ -18,7 +16,7 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
     .slice(0, 3)
     .map((item) => item.publicUrl);
 
-  const stackImages = imageUrls.length ? imageUrls : [fallbackImg];
+  const stackImages = imageUrls;
   const leaders = event.serviceLeaders.length
     ? event.serviceLeaders
     : [
@@ -38,8 +36,8 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
   const othersLedCount = Math.max(totalLeaders - 1, 0);
   const subtitle =
     othersLedCount > 0
-      ? `${preacher.name} +${othersLedCount} others led`
-      : `${preacher.name} led`;
+      ? `${preacher?.name ?? ""} +${othersLedCount} others led`
+      : preacher?.name ? `${preacher.name} led` : "";
 
   return (
     <div className="flex w-full flex-col items-stretch overflow-hidden rounded-[32px] border border-subtle bg-surface-muted shadow-[0_18px_42px_rgba(0,0,0,0.12)] lg:flex-row lg:items-center lg:gap-8 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none">
@@ -72,22 +70,10 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
       <div className="flex min-h-[220px] w-full min-w-0 flex-1 flex-col gap-4 border-t border-subtle p-5 sm:p-6 lg:h-[50vh] lg:w-[60vw] lg:rounded-[40px] lg:border-0 lg:bg-surface-muted">
           <div className="flex flex-col sm:flex-row  gap-4 items-center">
             <div className="flex items-center shrink-0">
-              {visibleLeaders.map((leader, index) => (
+              {visibleLeaders.filter((leader) => leader.avatarUrl).map((leader, index) => (
                 <img
                   key={`${event.id}-${leader.component}`}
-                  src={leader.avatarUrl ?? fallbackProfile}
-                  onError={(event) => {
-                    const image = event.currentTarget;
-                    if (image.dataset.fallbackStage === "local") {
-                      image.dataset.fallbackStage = "bundled";
-                      image.src = fallbackProfile;
-                      return;
-                    }
-                    if (leader.avatarPath) {
-                      image.dataset.fallbackStage = "local";
-                      image.src = `/offline-media/${leader.avatarPath.replace(/^\/+/, "")}`;
-                    }
-                  }}
+                  src={leader.avatarUrl!}
                   className={`${index === 0 ? "" : "-ml-3"} rounded-full h-12 w-12 object-cover border-2 border-[color:var(--surface-muted)]`}
                   alt={`${leader.name} (${leader.roleLabel})`}
                 />

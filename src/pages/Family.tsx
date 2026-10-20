@@ -2,15 +2,12 @@ import React from "react";
 
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
-import { departments } from "../data/departments";
-import { ChevronDown, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
+import { ChevronDown, Mail, Phone } from "lucide-react";
 import DesignCredit from "../components/DesignCredit";
-import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
-import { boardMembers as defaultBoardMembers, type BoardMember } from "../data/boardMembers";
+import type { BoardMemberRecord as BoardMember } from "../services/boardMembers";
 import { fetchBoardMembers } from "../services/boardMembers";
-import { isOffline } from "../lib/media";
 import { useCmsSection } from "../hooks/useCmsSection";
 import { resolveCmsMedia } from "../lib/cms";
 
@@ -65,7 +62,6 @@ const familyNavPages: NavPage[] = [
     path: "/family",
     sections: [
       { id: "PatronMatron", label: "Patron & Matron", sectionId: "family-patron-matron-section" },
-      { id: "Departments", label: "Departments", sectionId: "departments-section" },
       { id: "Board", label: "Board", sectionId: "family-board-section" },
     ],
   },
@@ -221,21 +217,19 @@ const PORTRAIT_TRANSITION_MS = 900;
 const Family: React.FC = () => {
   const familyContent = useCmsSection("family.content");
   const setCurrSection = useStore((state) => state.setCurrSection);
-  const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>(defaultBoardMembers);
+  const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>([]);
   const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
   const [selectedBoardYear, setSelectedBoardYear] = React.useState(new Date().getFullYear());
   const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === selectedBoardYear), [allBoardMembers, selectedBoardYear]);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
-  const [activeDepartmentIndex, setActiveDepartmentIndex] = React.useState(0);
-  const [departmentFlipped, setDepartmentFlipped] = React.useState(false);
   const [previousPortraitMember, setPreviousPortraitMember] =
     React.useState<BoardMember | null>(null);
   const [viewportWidth, setViewportWidth] = React.useState(() =>
     typeof window === "undefined" ? 1440 : window.innerWidth,
   );
 
-  const activeMember = boardMembers[activeIndex] ?? boardMembers[0] ?? defaultBoardMembers[0];
+  const activeMember = boardMembers[activeIndex] ?? boardMembers[0];
   const activeMemberRef = React.useRef<BoardMember>(activeMember);
   const isMobile = viewportWidth < 768;
   const orbitLayout = React.useMemo(
@@ -248,11 +242,10 @@ const Family: React.FC = () => {
   }, [setCurrSection]);
 
   React.useEffect(() => {
-    if (isOffline) return;
     let active = true;
     fetchBoardMembers().then((members) => {
       if (active) {
-        setAllBoardMembers(members.map((member) => ({ ...member, imageSrc: member.imageSrc ?? fallbackProfile })));
+        setAllBoardMembers(members);
         if (members.length) {
           const years = members.map((member) => member.boardYear);
           setSelectedBoardYear(years.includes(new Date().getFullYear()) ? new Date().getFullYear() : Math.max(...years));
@@ -396,9 +389,9 @@ const Family: React.FC = () => {
       }),
     [activeIndex, boardMembers],
   );
-  const patronMatronProfiles = React.useMemo(() => [familyContent.patron, familyContent.matron].map((profile) => ({ ...profile, id: profile.role.toLowerCase().replace(/\s+/g, "-"), imageSrc: resolveCmsMedia(profile.image) ?? fallbackProfile, imageAlt: `${profile.role} ${profile.name} portrait` })), [familyContent.patron, familyContent.matron]);
+  const patronMatronProfiles = React.useMemo(() => [familyContent.patron, familyContent.matron].filter((profile) => profile.name).map((profile) => ({ ...profile, id: profile.role.toLowerCase().replace(/\s+/g, "-"), imageSrc: resolveCmsMedia(profile.image) ?? "", imageAlt: `${profile.role} ${profile.name} portrait` })), [familyContent.patron, familyContent.matron]);
 
-  if (boardMembers.length === 0) {
+  if (allBoardMembers.length === 0) {
     return (
       <main className="min-h-screen bg-page px-6 py-32 text-center text-ink">
         <Navbar navPages={familyNavPages} />
@@ -442,7 +435,7 @@ const Family: React.FC = () => {
           }`}
         >
           <img
-            src={member.imageSrc ?? fallbackProfile}
+            src={member.imageSrc}
             alt={member.name}
             className="h-full w-full object-cover"
           />
@@ -531,13 +524,13 @@ const Family: React.FC = () => {
       <div className="relative family-portrait-shell h-full w-full overflow-hidden rounded-[22px]">
         {previousPortraitMember ? (
           <img
-            src={previousPortraitMember.imageSrc ?? fallbackProfile}
+            src={previousPortraitMember.imageSrc}
             alt={previousPortraitMember.name}
             className="family-portrait-mask family-portrait-image family-portrait-image--previous"
           />
         ) : null}
         <img
-          src={activeMember.imageSrc ?? fallbackProfile}
+          src={activeMember.imageSrc}
           alt={activeMember.name}
           className={`family-portrait-mask family-portrait-image ${
             previousPortraitMember
@@ -630,34 +623,11 @@ const Family: React.FC = () => {
                       : "patron-matron-image--left"
                   }`}
                 >
-                  <img src={profile.imageSrc} alt={profile.imageAlt} />
+                  {profile.imageSrc && <img src={profile.imageSrc} alt={profile.imageAlt} />}
                 </div>
               </div>
             );
           })}
-          </div>
-        </section>
-
-        {/* DEPARTMENTS SECTION */}
-        <section id="departments-section" className="mt-12 scroll-mt-24 rounded-[32px] border border-subtle bg-surface-elevated px-5 py-8 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:px-8">
-          <div className="mx-auto max-w-[620px] text-center">
-            <p className="text-overline font-semibold text-accent">{familyContent.departmentsOverline}</p>
-            <h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.departmentsTitle}</h2>
-            <p className="mt-3 text-body-sm text-muted">{familyContent.departmentsDescription}</p>
-          </div>
-          <div className="mt-8 flex flex-col items-center">
-            <div className="relative h-[390px] w-full max-w-[680px] [perspective:1200px]">
-              {[2, 1, 0].map((depth) => {
-                const item = departments[(activeDepartmentIndex + depth) % departments.length];
-                const Icon = item.icon;
-                return <article key={item.id} onClick={() => depth === 0 && setDepartmentFlipped((v) => !v)} className={`absolute inset-x-0 top-0 mx-auto h-[340px] w-[min(88%,520px)] cursor-pointer transition-all duration-500 [transform-style:preserve-3d] ${depth === 0 ? "z-30" : depth === 1 ? "z-20 translate-y-5 scale-[.94]" : "z-10 translate-y-10 scale-[.88]"} ${depth === 0 && departmentFlipped ? "[transform:rotateY(180deg)]" : ""}`}>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden rounded-[32px] border border-subtle bg-surface-elevated p-7 text-center shadow-[0_24px_60px_rgba(35,24,12,.18)] [backface-visibility:hidden]"><div className="mb-4 grid h-24 w-24 place-items-center overflow-hidden rounded-full border-4 border-accent-soft"><img src={item.members.find((member) => member.isLeader)?.imageSrc} alt="" className="h-full w-full object-cover" /></div><p className="text-overline font-semibold text-accent"><Icon className="mr-2 inline h-4 w-4" />Department</p><h3 className="mt-2 text-heading-lg font-semibold text-ink">{item.name}</h3><p className="mt-3 max-w-md text-body-sm text-muted">The {item.name} team serves the church and supports its gatherings.</p><p className="mt-5 text-body-xs text-muted">Select to meet the team</p></div>
-                  <div className="absolute inset-0 overflow-y-auto rounded-[32px] border border-subtle bg-surface-elevated p-6 shadow-[0_24px_60px_rgba(35,24,12,.18)] [backface-visibility:hidden] [transform:rotateY(180deg)]"><h3 className="text-heading-md font-semibold text-ink">{item.name} team</h3><div className="mt-4 grid gap-3">{item.members.map((member) => <div key={member.id} className="flex items-center gap-3 rounded-2xl border border-subtle bg-surface p-3"><img src={member.imageSrc} alt="" className="h-12 w-12 rounded-full object-cover" /><span><span className="block text-body-sm font-semibold text-ink">{member.name}</span><span className="text-body-xs text-muted">{member.role ?? (member.isLeader ? "Department Leader" : "Member")}</span></span></div>)}</div></div>
-                </article>;
-              })}
-            </div>
-            <div className="mt-4 flex items-center gap-5"><button type="button" aria-label="Previous department" onClick={() => { setDepartmentFlipped(false); setActiveDepartmentIndex((i) => (i - 1 + departments.length) % departments.length); }} className="grid h-11 w-11 place-items-center rounded-full border border-subtle bg-surface-elevated text-ink"><ChevronLeft /></button><span className="text-body-xs text-muted">{departments[activeDepartmentIndex]?.name}</span><button type="button" aria-label="Next department" onClick={() => { setDepartmentFlipped(false); setActiveDepartmentIndex((i) => (i + 1) % departments.length); }} className="grid h-11 w-11 place-items-center rounded-full border border-subtle bg-surface-elevated text-ink"><ChevronRight /></button></div>
-            <DesignCredit />
           </div>
         </section>
 

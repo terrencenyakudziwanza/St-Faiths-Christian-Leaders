@@ -1,7 +1,6 @@
 import React from "react";
 import DesignCredit from "./DesignCredit";
 import { Heart, X } from "lucide-react";
-import { boardMembers } from "../data/boardMembers";
 import { useCmsSection } from "../hooks/useCmsSection";
 import { resolveCmsMedia } from "../lib/cms";
 
@@ -14,102 +13,6 @@ type GalleryTile = {
   likes: number;
   ratio: string;
   termId: string;
-};
-
-const galleryMeta: Array<{
-  description: string;
-  tags: string[];
-  likes: number;
-  ratio: string;
-}> = [
-  {
-    description: "Intercession at first light",
-    tags: ["#intercession", "#dawn"],
-    likes: 128,
-    ratio: "4 / 5",
-  },
-  {
-    description: "Praise rises in the sanctuary",
-    tags: ["#praise", "#worship"],
-    likes: 214,
-    ratio: "3 / 4",
-  },
-  {
-    description: "Bible study in focus",
-    tags: ["#biblestudy", "#discipleship"],
-    likes: 176,
-    ratio: "1 / 1",
-  },
-  {
-    description: "Healing prayer moment",
-    tags: ["#healing", "#miraculous"],
-    likes: 203,
-    ratio: "2 / 3",
-  },
-  {
-    description: "Hands lifted in surrender",
-    tags: ["#worship", "#revival"],
-    likes: 189,
-    ratio: "3 / 4",
-  },
-  {
-    description: "Intercession circle",
-    tags: ["#prayer", "#intercession"],
-    likes: 162,
-    ratio: "4 / 5",
-  },
-  {
-    description: "Scripture alive",
-    tags: ["#word", "#bible"],
-    likes: 147,
-    ratio: "1 / 1",
-  },
-  {
-    description: "Joyful praise",
-    tags: ["#praise", "#community"],
-    likes: 219,
-    ratio: "3 / 5",
-  },
-];
-
-const galleryTerms = [
-  {
-    id: "term-2-2026",
-    title: "Term 2, 2026",
-    theme: "Faith in Motion",
-    tint: "rgba(255, 213, 0, 0.01)",
-    border: "rgba(219, 179, 81, 0.2)",
-  },
-];
-
-const buildGalleryTiles = (): GalleryTile[] => {
-  const images = boardMembers.map((member, index) => {
-    const meta = galleryMeta[index % galleryMeta.length];
-    const term = galleryTerms[index % galleryTerms.length];
-
-    return {
-      id: `${member.id}-${index}`,
-      src: member.imageSrc,
-      alt: member.name,
-      description: meta.description,
-      tags: meta.tags,
-      likes: meta.likes,
-      ratio: meta.ratio,
-      termId: term.id,
-    };
-  });
-
-  if (!images.length) {
-    return [];
-  }
-
-  const shuffled = [...images];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled;
 };
 
 interface GalleryModalProps {
@@ -161,7 +64,8 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
 
   const groupedTerms = React.useMemo(
     () =>
-      galleryTerms
+      Array.from(new Set(tiles.map((tile) => tile.termId)))
+        .map((id) => ({ id, title: id, theme: "", tint: "transparent", border: "var(--border)" }))
         .map((term) => ({
           ...term,
           tiles: tiles.filter((tile) => tile.termId === term.id),
@@ -372,9 +276,7 @@ const GalleryModal: React.FC<GalleryModalProps> = ({ show, onClose, tiles }) => 
 const Gallery: React.FC = () => {
   const [modalOpen, setModalOpen] = React.useState(false);
   const galleryContent = useCmsSection("home.gallery");
-  const seedTiles = React.useMemo(() => buildGalleryTiles(), []);
-  const tiles = React.useMemo(() => [
-    ...galleryContent.items.map((item) => ({
+  const tiles = React.useMemo(() => galleryContent.items.map((item) => ({
       id: item.id,
       src: resolveCmsMedia(item.image) ?? "",
       alt: item.title,
@@ -383,9 +285,7 @@ const Gallery: React.FC = () => {
       likes: item.likes,
       ratio: item.ratio,
       termId: item.termId,
-    })),
-    ...seedTiles,
-  ], [seedTiles, galleryContent.items]);
+    })), [galleryContent.items]);
   const rowTiles = React.useMemo(() => {
     if (!tiles.length) {
       return [];

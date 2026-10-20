@@ -1,7 +1,7 @@
 import "./styles/globals.css";
 import "./styles/animations.css";
 import "./styles/tailwind.css";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import gsap from "gsap";
 import { CustomEase, Flip, SplitText } from "gsap/all";
 import useStore from "./store";
@@ -15,6 +15,8 @@ import RequireAuth from "./components/RequireAuth";
 import ThemeRibbon from "./components/ThemeRibbon";
 import { supabase } from "./lib/supabase";
 import SeoManager from "./components/SeoManager";
+import GamePreloader from "./components/GamePreloader";
+import { resolveMediaUrl } from "./lib/media";
 // import ImmersiveWeek from "./components/ImmersiveWeek";
 
 const Events = lazy(() => import("./pages/Events"));
@@ -39,6 +41,7 @@ type SectionEntry = {
 };
 
 function App() {
+  const [initialMediaLoading, setInitialMediaLoading] = useState(true);
   const setCurrSection = useStore((state) => state.setCurrSection);
   const location = useLocation();
   const hideRibbon =
@@ -65,6 +68,51 @@ function App() {
         document.documentElement.style.setProperty("--accent-purple-glow", `color-mix(in srgb, ${secondaryAccent} 58%, transparent)`);
       }
     });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadInitialMedia = async () => {
+      try {
+        const results = await Promise.allSettled([
+          supabase.from("cms_content").select("content").eq("is_published", true),
+          supabase.from("event_media").select("storage_path, media_type"),
+          supabase.from("board_members").select("image_path"),
+          supabase.from("testimonials").select("avatar_path"),
+          supabase.from("shorts").select("thumbnail_path").eq("is_published", true),
+        ]);
+        const paths = new Set<string>();
+        const visit = (value: unknown) => {
+          if (!value || typeof value !== "object") return;
+          if (Array.isArray(value)) { value.forEach(visit); return; }
+          const record = value as Record<string, unknown>;
+          if (typeof record.storagePath === "string") paths.add(record.storagePath);
+          Object.values(record).forEach(visit);
+        };
+        const cmsRows = results[0].status === "fulfilled" ? results[0].value.data ?? [] : [];
+        cmsRows.forEach((row) => visit(row.content));
+        for (const result of results.slice(1)) {
+          if (result.status !== "fulfilled") continue;
+          for (const row of result.value.data ?? []) {
+            for (const value of Object.values(row)) if (typeof value === "string") paths.add(value);
+          }
+        }
+        const urls = Array.from(paths, resolveMediaUrl).filter((url): url is string => Boolean(url));
+        await Promise.all(urls.map((url) => new Promise<void>((resolve) => {
+          const image = new Image();
+          image.onload = () => resolve();
+          image.onerror = () => resolve();
+          image.src = url;
+          if (image.complete) resolve();
+        })));
+      } catch {
+        // A backend failure should release the page to its empty state.
+      } finally {
+        if (active) setInitialMediaLoading(false);
+      }
+    };
+    void loadInitialMedia();
     return () => { active = false; };
   }, []);
 
@@ -116,6 +164,7 @@ function App() {
   return (
     <>
       <SeoManager />
+      {initialMediaLoading && <GamePreloader />}
       <ThemeToggle />
       {!hideRibbon && <ThemeRibbon />}
       <Suspense fallback={<div className="min-h-screen bg-page" aria-busy="true" aria-label="Loading page" />}>

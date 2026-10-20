@@ -16,7 +16,6 @@ const Footer: React.FC = () => {
     return () => { active = false; };
   }, []);
   const year = new Date().getFullYear();
-  const developerAvatar = "/offline-media/presenters/sister-ama.jpg";
   const links: {
     pageName: string;
     pageSections: { sectionName: string; sectionId: string }[];

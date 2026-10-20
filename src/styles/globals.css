@@ -1450,3 +1450,16 @@ html::-webkit-scrollbar-thumb {
     font-size: 1.3rem;
   }
 }
+.game-preloader{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 38%),#100f18;color:#fff;}
+.game-preloader__card{position:relative;display:flex;width:min(100%,420px);flex-direction:column;align-items:center;border:1px solid rgba(255,255,255,.14);border-radius:28px;background:rgba(24,22,34,.84);padding:40px 30px 34px;box-shadow:0 28px 100px rgba(0,0,0,.45);text-align:center;backdrop-filter:blur(18px);}
+.game-preloader__icon{display:grid;width:66px;height:66px;place-items:center;border:1px solid color-mix(in srgb,var(--accent) 58%,transparent);border-radius:20px;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);animation:preloader-float 2s ease-in-out infinite;}
+.game-preloader__eyebrow{margin:22px 0 0;color:var(--accent);font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;}
+.game-preloader__title{margin:8px 0 0;color:#fff;font-size:clamp(24px,5vw,32px);font-weight:700;letter-spacing:-.04em;}
+.game-preloader__progress{height:5px;width:100%;overflow:hidden;margin-top:28px;border-radius:9px;background:rgba(255,255,255,.12);}
+.game-preloader__progress span{display:block;width:38%;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--accent),#a78bfa);animation:preloader-progress 1.7s ease-in-out infinite;}
+.game-preloader__message{min-height:24px;margin-top:15px;color:rgba(255,255,255,.72);font-size:14px;animation:preloader-message .35s ease both;}
+.game-preloader__spinner{position:absolute;right:22px;bottom:21px;color:rgba(255,255,255,.42);animation:preloader-spin 1.2s linear infinite;}
+@keyframes preloader-progress{0%{transform:translateX(-110%)}100%{transform:translateX(280%)}}
+@keyframes preloader-spin{to{transform:rotate(360deg)}}
+@keyframes preloader-float{50%{transform:translateY(-5px)}}
+@keyframes preloader-message{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}

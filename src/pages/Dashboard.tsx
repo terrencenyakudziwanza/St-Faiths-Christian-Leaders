@@ -2191,7 +2191,7 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   return (
     <SectionShell
       title="Gallery"
-      description="Add images and captions to the Home gallery. Existing seed images remain in place."
+      description="Add images and captions from Supabase Storage to the Home gallery."
       canEdit={canEdit}
       saving={saving}
       dirty={dirty}

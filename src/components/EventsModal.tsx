@@ -13,7 +13,6 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import fallbackProfile from "../assets/images/b8736a51078588b23134ef9998ede10e.jpg";
 import ProfileCard from "./ProfileCard";
 
 import type {
@@ -687,8 +686,7 @@ const EventsModal: React.FC<EventsModalProps> = ({
 
         <div className="flex flex-col border-[1.5px] border-subtle rounded-2xl px-4 py-3 gap-4">
           <ProfileCard
-            imageSrc={activeLeader.avatarUrl ?? fallbackProfile}
-            fallbackImageSrc={activeLeader.avatarPath ? `/offline-media/${activeLeader.avatarPath.replace(/^\/+/, "")}` : fallbackProfile}
+            imageSrc={activeLeader.avatarUrl ?? ""}
             imageAlt={activeLeader.name}
             name={activeLeader.name}
             details={

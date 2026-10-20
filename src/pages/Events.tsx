@@ -3,7 +3,6 @@ import EventCard from "../components/EventCard";
 import EventsModal from "../components/EventsModal";
 import LeaderDropdown from "../components/LeaderDropdown";
 import { Calendar, Search } from "lucide-react";
-import fallbackHighlight from "../assets/images/hand-writing.jpg";
 
 import { fetchEventMedia, fetchEvents } from "../services/events";
 import type {
@@ -71,7 +70,7 @@ const activityForMedia = (media: EventMedia): string => {
 
 const HighlightCard: React.FC<{ moment: HighlightMoment; index: number; onOpen: () => void }> = ({ moment, index, onOpen }) => (
   <button type="button" onClick={onOpen} className={`highlight-moment group relative block w-full overflow-hidden rounded-[28px] border border-subtle bg-surface-elevated text-left shadow-[0_16px_44px_rgba(0,0,0,0.1)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_54px_rgba(0,0,0,0.16)] min-h-[260px] ${index % 6 === 0 ? "md:col-span-1 md:row-span-2 min-h-[420px]" : index % 6 === 1 ? "md:col-span-2" : index % 6 === 3 ? "md:row-span-2 min-h-[420px]" : index % 6 === 4 ? "md:col-span-2" : ""}`}>
-    {moment.media.mediaType === "video" ? <video src={moment.media.publicUrl} poster={moment.event.presenterAvatarUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" muted playsInline preload="metadata" /> : <img src={moment.media.publicUrl || fallbackHighlight} alt={moment.media.caption || moment.event.themeTopic} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />}
+    {moment.media.mediaType === "video" ? <video src={moment.media.publicUrl} poster={moment.event.presenterAvatarUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" muted playsInline preload="metadata" /> : <img src={moment.media.publicUrl} alt={moment.media.caption || moment.event.themeTopic} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.025]" />}
     <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
     <span className="absolute left-4 top-4 rounded-full border border-white/35 bg-black/30 px-3 py-1.5 text-body-xs text-white backdrop-blur-sm">{moment.activity}</span>
     <span className="absolute inset-x-5 bottom-5 text-white"><span className="block text-heading-sm font-semibold">{moment.label || moment.media.caption || moment.event.themeTopic}</span><span className="mt-1 block text-body-xs text-white/80">{moment.event.title} · {moment.event.presenterName}</span><span className="mt-1 block text-body-xs text-white/70">{new Date(moment.event.eventDate).toLocaleDateString()}</span></span>
