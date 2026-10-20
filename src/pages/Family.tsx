@@ -220,7 +220,8 @@ const Family: React.FC = () => {
   const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>([]);
   const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
   const [selectedBoardYear, setSelectedBoardYear] = React.useState(new Date().getFullYear());
-  const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === selectedBoardYear), [allBoardMembers, selectedBoardYear]);
+  const effectiveBoardYear = boardYears.includes(selectedBoardYear) ? selectedBoardYear : boardYears[0];
+  const boardMembers = React.useMemo(() => allBoardMembers.filter((member) => member.boardYear === effectiveBoardYear), [allBoardMembers, effectiveBoardYear]);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isAuto, setIsAuto] = React.useState(true);
   const [previousPortraitMember, setPreviousPortraitMember] =
@@ -230,7 +231,7 @@ const Family: React.FC = () => {
   );
 
   const activeMember = boardMembers[activeIndex] ?? boardMembers[0];
-  const activeMemberRef = React.useRef<BoardMember>(activeMember);
+  const activeMemberRef = React.useRef<BoardMember | undefined>(activeMember);
   const isMobile = viewportWidth < 768;
   const orbitLayout = React.useMemo(
     () => getOrbitLayout(viewportWidth),
@@ -284,11 +285,16 @@ const Family: React.FC = () => {
   }, [isAuto, boardMembers.length]);
 
   React.useEffect(() => {
-    if (activeMemberRef.current.id === activeMember.id) {
+    if (!activeMember) {
+      activeMemberRef.current = undefined;
+      setPreviousPortraitMember(null);
+      return;
+    }
+    if (activeMemberRef.current?.id === activeMember.id) {
       return;
     }
 
-    setPreviousPortraitMember(activeMemberRef.current);
+    setPreviousPortraitMember(activeMemberRef.current ?? null);
     activeMemberRef.current = activeMember;
 
     const timeoutId = window.setTimeout(() => {
@@ -391,7 +397,7 @@ const Family: React.FC = () => {
   );
   const patronMatronProfiles = React.useMemo(() => [familyContent.patron, familyContent.matron].filter((profile) => profile.name).map((profile) => ({ ...profile, id: profile.role.toLowerCase().replace(/\s+/g, "-"), imageSrc: resolveCmsMedia(profile.image) ?? "", imageAlt: `${profile.role} ${profile.name} portrait` })), [familyContent.patron, familyContent.matron]);
 
-  if (allBoardMembers.length === 0) {
+  if (!activeMember) {
     return (
       <main className="min-h-screen bg-page px-6 py-32 text-center text-ink">
         <Navbar navPages={familyNavPages} />
@@ -634,7 +640,7 @@ const Family: React.FC = () => {
         {/* BOARD ORBIT STAGE */}
         <section id="family-board-section" className="mt-12 scroll-mt-24 rounded-[38px] border border-subtle bg-surface-elevated p-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
           <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><p className="text-overline font-semibold text-accent">{familyContent.boardOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.boardDescription}</p><DesignCredit /></div>
-          {boardYears.length > 1 && <div className="mb-5 flex items-center justify-center gap-3"><label htmlFor="board-history-year" className="text-body-sm font-semibold text-ink">Board year</label><select id="board-history-year" value={selectedBoardYear} onChange={(event) => { setSelectedBoardYear(Number(event.target.value)); setActiveIndex(0); }} className="rounded-full border border-subtle bg-surface px-4 py-2 text-body-sm text-ink">{boardYears.map((year) => <option key={year} value={year}>{year} Board</option>)}</select></div>}
+          {boardYears.length > 1 && <div className="mb-5 flex items-center justify-center gap-3"><label htmlFor="board-history-year" className="text-body-sm font-semibold text-ink">Board year</label><select id="board-history-year" value={effectiveBoardYear} onChange={(event) => { setSelectedBoardYear(Number(event.target.value)); setActiveIndex(0); }} className="rounded-full border border-subtle bg-surface px-4 py-2 text-body-sm text-ink">{boardYears.map((year) => <option key={year} value={year}>{year} Board</option>)}</select></div>}
         <div
           className="relative min-h-[620px] flex-1 overflow-hidden rounded-[38px] border border-subtle shadow-[0_28px_80px_rgba(67,46,18,0.14)] sm:min-h-[700px]"
           style={{ background: "var(--family-panel-gradient)" }}

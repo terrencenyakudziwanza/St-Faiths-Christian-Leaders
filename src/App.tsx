@@ -15,7 +15,7 @@ import RequireAuth from "./components/RequireAuth";
 import ThemeRibbon from "./components/ThemeRibbon";
 import { supabase } from "./lib/supabase";
 import SeoManager from "./components/SeoManager";
-import GamePreloader from "./components/GamePreloader";
+import Preloader from "./components/Preloader";
 import { resolveMediaUrl } from "./lib/media";
 // import ImmersiveWeek from "./components/ImmersiveWeek";
 
@@ -164,7 +164,7 @@ function App() {
   return (
     <>
       <SeoManager />
-      {initialMediaLoading && <GamePreloader />}
+      {initialMediaLoading && <Preloader />}
       <ThemeToggle />
       {!hideRibbon && <ThemeRibbon />}
       <Suspense fallback={<div className="min-h-screen bg-page" aria-busy="true" aria-label="Loading page" />}>
