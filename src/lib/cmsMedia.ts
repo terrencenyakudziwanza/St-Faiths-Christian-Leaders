@@ -8,6 +8,7 @@ export const CMS_MEDIA_FOLDERS = {
   presenterAvatars: "cms/content/events/presenters",
   boardMembers: "cms/content/board",
   homeGallery: "cms/home/gallery",
+  familyDepartments: "cms/family/departments",
 } as const satisfies Record<string, CmsMediaFolder>;
 
 export function isCmsMediaFolder(value: string): value is CmsMediaFolder {

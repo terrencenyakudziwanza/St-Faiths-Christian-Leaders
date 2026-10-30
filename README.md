@@ -36,7 +36,13 @@ If either value is missing, the app fails fast with a clear Supabase env error.
    - `supabase/migrations/0003_content_extensions.sql`
    - `supabase/migrations/0004_board_members.sql`
    - `supabase/migrations/0005_storage_upload_readback.sql`
+   - `supabase/migrations/0006_site_settings.sql`
+   - `supabase/migrations/0007_board_history.sql`
+   - `supabase/migrations/0008_highlights_editor_permission.sql`
+   - `supabase/migrations/0009_board_members_schema.sql`
 The migrations create the public `media` storage bucket. Add published site content and upload media through the CMS dashboard.
+
+If the dashboard reports that `public.board_members` is missing, run `0009_board_members_schema.sql` in the Supabase SQL Editor, then reload the dashboard. It creates the table and its admin-only write policies without adding sample members.
 
 ## 4. Storage path convention
 

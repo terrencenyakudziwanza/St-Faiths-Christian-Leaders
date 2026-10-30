@@ -7,7 +7,7 @@ export const cmsDefaults: CmsContentMap = {
   "home.focus": { overline: "", title: "", description: "", items: [] },
   "home.week": { overline: "", title: "", description: "", slides: [], themeOfWeek: { title: "", verseReference: "", verseText: "" } },
   "home.gallery": { overline: "", title: "", description: "", testimonialOverline: "", testimonialTitle: "", testimonialDescription: "", items: [] },
-  "family.content": { pageEyebrow: "", pageTitle: "", pageDescription: "", patronMatronTitle: "", patronMatronDescription: "", departmentsOverline: "", departmentsTitle: "", departmentsDescription: "", boardOverline: "", boardTitle: "", boardDescription: "", patron: emptyProfile, matron: { ...emptyProfile } },
+  "family.content": { pageEyebrow: "", pageTitle: "", pageDescription: "", patronMatronTitle: "", patronMatronDescription: "", departmentsOverline: "", departmentsTitle: "", departmentsDescription: "", departments: [], boardOverline: "", boardTitle: "", boardDescription: "", patron: emptyProfile, matron: { ...emptyProfile } },
 };
 
 export const cmsSectionLabels: Record<CmsSectionKey, string> = {

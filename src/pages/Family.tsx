@@ -2,7 +2,7 @@ import React from "react";
 
 import Navbar from "../components/Navbar";
 import ProfileCard from "../components/ProfileCard";
-import { ChevronDown, Mail, Phone } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import DesignCredit from "../components/DesignCredit";
 import useStore from "../store";
 import type { NavPage } from "../types/nav";
@@ -62,6 +62,7 @@ const familyNavPages: NavPage[] = [
     path: "/family",
     sections: [
       { id: "PatronMatron", label: "Patron & Matron", sectionId: "family-patron-matron-section" },
+      { id: "Departments", label: "Departments", sectionId: "family-departments-section" },
       { id: "Board", label: "Board", sectionId: "family-board-section" },
     ],
   },
@@ -216,6 +217,7 @@ const PORTRAIT_TRANSITION_MS = 900;
 
 const Family: React.FC = () => {
   const familyContent = useCmsSection("family.content");
+  const [activeDepartment, setActiveDepartment] = React.useState(0);
   const setCurrSection = useStore((state) => state.setCurrSection);
   const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>([]);
   const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
@@ -637,7 +639,23 @@ const Family: React.FC = () => {
           </div>
         </section>
 
-        {/* BOARD ORBIT STAGE */}
+        <section id="family-departments-section" className="mt-12 scroll-mt-24 rounded-[34px] border border-subtle bg-surface-elevated p-5 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
+          <div className="mx-auto max-w-[620px] text-center"><p className="text-overline font-semibold text-accent">{familyContent.departmentsOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.departmentsTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.departmentsDescription}</p></div>
+          {(familyContent.departments ?? []).length > 0 && (() => {
+            const departments = familyContent.departments;
+            const active = activeDepartment % departments.length;
+            const previous = departments[(active - 1 + departments.length) % departments.length];
+            const next = departments[(active + 1) % departments.length];
+            const cards = [{ item: previous, position: "previous" }, { item: departments[active], position: "active" }, { item: next, position: "next" }];
+            return <><div className="mx-auto mt-8 flex min-h-[380px] max-w-6xl items-center justify-center gap-[-1rem] overflow-hidden [perspective:1200px] md:min-h-[460px]">
+              {cards.map(({ item, position }, index) => <button key={`${position}-${item.id}-${index}`} type="button" onClick={() => setActiveDepartment(departments.findIndex((entry) => entry.id === item.id))} className={`relative shrink-0 overflow-hidden rounded-[28px] border border-white/20 text-left shadow-[0_24px_55px_rgba(0,0,0,0.2)] transition-all duration-500 ${position === "active" ? "z-20 h-[360px] w-[min(72vw,430px)] md:h-[420px]" : "z-10 -mx-8 hidden h-[290px] w-[min(42vw,285px)] opacity-75 md:block"} ${position === "previous" ? "[transform:rotateY(28deg)_scale(.9)] [transform-origin:right_center]" : ""} ${position === "next" ? "[transform:rotateY(-28deg)_scale(.9)] [transform-origin:left_center]" : ""}`}>
+                {resolveCmsMedia(item.image) && <img src={resolveCmsMedia(item.image) ?? ""} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-white"><p className="text-overline text-white/70">{position === "active" ? "Department" : "Explore"}</p><h3 className="mt-2 text-heading-md font-semibold">{item.name}</h3>{position === "active" && <><p className="mt-3 text-body-sm text-white/85">{item.purpose}</p><p className="mt-4 text-body-xs font-semibold text-white/90">Leader: {item.leader || "To be announced"}</p></>}</div>
+              </button>)}
+            </div><div className="mt-7 flex items-center justify-center gap-4"><button type="button" aria-label="Previous department" onClick={() => setActiveDepartment((prev) => (prev - 1 + departments.length) % departments.length)} className="grid h-10 w-10 place-items-center rounded-full border border-subtle"><ChevronLeft size={18} /></button><div className="flex gap-2">{departments.map((item, index) => <button key={item.id} type="button" aria-label={`Show ${item.name}`} onClick={() => setActiveDepartment(index)} className={`h-2.5 rounded-full transition-all ${index === active ? "w-7 bg-accent" : "w-2.5 bg-white"}`} />)}</div><button type="button" aria-label="Next department" onClick={() => setActiveDepartment((prev) => (prev + 1) % departments.length)} className="grid h-10 w-10 place-items-center rounded-full border border-subtle"><ChevronRight size={18} /></button></div></>;
+          })()}
+        </section>        {/* BOARD ORBIT STAGE */}
         <section id="family-board-section" className="mt-12 scroll-mt-24 rounded-[38px] border border-subtle bg-surface-elevated p-4 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
           <div className="mx-auto mb-7 max-w-[620px] px-4 text-center"><p className="text-overline font-semibold text-accent">{familyContent.boardOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.boardTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.boardDescription}</p><DesignCredit /></div>
           {boardYears.length > 1 && <div className="mb-5 flex items-center justify-center gap-3"><label htmlFor="board-history-year" className="text-body-sm font-semibold text-ink">Board year</label><select id="board-history-year" value={effectiveBoardYear} onChange={(event) => { setSelectedBoardYear(Number(event.target.value)); setActiveIndex(0); }} className="rounded-full border border-subtle bg-surface px-4 py-2 text-body-sm text-ink">{boardYears.map((year) => <option key={year} value={year}>{year} Board</option>)}</select></div>}

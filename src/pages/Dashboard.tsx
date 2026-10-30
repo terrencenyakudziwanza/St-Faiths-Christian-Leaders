@@ -71,7 +71,7 @@ const panelSubtextClass = "text-body-xs text-[color:var(--panel-text-muted)]";
 const EditorInfo: React.FC<{ text: string }> = ({ text }) => {
   const [open, setOpen] = React.useState(false);
   return (
-    <span className="group relative inline-flex">
+    <span className="relative inline-flex" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         type="button"
         aria-label="Section information"
@@ -82,7 +82,7 @@ const EditorInfo: React.FC<{ text: string }> = ({ text }) => {
         <Info size={15} />
       </button>
       <span
-        className={`${open ? "block" : "hidden"} absolute right-0 top-9 z-50 w-72 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-4 text-body-xs text-[color:var(--panel-text)] shadow-[0_16px_48px_rgba(0,0,0,0.2)] group-hover:md:block`}
+        className={`${open ? "block" : "hidden"} absolute right-0 top-9 z-50 w-72 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-bg)] p-4 text-body-xs text-[color:var(--panel-text)] shadow-[0_16px_48px_rgba(0,0,0,0.2)]`}
       >
         <span className="mb-2 flex justify-end md:hidden">
           <button
@@ -792,6 +792,7 @@ const Dashboard: React.FC = () => {
     ],
     family: [
       { label: "Family details", id: "dashboard-family" },
+      { label: "Departments", id: "dashboard-departments" },
       { label: "Board", id: "dashboard-board" },
     ],
   };
@@ -953,6 +954,7 @@ const Dashboard: React.FC = () => {
                   <SiteAppearanceEditor />
                   <RestorePointsEditor />
                   <FooterContactsEditor />
+                  <ThemeVerseEditor canEdit={isAdmin || permissions.includes("home.week")} />
                 </div>
               </details>
             )}
@@ -1033,7 +1035,9 @@ const Dashboard: React.FC = () => {
                     />
                   </div>
                 )}
-                <div id="dashboard-board">
+                <div id="dashboard-departments">
+                  <DepartmentsEditor canEdit={isAdmin || permissions.includes("family.content")} />
+                </div>                <div id="dashboard-board">
                   <BoardMembersEditor
                     canEdit={isAdmin || permissions.includes("content.board")}
                   />
@@ -1130,7 +1134,8 @@ const MediaUploadField: React.FC<{
   helper?: string;
   value?: string | null;
   onUpload: (file: File) => Promise<void>;
-}> = ({ label, helper, value, onUpload }) => {
+  previewClassName?: string;
+}> = ({ label, helper, value, onUpload, previewClassName = "aspect-[3/2] w-full max-w-xs" }) => {
   const [uploading, setUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -1168,7 +1173,7 @@ const MediaUploadField: React.FC<{
       {helper && <p className={panelSubtextClass}>{helper}</p>}
       {value && (
         <div className="overflow-hidden rounded-2xl border border-[color:var(--panel-border)]">
-          <img src={value} alt="Preview" className="h-48 w-full object-cover" />
+          <img src={value} alt="Preview" className={`${previewClassName} object-cover`} />
         </div>
       )}
       {error && <p className="text-body-xs text-danger">{error}</p>}
@@ -1203,7 +1208,9 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       folder: CMS_MEDIA_FOLDERS.homeHero,
       prefix: slugify(newSlideLabel || "hero-slide"),
     });
-    setNewSlideImage({ storagePath: result.storagePath });
+const image = { storagePath: result.storagePath };
+    setNewSlideImage(image);
+    if (editingSlideId) setDraft((prev) => ({ ...prev, slides: prev.slides.map((slide) => slide.id === editingSlideId ? { ...slide, image } : slide) }));
   };
 
   const addSlide = () => {
@@ -1214,16 +1221,7 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
     }
     setDraft((prev) => ({
       ...prev,
-      slides: editingSlideId
-        ? prev.slides.map((slide) =>
-            slide.id === editingSlideId
-              ? { ...slide, label, image: newSlideImage }
-              : slide,
-          )
-        : [
-            ...prev.slides,
-            { id: crypto.randomUUID(), label, image: newSlideImage },
-          ],
+            slides: [...prev.slides, { id: crypto.randomUUID(), label, image: newSlideImage }],
     }));
     setEditingSlideId(null);
     setNewSlideLabel("");
@@ -1342,7 +1340,11 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             <span className="text-body-sm font-medium">Slide label</span>
             <input
               value={newSlideLabel}
-              onChange={(event) => setNewSlideLabel(event.target.value)}
+onChange={(event) => {
+                const label = event.target.value;
+                setNewSlideLabel(label);
+                if (editingSlideId) setDraft((prev) => ({ ...prev, slides: prev.slides.map((slide) => slide.id === editingSlideId ? { ...slide, label } : slide) }));
+              }}
               className={panelInputClass}
               disabled={!canEdit}
               placeholder="e.g. Community Worship"
@@ -1355,14 +1357,8 @@ const HeroEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             onUpload={handleSlideUpload}
           />
         </div>
-        <button
-          type="button"
-          onClick={addSlide}
-          disabled={!canEdit || !newSlideLabel.trim() || !newSlideImage}
-          className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50"
-        >
-          {editingSlideId ? "Update slide" : "Add slide"}
-        </button>
+        {!editingSlideId && <button type="button" onClick={addSlide} disabled={!canEdit || !newSlideLabel.trim() || !newSlideImage} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50">Add slide</button>}
+        {editingSlideId && <p className={`mt-4 ${panelSubtextClass}`}>Edits are ready to save. Use Save changes below to publish them.</p>}
         {editingSlideId && (
           <button
             type="button"
@@ -1681,6 +1677,55 @@ const FocusEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   );
 };
 
+const BIBLE_BOOKS = "Genesis,Exodus,Leviticus,Numbers,Deuteronomy,Joshua,Judges,Ruth,1 Samuel,2 Samuel,1 Kings,2 Kings,1 Chronicles,2 Chronicles,Ezra,Nehemiah,Esther,Job,Psalms,Proverbs,Ecclesiastes,Song of Solomon,Isaiah,Jeremiah,Lamentations,Ezekiel,Daniel,Hosea,Joel,Amos,Obadiah,Jonah,Micah,Nahum,Habakkuk,Zephaniah,Haggai,Zechariah,Malachi,Matthew,Mark,Luke,John,Acts,Romans,1 Corinthians,2 Corinthians,Galatians,Ephesians,Philippians,Colossians,1 Thessalonians,2 Thessalonians,1 Timothy,2 Timothy,Titus,Philemon,Hebrews,James,1 Peter,2 Peter,1 John,2 John,3 John,Jude,Revelation".split(",");
+
+const ThemeVerseEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const content = useCmsSection("home.week");
+  const [draft, setDraft] = React.useState(content.themeOfWeek);
+  const [saved, setSaved] = React.useState(JSON.stringify(content.themeOfWeek));
+  const [book, setBook] = React.useState("");
+  const [chapter, setChapter] = React.useState("");
+  const [verse, setVerse] = React.useState("");
+  const [finding, setFinding] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  React.useEffect(() => { setDraft(content.themeOfWeek); setSaved(JSON.stringify(content.themeOfWeek)); }, [content.themeOfWeek]);
+  const findVerse = async () => {
+    if (!book || !chapter || !verse) return;
+    setFinding(true); setError(null);
+    try {
+      const result = await fetchBibleVerse(`${book} ${chapter}:${verse}`, draft.verseVersion);
+      setDraft((prev) => ({ ...prev, verseReference: result.reference, verseText: result.text, verseVersion: result.translationId, verseTranslation: result.translationName, selectedSentenceIndexes: [] }));
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not find that verse."); }
+    finally { setFinding(false); }
+  };
+  const save = async () => {
+    if (!canEdit) return;
+    setSaving(true); setError(null);
+    try {
+      await upsertCmsContent("home.week", { ...content, themeOfWeek: { ...draft, title: normalizeText(draft.title), selectedSentenceIndexes: draft.selectedSentenceIndexes ?? [] } });
+      setSaved(JSON.stringify(draft));
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not save theme verse."); }
+    finally { setSaving(false); }
+  };
+  const sentences = draft.verseText.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((item) => item.trim()).filter(Boolean) ?? [];
+  const ready = Boolean(book && chapter && verse && !finding && canEdit);
+  return <section className={`${panelShellClass} p-6`}>
+    <h2 className="text-heading-md font-semibold">Theme Verse</h2>
+    <p className={`mt-2 ${panelSubtextClass}`}>Find a Bible verse, then select the complete sentences to display.</p>
+    <div className="mt-6 grid gap-4">
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Theme title</span><input value={draft.title} onChange={(event) => setDraft((prev) => ({ ...prev, title: event.target.value }))} className={panelInputClass} disabled={!canEdit} /></label>
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Book</span><select value={book} onChange={(event) => setBook(event.target.value)} className={panelInputClass} disabled={!canEdit}><option value="">Choose a book</option>{BIBLE_BOOKS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Chapter</span><select value={chapter} onChange={(event) => setChapter(event.target.value)} className={panelInputClass} disabled={!canEdit}><option value="">Choose a chapter</option>{Array.from({ length: 150 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Verse</span><select value={verse} onChange={(event) => setVerse(event.target.value)} className={panelInputClass} disabled={!canEdit}><option value="">Choose a verse</option>{Array.from({ length: 176 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Verse version</span><select value={draft.verseVersion ?? ""} onChange={(event) => setDraft((prev) => ({ ...prev, verseVersion: event.target.value || null }))} className={panelInputClass} disabled={!canEdit}><option value="">Default (WEB)</option>{BIBLE_TRANSLATIONS.map((translation) => <option key={translation.id} value={translation.id}>{translation.label}</option>)}</select></label>
+      <button type="button" onClick={() => void findVerse()} disabled={!ready} className={`rounded-full border px-5 py-2 text-body-sm font-semibold transition-all disabled:border-[color:var(--panel-border)] disabled:bg-transparent disabled:text-[color:var(--panel-text-muted)] disabled:opacity-100 ${ready ? "animate-save-pulse border-[color:var(--panel-text)] bg-[color:var(--panel-text)] text-[color:var(--panel-ink)]" : ""}`}>{finding ? "Finding verse..." : "Find verse"}</button>
+      {error && <p className="text-body-sm text-danger">{error}</p>}
+      <div className="grid gap-2"><span className="text-body-sm font-medium">Resolved verse</span>{sentences.map((sentence, index) => <label key={`${index}-${sentence}`} className="flex gap-2 rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-input)] p-3 text-body-sm"><input type="checkbox" checked={draft.selectedSentenceIndexes?.includes(index) ?? false} onChange={() => setDraft((prev) => { const selected = prev.selectedSentenceIndexes ?? []; return { ...prev, selectedSentenceIndexes: selected.includes(index) ? selected.filter((item) => item !== index) : [...selected, index] }; })} disabled={!canEdit} />{sentence}</label>)}</div>
+    </div>
+    <button type="button" onClick={() => void save()} disabled={!canEdit || saving || JSON.stringify(draft) === saved} className={`mt-6 rounded-full border border-[color:var(--panel-text)] bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:border-[color:var(--panel-border)] disabled:bg-transparent disabled:text-[color:var(--panel-text-muted)]`}>{saving ? "Saving..." : "Save changes"}</button>
+  </section>;
+};
 const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initialContent = useCmsSection("home.week");
   const [draft, setDraft] = React.useState<CmsWeekContent>(initialContent);
@@ -1696,7 +1741,8 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   );
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
-  const [errors, setErrors] = React.useState<string[]>([]);
+const [errors, setErrors] = React.useState<string[]>([]);
+
 
   React.useEffect(() => {
     setDraft(initialContent);
@@ -1760,6 +1806,7 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           verseVersion: resolvedVersion,
           verseText: resolvedVerseText,
           verseTranslation: resolvedTranslation,
+          selectedSentenceIndexes: draft.themeOfWeek.selectedSentenceIndexes,
         },
         slides: draft.slides.map((slide) => ({
           ...slide,
@@ -1841,83 +1888,6 @@ const WeekEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
           disabled={!canEdit}
         />
       </label>
-
-      <div className="rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Theme title</span>
-            <input
-              type="text"
-              value={draft.themeOfWeek.title}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  themeOfWeek: {
-                    ...prev.themeOfWeek,
-                    title: event.target.value,
-                  },
-                }))
-              }
-              className={panelInputClass}
-              disabled={!canEdit}
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Verse reference</span>
-            <input
-              type="text"
-              value={draft.themeOfWeek.verseReference}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  themeOfWeek: {
-                    ...prev.themeOfWeek,
-                    verseReference: event.target.value,
-                  },
-                }))
-              }
-              className={panelInputClass}
-              disabled={!canEdit}
-              placeholder="e.g. John 3:16"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Verse version</span>
-            <select
-              value={draft.themeOfWeek.verseVersion ?? ""}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  themeOfWeek: {
-                    ...prev.themeOfWeek,
-                    verseVersion: event.target.value || null,
-                  },
-                }))
-              }
-              className={panelInputClass}
-              disabled={!canEdit}
-            >
-              <option value="">Default (WEB)</option>
-              {BIBLE_TRANSLATIONS.map((translation) => (
-                <option key={translation.id} value={translation.id}>
-                  {translation.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Resolved verse</span>
-            <div className="rounded-xl border border-[color:var(--panel-border)] bg-[color:var(--panel-input)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)] min-h-[72px]">
-              {draft.themeOfWeek.verseText
-                ? draft.themeOfWeek.verseText
-                : "Verse text will populate after saving."}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="flex flex-wrap gap-2">
         {draft.slides.map((slide) => (
@@ -2128,7 +2098,7 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const [image, setImage] = React.useState<{ storagePath: string } | null>(
     null,
   );
-  const [ratio, setRatio] = React.useState("4 / 5");
+  const [ratio, setRatio] = React.useState("2 / 3");
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const dirty = JSON.stringify(draft) !== savedSnapshot;
@@ -2241,54 +2211,7 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             />
           </label>
         </div>
-        <h3 className="mt-5 text-heading-sm font-semibold">
-          Testimonials section heading
-        </h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Overline</span>
-            <input
-              className={panelInputClass}
-              value={draft.testimonialOverline}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  testimonialOverline: event.target.value,
-                }))
-              }
-              disabled={!canEdit}
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="text-body-sm font-medium">Title</span>
-            <input
-              className={panelInputClass}
-              value={draft.testimonialTitle}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  testimonialTitle: event.target.value,
-                }))
-              }
-              disabled={!canEdit}
-            />
-          </label>
-          <label className="flex flex-col gap-2 md:col-span-2">
-            <span className="text-body-sm font-medium">Description</span>
-            <textarea
-              className={panelTextareaClass}
-              value={draft.testimonialDescription}
-              onChange={(event) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  testimonialDescription: event.target.value,
-                }))
-              }
-              disabled={!canEdit}
-            />
-          </label>
-        </div>
-        <h3 className="text-heading-sm font-semibold">Add a gallery image</h3>
+        <h3 className="mt-5 text-heading-sm font-semibold">Add a gallery image</h3>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="flex flex-col gap-2">
             <span className="text-body-sm font-medium">Image title</span>
@@ -2369,7 +2292,7 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
                 <img
                   src={resolveCmsMedia(item.image) ?? ""}
                   alt=""
-                  className="h-16 w-16 rounded-xl object-cover"
+                  className="aspect-[3/2] w-12 rounded-xl object-cover"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{item.title}</p>
@@ -2399,11 +2322,34 @@ const GalleryEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   );
 };
 
+const TestimonialHeadingEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const gallery = useCmsSection("home.gallery");
+  const [draft, setDraft] = React.useState(gallery);
+  const [saved, setSaved] = React.useState(JSON.stringify(gallery));
+  const [status, setStatus] = React.useState<string | null>(null);
+  React.useEffect(() => { setDraft(gallery); setSaved(JSON.stringify(gallery)); }, [gallery]);
+  const save = async () => {
+    if (!canEdit) return;
+    try { await upsertCmsContent("home.gallery", draft); setSaved(JSON.stringify(draft)); setStatus("Testimonial heading saved."); }
+    catch (error) { setStatus(error instanceof Error ? error.message : "Could not save testimonial heading."); }
+  };
+  return <div className="mt-6 rounded-2xl border border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] p-4">
+    <h3 className="text-heading-sm font-semibold">Testimonials section heading</h3>
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Overline</span><input className={panelInputClass} value={draft.testimonialOverline} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialOverline: event.target.value }))} disabled={!canEdit} /></label>
+      <label className="flex flex-col gap-2"><span className="text-body-sm font-medium">Title</span><input className={panelInputClass} value={draft.testimonialTitle} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialTitle: event.target.value }))} disabled={!canEdit} /></label>
+      <label className="flex flex-col gap-2 md:col-span-2"><span className="text-body-sm font-medium">Description</span><textarea className={panelTextareaClass} value={draft.testimonialDescription} onChange={(event) => setDraft((prev) => ({ ...prev, testimonialDescription: event.target.value }))} disabled={!canEdit} /></label>
+    </div>
+    <button type="button" onClick={() => void save()} disabled={!canEdit || JSON.stringify(draft) === saved} className="mt-4 rounded-full border border-[color:var(--panel-border)] px-4 py-2 text-body-sm disabled:opacity-50">Save testimonial heading</button>
+    {status && <p className={`mt-2 ${panelSubtextClass}`}>{status}</p>}
+  </div>;
+};
 const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
-  const [errors, setErrors] = React.useState<string[]>([]);
+const [errors, setErrors] = React.useState<string[]>([]);
+
   const [error, setError] = React.useState<string | null>(null);
   const [items, setItems] = React.useState<
     Awaited<ReturnType<typeof fetchTestimonials>>
@@ -2541,6 +2487,7 @@ const TestimonialsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
         </div>
       )}
 
+      <TestimonialHeadingEditor canEdit={canEdit} />
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <label className="flex flex-col gap-2">
           <span className="text-body-sm font-medium">Name</span>
@@ -2673,7 +2620,8 @@ const EventsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
-  const [errors, setErrors] = React.useState<string[]>([]);
+const [errors, setErrors] = React.useState<string[]>([]);
+
   const [error, setError] = React.useState<string | null>(null);
   const [events, setEvents] = React.useState<
     Awaited<ReturnType<typeof fetchAllEvents>>
@@ -3388,6 +3336,18 @@ const HighlightsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   );
 };
 
+const DepartmentsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
+  const initial = useCmsSection("family.content");
+  const [draft, setDraft] = React.useState(initial);
+  const [saved, setSaved] = React.useState(JSON.stringify(initial));
+  const [newDepartment, setNewDepartment] = React.useState({ name: "", purpose: "", leader: "", image: null as { storagePath: string } | null });
+  const [saving, setSaving] = React.useState(false);
+  React.useEffect(() => { setDraft(initial); setSaved(JSON.stringify(initial)); }, [initial]);
+  const add = () => { if (!newDepartment.name.trim()) return; setDraft((prev) => ({ ...prev, departments: [...(prev.departments ?? []), { id: crypto.randomUUID(), name: normalizeText(newDepartment.name), purpose: normalizeText(newDepartment.purpose), leader: normalizeText(newDepartment.leader), image: newDepartment.image ?? {} }] })); setNewDepartment({ name: "", purpose: "", leader: "", image: null }); };
+  const upload = async (file: File) => { const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.familyDepartments, prefix: newDepartment.name || "department" }); setNewDepartment((prev) => ({ ...prev, image: { storagePath: result.storagePath } })); };
+  const save = async () => { if (!canEdit) return; setSaving(true); try { await upsertCmsContent("family.content", draft); setSaved(JSON.stringify(draft)); } finally { setSaving(false); } };
+  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Departments</h2><p className={`mt-2 ${panelSubtextClass}`}>Manage ministry teams, their purpose, leaders, and imagery.</p><div className="mt-6 grid gap-4"><label className="grid gap-2"><span>Overline</span><input className={panelInputClass} value={draft.departmentsOverline} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsOverline: event.target.value }))} /></label><label className="grid gap-2"><span>Title</span><input className={panelInputClass} value={draft.departmentsTitle} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsTitle: event.target.value }))} /></label><label className="grid gap-2"><span>Description</span><textarea className={panelTextareaClass} value={draft.departmentsDescription} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsDescription: event.target.value }))} /></label></div><div className={`mt-6 ${panelMutedClass} rounded-2xl p-4`}><h3 className="font-semibold">Add department</h3><div className="mt-4 grid gap-4"><input className={panelInputClass} placeholder="Department name" value={newDepartment.name} onChange={(event) => setNewDepartment((prev) => ({ ...prev, name: event.target.value }))} /><textarea className={panelTextareaClass} placeholder="Purpose" value={newDepartment.purpose} onChange={(event) => setNewDepartment((prev) => ({ ...prev, purpose: event.target.value }))} /><input className={panelInputClass} placeholder="Department leader" value={newDepartment.leader} onChange={(event) => setNewDepartment((prev) => ({ ...prev, leader: event.target.value }))} /><MediaUploadField label="Department image" value={resolveCmsMedia(newDepartment.image)} onUpload={upload} /></div><button type="button" onClick={add} disabled={!canEdit || !newDepartment.name.trim()} className="mt-4 rounded-full border px-4 py-2 text-body-sm disabled:opacity-50">Add department</button></div><div className="mt-6 grid gap-3">{(draft.departments ?? []).map((department) => <article key={department.id} className={`flex items-center gap-3 ${panelMutedClass} rounded-2xl p-3`}>{resolveCmsMedia(department.image) && <img src={resolveCmsMedia(department.image) ?? ""} alt="" className="aspect-[1/2] w-12 rounded-xl object-cover" />}<div className="min-w-0 flex-1"><p className="font-semibold">{department.name}</p><p className={panelSubtextClass}>{department.leader}</p></div><button type="button" onClick={() => setDraft((prev) => ({ ...prev, departments: prev.departments.filter((item) => item.id !== department.id) }))} className="text-danger">Remove</button></article>)}</div><button type="button" onClick={() => void save()} disabled={!canEdit || saving || JSON.stringify(draft) === saved} className="mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50">{saving ? "Saving..." : "Save departments"}</button></section>;
+};
 const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initial = useCmsSection("family.content");
   const [draft, setDraft] = React.useState<CmsFamilyContent>(initial);
@@ -3400,7 +3360,7 @@ const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   }, [initial]);
   const dirty = JSON.stringify(draft) !== snapshot;
   const update = (
-    key: Exclude<keyof CmsFamilyContent, "patron" | "matron">,
+    key: Exclude<keyof CmsFamilyContent, "patron" | "matron" | "departments">,
     value: string,
   ) => setDraft((prev) => ({ ...prev, [key]: value }));
   const updateProfile = (
@@ -3445,7 +3405,7 @@ const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   };
   const field = (
     label: string,
-    key: Exclude<keyof CmsFamilyContent, "patron" | "matron">,
+    key: Exclude<keyof CmsFamilyContent, "patron" | "matron" | "departments">,
     multiline = false,
   ) => (
     <label className="flex flex-col gap-2">
