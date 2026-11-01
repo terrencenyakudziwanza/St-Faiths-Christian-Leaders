@@ -76,7 +76,7 @@ const Home: React.FC = () => {
 
 
   useGSAP(() => {
-    if (!homeRef.current) {
+    if (!homeRef.current || heroSlides.length === 0) {
       return;
     }
 
@@ -281,7 +281,7 @@ const Home: React.FC = () => {
       secondarySplits.forEach((split) => split.revert());
       introTlRef.current = null;
     };
-  }, []);
+  }, { scope: homeRef, dependencies: [heroSlides.length] });
 
   const handleSkipIntro = () => {
     if (!introAnimDone) {

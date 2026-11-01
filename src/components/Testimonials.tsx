@@ -19,18 +19,24 @@ const Testimonials: React.FC = () => {
     fetchTestimonials()
       .then((rows) => {
         if (!active) return;
-        setItems(rows.map((row) => ({
-          id: row.id,
-          avatar: {
-            img: row.avatarUrl ?? "",
-            name: row.name,
-            personalDetails: row.profileDetails ?? "",
-          },
-          testimonial: row.testimonial,
-        })));
+        setItems(
+          rows.map((row) => ({
+            id: row.id,
+            avatar: {
+              img: row.avatarUrl ?? "",
+              name: row.name,
+              personalDetails: row.profileDetails ?? "",
+            },
+            testimonial: row.testimonial,
+          })),
+        );
       })
-      .catch(() => { if (active) setItems([]); });
-    return () => { active = false; };
+      .catch(() => {
+        if (active) setItems([]);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const columns: TestimonialItem[][] = [[], [], []];
@@ -38,26 +44,65 @@ const Testimonials: React.FC = () => {
   const directions = ["up", "down", "up"] as const;
 
   return (
-    <section id="testimonials-section" data-nav-theme="light" className="relative min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15">
+    <section
+      id="testimonials-section"
+      data-nav-theme="light"
+      className="relative min-h-screen w-screen bg-page p-4 md:p-8 lg:p-14 flex flex-col gap-15"
+    >
       <div className="section-fade-top" />
       <div className="section-fade-bottom" />
-      <header className="relative z-10 mx-auto max-w-[680px] text-center"><p className="text-overline font-semibold text-accent">{copy.testimonialOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{copy.testimonialTitle}</h2><p className="mt-3 text-body text-muted">{copy.testimonialDescription}</p><DesignCredit name="Christian Leaders" role="Communications Team" /></header>
+      <header className="relative z-10 mx-auto max-w-[680px] text-center">
+        <p className="text-overline font-semibold text-accent">
+          {copy.testimonialOverline}
+        </p>
+        <h2 className="mt-3 text-display-sm font-semibold text-ink">
+          {copy.testimonialTitle}
+        </h2>
+        <p className="mt-3 text-body text-muted">
+          {copy.testimonialDescription}
+        </p>
+        <DesignCredit name="Christian Leaders" role="Communications Team" />
+      </header>
       {items.length === 0 ? (
-        <p className="relative z-10 text-center text-body-sm text-muted">No testimonials have been published yet.</p>
+        <p className="relative z-10 text-center text-body-sm text-muted">
+          No testimonials have been published yet.
+        </p>
       ) : (
         <div className="relative z-10 h-full w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-x-hidden">
-          {columns.map((column, index) => column.length > 0 && (
-            <div className={`testimonial-marquee relative z-[1] ${index === 1 ? "hidden md:block" : ""} ${index === 2 ? "hidden lg:block" : ""}`} key={index}>
-              <div className={`testimonial-marquee__track testimonial-marquee__track--${directions[index]} ${column.length < 2 ? "testimonial-marquee__track--static" : ""}`}>
-                {(column.length < 2 ? column : [...column, ...column]).map((item, copyIndex) => (
-                  <div key={`${item.id}-${copyIndex}`} className="flex flex-col border border-subtle rounded-3xl p-3 gap-4 h-fit cursor-pointer bg-surface">
-                    <p className="text-body-sm text-muted">{item.testimonial}</p>
-                    <ProfileCard imageSrc={item.avatar.img} imageAlt={item.avatar.name} name={item.avatar.name} details={item.avatar.personalDetails} className="pt-1" nameClassName="text-heading-sm" />
+          {columns.map(
+            (column, index) =>
+              column.length > 0 && (
+                <div
+                  className={`testimonial-marquee relative z-[1] ${index === 1 ? "hidden md:block" : ""} ${index === 2 ? "hidden lg:block" : ""}`}
+                  key={index}
+                >
+                  <div
+                    className={`testimonial-marquee__track testimonial-marquee__track--${directions[index]} ${column.length < 2 ? "testimonial-marquee__track--static" : ""}`}
+                  >
+                    {(column.length < 2 ? column : [...column, ...column]).map(
+                      (item, copyIndex) => (
+                        <div
+                          key={`${item.id}-${copyIndex}`}
+                          className="flex flex-col border border-subtle rounded-3xl p-3 gap-4 h-fit cursor-pointer bg-surface"
+                        >
+                          <p className="text-body-sm text-muted">
+                            {item.testimonial}
+                          </p>
+                          <ProfileCard
+                            imageSrc={item.avatar.img}
+                            imageAlt={item.avatar.name}
+                            name={item.avatar.name}
+                            details={item.avatar.personalDetails}
+                            className="pt-1"
+                            nameClassName="text-heading-sm"
+                          />
+                        </div>
+                      ),
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                </div>
+              ),
+          )}
         </div>
       )}
     </section>

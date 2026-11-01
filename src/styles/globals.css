@@ -1204,10 +1204,10 @@ html::-webkit-scrollbar-thumb {
     transform 300ms ease, background-color 300ms ease;
 }
 
-.intercession-card--active {
-  border-color: var(--accent-purple);
-  background: var(--accent-purple-soft);
-  box-shadow: 0 22px 46px var(--accent-purple-glow);
+ .intercession-card--active {
+  border-color: color-mix(in srgb, var(--accent-purple) 38%, var(--surface-muted));
+  background: color-mix(in srgb, var(--accent-purple-soft) 42%, var(--surface));
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--accent-purple-glow) 34%, transparent);
   transform: translateY(-4px);
 }
 
@@ -1216,7 +1216,7 @@ html::-webkit-scrollbar-thumb {
 }
 
 .intercession-card--active h3 {
-  color: var(--accent-purple);
+  color: color-mix(in srgb, var(--accent-purple) 74%, var(--ink));
 }
 
 /* WEEK SLIDER */

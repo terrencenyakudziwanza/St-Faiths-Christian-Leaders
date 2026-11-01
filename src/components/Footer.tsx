@@ -1,13 +1,12 @@
 import React from "react";
 
-import { Facebook, Instagram, Mail, MessageCircle, Phone, X } from "lucide-react";
+import { Facebook, Instagram, Mail, MessageCircle, Phone } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 type FooterSettings = { phone?: string; email?: string; socials?: { instagram?: string; facebook?: string; whatsapp?: string } };
 
 const Footer: React.FC = () => {
   const [settings, setSettings] = React.useState<FooterSettings>({});
-  const [developersOpen, setDevelopersOpen] = React.useState(false);
   React.useEffect(() => {
     let active = true;
     void supabase.from("cms_content").select("content").eq("section_key", "site.footer_contacts").eq("is_published", true).maybeSingle().then(({ data }) => {
@@ -107,16 +106,8 @@ const Footer: React.FC = () => {
             })}
           </div>
         </div>
-
-        {/* DEVELOPER COLUMN */}
-        <div className="space-y-4">
-          <h3 className="text-caption font-semibold uppercase tracking-wider text-ink">
-            Website Developed By
-          </h3>
-
-        </div>
       </div>
-      {developersOpen && <div role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDevelopersOpen(false); }} className="fixed inset-0 z-[200] grid place-items-center bg-black/55 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="developer-dialog-title" className="w-full max-w-lg rounded-3xl border border-subtle bg-surface-elevated p-6 shadow-2xl"><div className="flex items-center justify-between"><h2 id="developer-dialog-title" className="text-heading-md font-semibold text-ink">Website developers</h2><button type="button" onClick={() => setDevelopersOpen(false)} aria-label="Close developers" className="grid h-9 w-9 place-items-center rounded-full border border-subtle"><X size={18} /></button></div><div className="mt-5 divide-y divide-subtle">{[{ name: "Hola!", role: "Creative Web Development" }, { name: "Website Design Team", role: "Design and Content" }, { name: "Technical Team", role: "Development and Support" }].map((person) => <div key={person.name} className="flex items-center gap-3 py-4"><span className="h-2 w-2 rounded-full bg-accent"/><span className="font-semibold text-ink">{person.name}</span><span className="ml-auto text-right text-body-sm text-muted">{person.role}</span></div>)}</div></section></div>}
+      
 
       {/* FOOTER BASELINE */}
       <div className="flex flex-col items-center justify-between gap-4 border-t border-subtle px-8 py-4 text-body-sm text-muted md:flex-row">
