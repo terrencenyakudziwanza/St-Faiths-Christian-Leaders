@@ -30,6 +30,7 @@ type EventRow = {
   presenter_name: string;
   presenter_role: string;
   presenter_avatar_path: string | null;
+  thumbnail_path: string | null;
   theme_scripture_reference: string | null;
   theme_scripture_version: string | null;
   theme_scripture_text: string | null;
@@ -149,6 +150,8 @@ function mapEvent(
     presenterRole: row.presenter_role,
     presenterAvatarPath: row.presenter_avatar_path,
     presenterAvatarUrl: resolveMediaUrl(row.presenter_avatar_path),
+    thumbnailPath: row.thumbnail_path,
+    thumbnailUrl: resolveMediaUrl(row.thumbnail_path),
     serviceLeaders: buildServiceLeaders(row),
     themeScriptureReference: scripture.reference,
     themeScriptureText: scripture.text,
@@ -174,6 +177,7 @@ export async function fetchEvents(feedType: FeedType): Promise<EventItem[]> {
         presenter_name,
         presenter_role,
         presenter_avatar_path,
+          thumbnail_path,
         theme_topic,
         theme_scripture_reference,
         theme_scripture_version,

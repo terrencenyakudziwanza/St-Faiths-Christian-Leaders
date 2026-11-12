@@ -218,6 +218,10 @@ const PORTRAIT_TRANSITION_MS = 900;
 const Family: React.FC = () => {
   const familyContent = useCmsSection("family.content");
   const [activeDepartment, setActiveDepartment] = React.useState(0);
+  const departmentYears = React.useMemo(() => Array.from(new Set((familyContent.departments ?? []).map((department) => department.year ?? new Date().getFullYear()))).sort((a, b) => b - a), [familyContent.departments]);
+  const [selectedDepartmentYear, setSelectedDepartmentYear] = React.useState(new Date().getFullYear());
+  const effectiveDepartmentYear = departmentYears.includes(selectedDepartmentYear) ? selectedDepartmentYear : departmentYears[0];
+  const visibleDepartments = React.useMemo(() => (familyContent.departments ?? []).filter((department) => (department.year ?? new Date().getFullYear()) === effectiveDepartmentYear), [familyContent.departments, effectiveDepartmentYear]);
   const setCurrSection = useStore((state) => state.setCurrSection);
   const [allBoardMembers, setAllBoardMembers] = React.useState<BoardMember[]>([]);
   const boardYears = React.useMemo(() => Array.from(new Set(allBoardMembers.map((member) => member.boardYear))).sort((a, b) => b - a), [allBoardMembers]);
@@ -641,8 +645,9 @@ const Family: React.FC = () => {
 
         <section id="family-departments-section" className="mt-12 scroll-mt-24 rounded-[34px] border border-subtle bg-surface-elevated p-5 shadow-[0_18px_50px_rgba(0,0,0,0.06)] sm:p-7">
           <div className="mx-auto max-w-[620px] text-center"><p className="text-overline font-semibold text-accent">{familyContent.departmentsOverline}</p><h2 className="mt-3 text-display-sm font-semibold text-ink">{familyContent.departmentsTitle}</h2><p className="mt-2 text-body-sm text-muted">{familyContent.departmentsDescription}</p></div>
-          {(familyContent.departments ?? []).length > 0 && (() => {
-            const departments = familyContent.departments;
+          {departmentYears.length > 1 && <div className="mt-4 flex justify-center"><label className="relative inline-flex items-center"><span className="sr-only">Department year</span><select aria-label="Department year" value={effectiveDepartmentYear} onChange={(event) => { setSelectedDepartmentYear(Number(event.target.value)); setActiveDepartment(0); }} className="cursor-pointer appearance-none rounded-full border border-subtle bg-surface px-5 py-2.5 pr-10 text-body-sm font-semibold text-ink shadow-sm outline-none transition hover:border-accent focus:border-accent"><option value={effectiveDepartmentYear}>{effectiveDepartmentYear} Departments</option>{departmentYears.filter((year) => year !== effectiveDepartmentYear).map((year) => <option key={year} value={year}>{year} Departments</option>)}</select><ChevronRight aria-hidden="true" size={16} className="pointer-events-none absolute right-4 rotate-90 text-accent" /></label></div>}
+          {visibleDepartments.length > 0 && (() => {
+            const departments = visibleDepartments;
             const active = activeDepartment % departments.length;
             const previous = departments[(active - 1 + departments.length) % departments.length];
             const next = departments[(active + 1) % departments.length];

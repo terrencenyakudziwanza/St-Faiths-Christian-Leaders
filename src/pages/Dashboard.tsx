@@ -43,7 +43,6 @@ import {
   createEvent,
   deleteEvent,
   fetchAllEvents,
-  updateEvent,
 } from "../services/eventsAdmin";
 import {
   createTestimonial,
@@ -953,8 +952,8 @@ const Dashboard: React.FC = () => {
                 <div className="grid gap-6 border-t border-[color:var(--panel-border)] p-5">
                   <SiteAppearanceEditor />
                   <RestorePointsEditor />
-                  <FooterContactsEditor />
                   <ThemeVerseEditor canEdit={isAdmin || permissions.includes("home.week")} />
+                  <FooterContactsEditor />
                 </div>
               </details>
             )}
@@ -1099,17 +1098,6 @@ const SectionShell: React.FC<{
         </div>
       )}
 
-      {errors.length > 0 && (
-        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
-          <p className="font-semibold">Validation issues</p>
-          <ul className="mt-2 list-disc pl-5">
-            {errors.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {status && (
         <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
           {status}
@@ -1117,6 +1105,12 @@ const SectionShell: React.FC<{
       )}
 
       <div className="mt-6 flex flex-col gap-6">{children}</div>
+      {errors.length > 0 && (
+        <div className="mt-5 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
+          <p className="font-semibold">Validation issues</p>
+          <ul className="mt-2 list-disc pl-5">{errors.map((item) => <li key={item}>{item}</li>)}</ul>
+        </div>
+      )}
       <button
         type="button"
         onClick={onSave}
@@ -2470,17 +2464,6 @@ const [errors, setErrors] = React.useState<string[]>([]);
         </div>
       )}
 
-      {errors.length > 0 && (
-        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
-          <p className="font-semibold">Validation issues</p>
-          <ul className="mt-2 list-disc pl-5">
-            {errors.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {status && (
         <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
           {status}
@@ -2555,6 +2538,7 @@ const [errors, setErrors] = React.useState<string[]>([]);
         Publish immediately
       </label>
 
+      {errors.length > 0 && <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger"><p className="font-semibold">Validation issues</p><ul className="mt-2 list-disc pl-5">{errors.map((item) => <li key={item}>{item}</li>)}</ul></div>}
       <button
         type="button"
         onClick={handleCreate}
@@ -2627,6 +2611,7 @@ const [errors, setErrors] = React.useState<string[]>([]);
     Awaited<ReturnType<typeof fetchAllEvents>>
   >([]);
   const [slugTouched, setSlugTouched] = React.useState(false);
+  const [editingEventId, setEditingEventId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState({
     title: "",
     slug: "",
@@ -2637,6 +2622,9 @@ const [errors, setErrors] = React.useState<string[]>([]);
     presenterRole: "",
     presenterAvatarPath: null as string | null,
     presenterAvatarUrl: null as string | null,
+    thumbnailPath: null as string | null,
+    thumbnailUrl: null as string | null,
+    media: [] as { mediaType: "picture" | "video"; storagePath: string; publicUrl: string; caption: string }[],
     themeTopic: "",
     verseReference: "",
     verseVersion: "",
@@ -2683,6 +2671,16 @@ const [errors, setErrors] = React.useState<string[]>([]);
     }));
   };
 
+  const handleThumbnailUpload = async (file: File) => {
+    const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.eventMedia, prefix: `${draft.title || "event"}-thumbnail` });
+    setDraft((prev) => ({ ...prev, thumbnailPath: result.storagePath, thumbnailUrl: result.publicUrl }));
+  };
+  const handleEventMediaUpload = async (file: File) => {
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) throw new Error("Choose an image or video file.");
+    const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.eventMedia, prefix: draft.title || "event" });
+    setDraft((prev) => ({ ...prev, media: [...prev.media, { mediaType: file.type.startsWith("video/") ? "video" : "picture", storagePath: result.storagePath, publicUrl: result.publicUrl, caption: "" }] }));
+  };
+
   const handleCreate = async () => {
     if (!canEdit) return;
 
@@ -2722,7 +2720,7 @@ const [errors, setErrors] = React.useState<string[]>([]);
         .map((item) => normalizeText(item))
         .filter(Boolean);
 
-      await createEvent({
+      const eventInput = {
         slug: normalizeText(draft.slug),
         title: normalizeText(draft.title),
         feedType: draft.feedType,
@@ -2738,9 +2736,23 @@ const [errors, setErrors] = React.useState<string[]>([]);
         intercessionPrayerPoints: prayerPoints,
         praiseHighlights,
         isPublished: draft.isPublished,
-      });
+        thumbnailPath: draft.thumbnailPath,
+        media: draft.media,
+      };
+      if (editingEventId) {
+        const { error: updateError } = await supabase.from("events").update({
+          slug: eventInput.slug, title: eventInput.title, feed_type: eventInput.feedType, summary: eventInput.summary,
+          event_date: eventInput.eventDate, presenter_name: eventInput.presenterName, presenter_role: eventInput.presenterRole,
+          presenter_avatar_path: eventInput.presenterAvatarPath, theme_topic: eventInput.themeTopic,
+          theme_scripture_reference: eventInput.themeScriptureReference, theme_scripture_version: eventInput.themeScriptureVersion,
+          theme_scripture_text: eventInput.themeScriptureText, intercession_prayer_points: eventInput.intercessionPrayerPoints,
+          praise_highlights: eventInput.praiseHighlights, is_published: eventInput.isPublished, thumbnail_path: eventInput.thumbnailPath,
+        }).eq("id", editingEventId);
+        if (updateError) throw new Error(`Could not update event: ${updateError.message}`);
+        setEditingEventId(null);
+      } else await createEvent(eventInput);
 
-      setStatus("Event registered.");
+      setStatus(editingEventId ? "Event updated." : "Event registered.");
       setDraft({
         title: "",
         slug: "",
@@ -2751,6 +2763,9 @@ const [errors, setErrors] = React.useState<string[]>([]);
         presenterRole: "",
         presenterAvatarPath: null,
         presenterAvatarUrl: null,
+        thumbnailPath: null,
+        thumbnailUrl: null,
+        media: [],
         themeTopic: "",
         verseReference: "",
         verseVersion: "",
@@ -2768,10 +2783,17 @@ const [errors, setErrors] = React.useState<string[]>([]);
     }
   };
 
-  const handleTogglePublish = async (id: string, nextValue: boolean) => {
-    if (!canEdit) return;
-    await updateEvent(id, { isPublished: nextValue });
-    await loadEvents();
+  const handleEditEvent = (item: Awaited<ReturnType<typeof fetchAllEvents>>[number]) => {
+    setEditingEventId(item.id);
+    setSlugTouched(true);
+    setErrors([]);
+    setDraft({ title: item.title, slug: item.slug, feedType: item.feedType, summary: item.summary,
+      eventDate: item.eventDate.slice(0, 10), presenterName: item.presenterName, presenterRole: item.presenterRole,
+      presenterAvatarPath: item.presenterAvatarPath, presenterAvatarUrl: resolveCmsMedia({ storagePath: item.presenterAvatarPath }),
+      thumbnailPath: item.thumbnailPath, thumbnailUrl: item.thumbnailUrl, media: [], themeTopic: item.themeTopic,
+      verseReference: item.verseReference, verseVersion: item.verseVersion ?? "", intercessionPrayerPoints: item.intercessionPrayerPoints.join("\n"),
+      praiseHighlights: item.praiseHighlights.join("\n"), isPublished: item.isPublished });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id: string) => {
@@ -2797,17 +2819,6 @@ const [errors, setErrors] = React.useState<string[]>([]);
       {!canEdit && (
         <div className="mt-4 rounded-xl border border-dashed border-[color:var(--panel-border)] bg-[color:var(--panel-muted)] px-4 py-3 text-body-sm text-[color:var(--panel-text-muted)]">
           You can view events but you do not have edit permissions.
-        </div>
-      )}
-
-      {errors.length > 0 && (
-        <div className="mt-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger">
-          <p className="font-semibold">Validation issues</p>
-          <ul className="mt-2 list-disc pl-5">
-            {errors.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
         </div>
       )}
 
@@ -2934,6 +2945,14 @@ const [errors, setErrors] = React.useState<string[]>([]);
         />
       </div>
 
+      <div className="mt-4 grid gap-5 md:grid-cols-2">
+        <MediaUploadField label="Event thumbnail" helper="Optional square image shown on the Events page." value={draft.thumbnailUrl} onUpload={handleThumbnailUpload} previewClassName="aspect-square w-32" />
+        <div className="grid gap-3">
+          <label className="grid gap-2 text-body-sm"><span>Event photos and videos</span><input type="file" accept="image/*,video/*" multiple onChange={(event) => { const files = Array.from(event.target.files ?? []); event.target.value = ""; void Promise.all(files.map(handleEventMediaUpload)).catch((uploadError) => setStatus(uploadError instanceof Error ? uploadError.message : "Media upload failed.")); }} disabled={!canEdit} className={`${panelInputClass} file:mr-3 file:rounded-full file:border-0 file:bg-[color:var(--panel-text)] file:px-3 file:py-1 file:text-[color:var(--panel-ink)]`} /></label>
+          <div className="grid gap-2">{draft.media.map((item, index) => <div key={item.storagePath} className={`flex items-center gap-3 rounded-xl ${panelMutedClass} p-2`}>{item.mediaType === "picture" ? <img src={item.publicUrl} alt="" className="h-12 w-12 rounded-lg object-cover" /> : <video src={item.publicUrl} className="h-12 w-12 rounded-lg object-cover" muted />}<div className="min-w-0 flex-1"><p className="text-body-xs">{item.mediaType === "picture" ? "Photo" : "Video"} {index + 1}</p><input aria-label={`Caption for event media ${index + 1}`} placeholder="Caption (optional)" value={item.caption} onChange={(event) => setDraft((prev) => ({ ...prev, media: prev.media.map((media, at) => at === index ? { ...media, caption: event.target.value } : media) }))} className={`${panelInputClass} mt-1 w-full`} /></div><button type="button" onClick={() => setDraft((prev) => ({ ...prev, media: prev.media.filter((_, at) => at !== index) }))} className="text-body-xs text-danger">Remove</button></div>)}</div>
+        </div>
+      </div>
+
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="flex flex-col gap-2">
           <span className="text-body-sm font-medium">Theme topic</span>
@@ -3042,14 +3061,16 @@ const [errors, setErrors] = React.useState<string[]>([]);
         </label>
       </div>
 
+      {errors.length > 0 && <div className="mb-4 rounded-xl border border-dashed border-[color:var(--danger)] bg-[rgba(185,28,28,0.08)] px-4 py-3 text-body-sm text-danger"><p className="font-semibold">Validation issues</p><ul className="mt-2 list-disc pl-5">{errors.map((item) => <li key={item}>{item}</li>)}</ul></div>}
       <button
         type="button"
         onClick={handleCreate}
         disabled={!canEdit || saving}
         className="mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] transition-opacity disabled:opacity-50"
       >
-        {saving ? "Saving..." : "Add event"}
+        {saving ? "Saving..." : editingEventId ? "Save event changes" : "Add event"}
       </button>
+      {editingEventId && <button type="button" onClick={() => { setEditingEventId(null); setDraft((prev) => ({ ...prev, title: "", slug: "", summary: "", eventDate: "", presenterName: "", presenterRole: "", presenterAvatarPath: null, presenterAvatarUrl: null, thumbnailPath: null, thumbnailUrl: null, media: [], themeTopic: "", verseReference: "", verseVersion: "", intercessionPrayerPoints: "", praiseHighlights: "" })); }} className="ml-3 rounded-full border border-[color:var(--panel-border)] px-5 py-2 text-body-sm">Cancel edit</button>}
 
       <div className="mt-8">
         <h3 className="text-heading-sm font-semibold">Existing events</h3>
@@ -3074,13 +3095,11 @@ const [errors, setErrors] = React.useState<string[]>([]);
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      handleTogglePublish(item.id, !item.isPublished)
-                    }
+                    onClick={() => handleEditEvent(item)}
                     className="rounded-full border border-[color:var(--panel-border)] px-3 py-1 text-body-xs text-[color:var(--panel-text-muted)] hover:text-[color:var(--panel-text)]"
                     disabled={!canEdit}
                   >
-                    {item.isPublished ? "Unpublish" : "Publish"}
+                    Edit
                   </button>
                   <button
                     type="button"
@@ -3229,7 +3248,7 @@ const HighlightsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
             <label className="flex flex-col gap-2">
               <span className="text-body-sm font-medium">Photo or video</span>
               <select
-                className={panelInputClass}
+                className={`${panelInputClass} relative z-10 w-full cursor-pointer appearance-auto pointer-events-auto`}
                 value={mediaId}
                 onChange={(event) => setMediaId(event.target.value)}
                 disabled={!canEdit || !availableMedia.length}
@@ -3340,13 +3359,13 @@ const DepartmentsEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initial = useCmsSection("family.content");
   const [draft, setDraft] = React.useState(initial);
   const [saved, setSaved] = React.useState(JSON.stringify(initial));
-  const [newDepartment, setNewDepartment] = React.useState({ name: "", purpose: "", leader: "", image: null as { storagePath: string } | null });
+  const [newDepartment, setNewDepartment] = React.useState({ year: new Date().getFullYear(), name: "", purpose: "", leader: "", image: null as { storagePath: string } | null });
   const [saving, setSaving] = React.useState(false);
   React.useEffect(() => { setDraft(initial); setSaved(JSON.stringify(initial)); }, [initial]);
-  const add = () => { if (!newDepartment.name.trim()) return; setDraft((prev) => ({ ...prev, departments: [...(prev.departments ?? []), { id: crypto.randomUUID(), name: normalizeText(newDepartment.name), purpose: normalizeText(newDepartment.purpose), leader: normalizeText(newDepartment.leader), image: newDepartment.image ?? {} }] })); setNewDepartment({ name: "", purpose: "", leader: "", image: null }); };
+  const add = () => { if (!newDepartment.name.trim()) return; setDraft((prev) => ({ ...prev, departments: [...(prev.departments ?? []), { id: crypto.randomUUID(), year: newDepartment.year, name: normalizeText(newDepartment.name), purpose: normalizeText(newDepartment.purpose), leader: normalizeText(newDepartment.leader), image: newDepartment.image ?? {} }] })); setNewDepartment({ year: new Date().getFullYear(), name: "", purpose: "", leader: "", image: null }); };
   const upload = async (file: File) => { const result = await uploadMediaFile(file, { folder: CMS_MEDIA_FOLDERS.familyDepartments, prefix: newDepartment.name || "department" }); setNewDepartment((prev) => ({ ...prev, image: { storagePath: result.storagePath } })); };
   const save = async () => { if (!canEdit) return; setSaving(true); try { await upsertCmsContent("family.content", draft); setSaved(JSON.stringify(draft)); } finally { setSaving(false); } };
-  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Departments</h2><p className={`mt-2 ${panelSubtextClass}`}>Manage ministry teams, their purpose, leaders, and imagery.</p><div className="mt-6 grid gap-4"><label className="grid gap-2"><span>Overline</span><input className={panelInputClass} value={draft.departmentsOverline} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsOverline: event.target.value }))} /></label><label className="grid gap-2"><span>Title</span><input className={panelInputClass} value={draft.departmentsTitle} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsTitle: event.target.value }))} /></label><label className="grid gap-2"><span>Description</span><textarea className={panelTextareaClass} value={draft.departmentsDescription} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsDescription: event.target.value }))} /></label></div><div className={`mt-6 ${panelMutedClass} rounded-2xl p-4`}><h3 className="font-semibold">Add department</h3><div className="mt-4 grid gap-4"><input className={panelInputClass} placeholder="Department name" value={newDepartment.name} onChange={(event) => setNewDepartment((prev) => ({ ...prev, name: event.target.value }))} /><textarea className={panelTextareaClass} placeholder="Purpose" value={newDepartment.purpose} onChange={(event) => setNewDepartment((prev) => ({ ...prev, purpose: event.target.value }))} /><input className={panelInputClass} placeholder="Department leader" value={newDepartment.leader} onChange={(event) => setNewDepartment((prev) => ({ ...prev, leader: event.target.value }))} /><MediaUploadField label="Department image" value={resolveCmsMedia(newDepartment.image)} onUpload={upload} /></div><button type="button" onClick={add} disabled={!canEdit || !newDepartment.name.trim()} className="mt-4 rounded-full border px-4 py-2 text-body-sm disabled:opacity-50">Add department</button></div><div className="mt-6 grid gap-3">{(draft.departments ?? []).map((department) => <article key={department.id} className={`flex items-center gap-3 ${panelMutedClass} rounded-2xl p-3`}>{resolveCmsMedia(department.image) && <img src={resolveCmsMedia(department.image) ?? ""} alt="" className="aspect-[1/2] w-12 rounded-xl object-cover" />}<div className="min-w-0 flex-1"><p className="font-semibold">{department.name}</p><p className={panelSubtextClass}>{department.leader}</p></div><button type="button" onClick={() => setDraft((prev) => ({ ...prev, departments: prev.departments.filter((item) => item.id !== department.id) }))} className="text-danger">Remove</button></article>)}</div><button type="button" onClick={() => void save()} disabled={!canEdit || saving || JSON.stringify(draft) === saved} className="mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50">{saving ? "Saving..." : "Save departments"}</button></section>;
+  return <section className={`${panelShellClass} p-6`}><h2 className="text-heading-md font-semibold">Departments</h2><p className={`mt-2 ${panelSubtextClass}`}>Manage ministry teams, their purpose, leaders, and imagery.</p><div className="mt-6 grid gap-4"><label className="grid gap-2"><span>Overline</span><input className={panelInputClass} value={draft.departmentsOverline} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsOverline: event.target.value }))} /></label><label className="grid gap-2"><span>Title</span><input className={panelInputClass} value={draft.departmentsTitle} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsTitle: event.target.value }))} /></label><label className="grid gap-2"><span>Description</span><textarea className={panelTextareaClass} value={draft.departmentsDescription} onChange={(event) => setDraft((prev) => ({ ...prev, departmentsDescription: event.target.value }))} /></label></div><div className={`mt-6 ${panelMutedClass} rounded-2xl p-4`}><h3 className="font-semibold">Add department</h3><div className="mt-4 grid gap-4"><label className="grid gap-2 text-body-sm"><span>Department year</span><input type="number" className={panelInputClass} value={newDepartment.year} onChange={(event) => setNewDepartment((prev) => ({ ...prev, year: Number(event.target.value) }))} /></label><input className={panelInputClass} placeholder="Department name" value={newDepartment.name} onChange={(event) => setNewDepartment((prev) => ({ ...prev, name: event.target.value }))} /><textarea className={panelTextareaClass} placeholder="Purpose" value={newDepartment.purpose} onChange={(event) => setNewDepartment((prev) => ({ ...prev, purpose: event.target.value }))} /><input className={panelInputClass} placeholder="Department leader" value={newDepartment.leader} onChange={(event) => setNewDepartment((prev) => ({ ...prev, leader: event.target.value }))} /><MediaUploadField label="Department image" value={resolveCmsMedia(newDepartment.image)} onUpload={upload} /></div><button type="button" onClick={add} disabled={!canEdit || !newDepartment.name.trim()} className="mt-4 rounded-full border px-4 py-2 text-body-sm disabled:opacity-50">Add department</button></div><div className="mt-6 grid gap-3">{(draft.departments ?? []).map((department) => <article key={department.id} className={`flex items-center gap-3 ${panelMutedClass} rounded-2xl p-3`}>{resolveCmsMedia(department.image) && <img src={resolveCmsMedia(department.image) ?? ""} alt="" className="aspect-[1/2] w-12 rounded-xl object-cover" />}<div className="min-w-0 flex-1"><p className="font-semibold">{department.name}</p><p className={panelSubtextClass}>{department.leader}</p></div><button type="button" onClick={() => setDraft((prev) => ({ ...prev, departments: prev.departments.filter((item) => item.id !== department.id) }))} className="text-danger">Remove</button></article>)}</div><button type="button" onClick={() => void save()} disabled={!canEdit || saving || JSON.stringify(draft) === saved} className="mt-6 rounded-full bg-[color:var(--panel-text)] px-5 py-2 text-body-sm font-semibold text-[color:var(--panel-ink)] disabled:opacity-50">{saving ? "Saving..." : "Save departments"}</button></section>;
 };
 const FamilyContentEditor: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
   const initial = useCmsSection("family.content");

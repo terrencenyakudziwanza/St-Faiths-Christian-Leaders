@@ -11,7 +11,7 @@ interface EventsCardProps {
 
 const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
   const orderedMedia = [...event.media].sort((a, b) => a.sortOrder - b.sortOrder);
-  const imageUrls = orderedMedia
+  const imageUrls = event.thumbnailUrl ? [event.thumbnailUrl] : orderedMedia
     .filter((item) => item.mediaType === "picture")
     .slice(0, 3)
     .map((item) => item.publicUrl);
@@ -44,10 +44,10 @@ const EventCard: React.FC<EventsCardProps> = ({ event, onOpen }) => {
       {/* EVENT MEDIA STACK */}
       <button
         type="button"
-        className="group relative h-[38vh] min-h-[240px] w-full shrink-0 text-left lg:h-[50vh] lg:w-100"
+        className={`group relative h-[38vh] min-h-[240px] w-full shrink-0 text-left ${event.thumbnailUrl ? "lg:h-80 lg:w-80" : "lg:h-[50vh] lg:w-100"}`}
         onClick={() => onOpen(event)}
       >
-        <div className="stacked-imgs flex h-full w-full flex-col items-center lg:h-[50vh] lg:w-100">
+        <div className={`stacked-imgs flex h-full w-full flex-col items-center ${event.thumbnailUrl ? "lg:h-80 lg:w-80" : "lg:h-[50vh] lg:w-100"}`}>
           {stackImages.map((img, i) => (
             <img
               key={`${event.id}-cover-${i}`}

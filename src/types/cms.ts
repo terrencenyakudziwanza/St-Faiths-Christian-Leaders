@@ -16,7 +16,8 @@ export type CmsMediaFolder =
   | "cms/content/events/presenters"
   | "cms/content/board"
   | "cms/home/gallery"
-  | "cms/family/departments";
+  | "cms/family/departments"
+  | "cms/content/events/media";
 
 export type CmsMediaRef = {
   storagePath?: string | null;
@@ -37,7 +38,7 @@ export type CmsGalleryItem = {
 export type CmsGalleryContent = { overline: string; title: string; description: string; testimonialOverline: string; testimonialTitle: string; testimonialDescription: string; items: CmsGalleryItem[] };
 
 export type CmsFamilyProfile = { role: string; name: string; about: string; phone: string; email: string; image: CmsMediaRef };
-export type CmsDepartment = { id: string; name: string; purpose: string; leader: string; image: CmsMediaRef };
+export type CmsDepartment = { id: string; year?: number; name: string; purpose: string; leader: string; image: CmsMediaRef };
 export type CmsFamilyContent = { pageEyebrow: string; pageTitle: string; pageDescription: string; patronMatronTitle: string; patronMatronDescription: string; departmentsOverline: string; departmentsTitle: string; departmentsDescription: string; departments: CmsDepartment[]; boardOverline: string; boardTitle: string; boardDescription: string; patron: CmsFamilyProfile; matron: CmsFamilyProfile };
 
 export type CmsHeroSlide = {

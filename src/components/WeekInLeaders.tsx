@@ -1,4 +1,5 @@
 import React from "react";
+import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCmsSection } from "../hooks/useCmsSection";
 import { resolveCmsMedia } from "../lib/cms";
@@ -24,19 +25,25 @@ const WeekInLeaders: React.FC = () => {
 
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [previousIndex, setPreviousIndex] = React.useState<number | null>(null);
+  const [isAuto, setIsAuto] = React.useState(true);
+
+  const goTo = React.useCallback((index: number) => {
+    if (!weekSlides.length) return;
+    setActiveIndex((current) => {
+      const next = (index + weekSlides.length) % weekSlides.length;
+      setPreviousIndex(current);
+      return next;
+    });
+  }, [weekSlides.length]);
 
   React.useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setActiveIndex((prev) => {
-        setPreviousIndex(prev);
-        return weekSlides.length ? (prev + 1) % weekSlides.length : 0;
-      });
-    }, 5200);
+    if (!isAuto || weekSlides.length < 2) return;
+    const intervalId = window.setInterval(() => goTo(activeIndex + 1), 5200);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [activeIndex, goTo, isAuto, weekSlides.length]);
 
   React.useEffect(() => {
     if (!weekSlides.length) {
@@ -66,6 +73,11 @@ const WeekInLeaders: React.FC = () => {
           <p className="mt-3 text-body-sm text-muted">
             {weekContent.description}
           </p>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-subtle bg-surface-elevated p-1 shadow-sm">
+            <button type="button" aria-label="Previous day" onClick={() => goTo(activeIndex - 1)} className="grid h-9 w-9 place-items-center rounded-full text-ink transition hover:bg-accent-soft"><ChevronLeft size={18} /></button>
+            <button type="button" aria-pressed={!isAuto} onClick={() => setIsAuto((value) => !value)} className="inline-flex min-w-28 items-center justify-center gap-2 rounded-full bg-ink px-4 py-2 text-body-xs font-semibold text-inverse"><span>{isAuto ? <Pause size={14} /> : <Play size={14} />}</span>{isAuto ? "Pause" : "Play"}</button>
+            <button type="button" aria-label="Next day" onClick={() => goTo(activeIndex + 1)} className="grid h-9 w-9 place-items-center rounded-full text-ink transition hover:bg-accent-soft"><ChevronRight size={18} /></button>
+          </div>
         </div>
       </div>
 
@@ -75,7 +87,7 @@ const WeekInLeaders: React.FC = () => {
 
           <div className="week-rail">
             {weekSlides.map((slide, index) => (
-              <div
+              <button type="button" onClick={() => goTo(index)} aria-current={activeIndex === index ? "step" : undefined}
                 key={slide.day}
                 className={`week-rail-item ${
                   activeIndex === index ? "week-rail-item--active" : ""
@@ -83,7 +95,7 @@ const WeekInLeaders: React.FC = () => {
               >
                 <span className="week-rail-dot"></span>
                 <span>{slide.day}</span>
-              </div>
+              </button>
             ))}
           </div>
 

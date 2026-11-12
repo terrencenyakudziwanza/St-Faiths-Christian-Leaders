@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-ink opacity-70" />
-              <a href={`mailto:${settings.email || "someemail@gmail.com"}`}>{settings.email || "someemail@gmail.com"}</a>
+              <a href={`mailto:${settings.email || "someemail@gmail.com"}`}>{settings.email || "blablabla@gmail.com"}</a>
             </div>
           </div>
 

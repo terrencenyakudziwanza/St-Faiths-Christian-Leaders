@@ -36,6 +36,8 @@ export interface EventItem {
   presenterRole: string;
   presenterAvatarPath: string | null;
   presenterAvatarUrl: string | null;
+  thumbnailPath: string | null;
+  thumbnailUrl: string | null;
   serviceLeaders: ServiceLeader[];
   themeScriptureReference: string;
   themeScriptureText: string;
